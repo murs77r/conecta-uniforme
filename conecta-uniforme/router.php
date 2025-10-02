@@ -5,15 +5,16 @@ $caminho = $_SERVER['REQUEST_URI'];
 $caminho = substr($caminho, 1);
 $partes = explode('/',$caminho);
 
-echo $partes[0];
-
+$root = $host.'/conecta-uniforme/';
 $routes = [
-    $host => '/Model/home.php',
-    $host.'/cadastro' => '/Model/cadastro.php',
-    $host.'/login' => '/Model/login.php',
+    $root => '/Model/home.php',
+    $root.'cadastro' => '/Model/cadastro.php',
+    $root.'login' => '/Model/login.php',
 ];
 
 if (array_key_exists($host.'/'.$caminho,$routes)) {
     $caminho_counteudo = $routes[$host.'/'.$caminho];
-    include 'View/parciais/template.php';
+} else {
+    $caminho_counteudo = '/View/404.view.php';
 }
+include 'View/parciais/template.php';
