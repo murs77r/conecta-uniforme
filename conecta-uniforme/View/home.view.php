@@ -1,2 +1,2 @@
-<a href='View/login.view.php'>Login</a>
-<a href='View/cadastro.view.php'>Cadastro</a>
+<a href='login'>Login</a>
+<a href='cadastro'>Cadastro</a>

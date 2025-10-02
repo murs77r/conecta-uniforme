@@ -3,7 +3,7 @@ create database conecta_uniformes;
 use conecta_uniformes;
 
 create table escola (
-    id int primary key not null,
+    id int primary key auto_increment not null,
     email varchar(80) not null,
     nome varchar(80) not null,
     cnpj varchar(14) not null,

@@ -7,5 +7,4 @@ depois chama o template.php que então chama o header.php e o footer.php que sã
 baixo da página. Entre o footer e header ele chama o conteúdo da página, que ficam dentro da pasta View.
 
 A ideia é colocar qualquer HTML que repete entre todas as páginas no template, reduzindo o tanto de trabalho por
-
 página individual. */
