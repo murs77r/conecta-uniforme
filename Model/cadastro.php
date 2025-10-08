@@ -1,0 +1,1 @@
+<?php include 'View/cadastro.view.php'; ?>
