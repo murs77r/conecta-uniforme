@@ -7,7 +7,7 @@ create table escola (
     email varchar(80) not null,
     nome varchar(80) not null,
     cnpj varchar(14) not null,
-    senha varchar(64) not null
+    senha varchar(64) not null,
 
     cep varchar(8),
     estado varchar(2),
