@@ -7,12 +7,20 @@
     function carregarForm (tipo) {
         if (tipo == 1) {
             divLogin.innerHTML = `
-            Email: <input type="email" name="email" required><br>
-            Senha: <input type="password" name="senha" required>
+            <form method="post">
+                Email: <input type="email" name="email" required><br>
+                Senha: <input type="password" name="senha" required>
+                <input type="hidden" name="tipo_login" value='1'>
+                <input type="submit" value="Login">
+            </form>
             `;
         } else {
             divLogin.innerHTML = `
-            Código de acesso da escola: <input type="text" name="codacesso" required>
+            <form method="post">
+                Código de acesso da escola: <input type="text" name="codacesso" required>
+                <input type="hidden" name="tipo_login" value='2'>
+                <input type="submit" value="Login">
+            </form>
             `;
         }
     }

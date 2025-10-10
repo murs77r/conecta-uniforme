@@ -10,6 +10,7 @@ $routes = [
     $root => '/Model/home.php',
     $root.'cadastro' => '/Model/cadastro.php',
     $root.'login' => '/Model/login.php',
+    $root.'catalogo' => '/Model/catalogo.php',
 ];
 
 if (array_key_exists($host.'/'.$caminho,$routes)) {
