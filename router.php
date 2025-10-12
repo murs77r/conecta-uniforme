@@ -60,7 +60,8 @@ $routes = [
     '' => '/Model/home.php',
     'cadastro' => '/Model/cadastro.php',
     'login' => '/Model/login.php',
-    'Responsável' => '/Model/Responsável.php',
+    'responsavel' => '/Model/responsavel.php',
+    'Responsável' => '/Model/responsavel.php',
     'usuarios' => '/Model/usuarios.php',
     'catalogo' => '/Model/catalogo.php',
 
@@ -74,10 +75,15 @@ $routes = [
     'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
 
     // Gestão de alunos (Gestor)
-    'alunos-Gestor' => '/Model/alunos-Gestor.php',
+    'alunos-gestor' => '/Model/alunos-gestor.php',
+    'alunos-Gestor' => '/Model/alunos-gestor.php',
+
+    // Gestão de fornecedores (Gestor)
+    'fornecedores-gestor' => '/Model/fornecedores-gestor.php',
 
     // Gestão de produtos (Fornecedor)
-    'produtos-Fornecedor' => '/Model/produtos-Fornecedor.php',
+    'produtos-fornecedor' => '/Model/produtos-fornecedor.php',
+    'produtos-Fornecedor' => '/Model/produtos-fornecedor.php',
 
     // Catálogo e carrinho (responsável)
     'catalogo-novo' => '/Model/catalogo-novo.php',

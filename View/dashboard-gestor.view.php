@@ -11,8 +11,8 @@
     
     <nav>
         <a href="/dashboard-gestor">Dashboard</a> |
-        <a href="/alunos-Gestor">Gerenciar Alunos</a> |
-        <a href="/Fornecedores-Gestor">Gerenciar Fornecedores</a> |
+    <a href="/alunos-gestor">Gerenciar Alunos</a> |
+        <a href="/fornecedores-gestor">Gerenciar Fornecedores</a> |
         <a href="/pedidos-gerenciar">Ver Pedidos</a> |
         <a href="/comissoes-relatorio">Relatórios de Comissão</a> |
         <a href="/logout">Sair</a>

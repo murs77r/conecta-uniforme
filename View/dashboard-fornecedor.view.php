@@ -10,8 +10,8 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/dashboard-fornecedor">Dashboard</a> |
-        <a href="/produtos-Fornecedor">Meus Produtos</a> |
+    <a href="/dashboard-fornecedor">Dashboard</a> |
+    <a href="/produtos-fornecedor">Meus Produtos</a> |
         <a href="/pedidos-gerenciar">Pedidos</a> |
         <a href="/comissoes-relatorio">Relatórios Financeiros</a> |
         <a href="/logout">Sair</a>
@@ -73,8 +73,8 @@
     <?php endif; ?>
     
     <h2>Meus Produtos</h2>
-    <p><a href="/produtos-Fornecedor">Gerenciar Produtos</a> | 
-       <a href="/produtos-Fornecedor?novo=1">Adicionar Novo Produto</a></p>
+     <p><a href="/produtos-fornecedor">Gerenciar Produtos</a> | 
+         <a href="/produtos-fornecedor?novo=1">Adicionar Novo Produto</a></p>
     
     <?php if(count($produtos) > 0): ?>
         <table border="1" cellpadding="5" cellspacing="0" style="width: 100%;">
@@ -97,7 +97,7 @@
                         <td><?= $produto['total_variacoes'] ?></td>
                         <td><?= $produto['ativo'] ? 'Ativo' : 'Inativo' ?></td>
                         <td>
-                            <a href="/produtos-Fornecedor?editar=<?= $produto['id'] ?>">Editar</a>
+                            <a href="/produtos-fornecedor?editar=<?= $produto['id'] ?>">Editar</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

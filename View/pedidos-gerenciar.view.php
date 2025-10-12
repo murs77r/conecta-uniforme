@@ -14,7 +14,7 @@
             <a href="/catalogo-novo">Catálogo</a> |
         <?php elseif($user_tipo == 'Fornecedor'): ?>
             <a href="/dashboard-fornecedor">Dashboard</a> |
-            <a href="/produtos-Fornecedor">Produtos</a> |
+            <a href="/produtos-fornecedor">Produtos</a> |
         <?php else: ?>
             <a href="/dashboard-gestor">Dashboard</a> |
         <?php endif; ?>
