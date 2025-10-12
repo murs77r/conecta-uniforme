@@ -34,4 +34,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $escolas = consulta_sql('SELECT id, nome FROM escola');
 // sem tabela de alunos; o frontend deve coletar matrícula fornecida pela escola
 
-include __DIR__ . '/../View/Responsável.view.php';
+include __DIR__ . '/../View/responsável.view.php';

@@ -66,4 +66,4 @@ $total_alunos = count($alunos);
 $total_Fornecedores = count($Fornecedores_homologados);
 $total_pedidos = count($pedidos);
 
-require __DIR__ . '/../View/dashboard-Gestor.view.php';
+require __DIR__ . '/../View/dashboard-gestor.view.php';

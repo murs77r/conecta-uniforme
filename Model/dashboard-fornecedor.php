@@ -45,4 +45,4 @@ $pedidos_Pendentes = count(array_filter($pedidos, function($p) {
     return $p['status'] == 'Pendente' || $p['status'] == 'Aprovado';
 }));
 
-require __DIR__ . '/../View/dashboard-Fornecedor.view.php';
+require __DIR__ . '/../View/dashboard-fornecedor.view.php';
