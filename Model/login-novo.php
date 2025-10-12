@@ -82,6 +82,9 @@ if(isset($_POST['validar_codigo'])) {
                     case 'Responsável':
                         header('Location: /dashboard-responsavel');
                         exit;
+                    case 'Administrador':
+                        header('Location: /dashboard-administrador');
+                        exit;
                 }
             }
         } else {

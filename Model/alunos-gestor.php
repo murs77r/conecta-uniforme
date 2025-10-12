@@ -18,6 +18,7 @@ $escola_id = $_SESSION['escola_id'];
 
 $mensagem = '';
 $erro = '';
+$responsaveis_aluno = [];
 
 // Adicionar aluno individual
 if(isset($_POST['adicionar_aluno'])) {
@@ -126,7 +127,69 @@ if(isset($_POST['editar_aluno'])) {
     ];
     
     if($alunoClass->atualizar($aluno_id, $dados)) {
-        $mensagem = 'Aluno atualizado!';
+        $responsaveisDados = $_POST['responsaveis'] ?? [];
+        foreach($responsaveisDados as $resp_id => $resp_info) {
+            $resp_id = (int)$resp_id;
+            if($resp_id <= 0) {
+                continue;
+            }
+
+            $remover = isset($resp_info['remover']) && $resp_info['remover'] == '1';
+            if($remover) {
+                if(!$usuario->removerResponsavel($resp_id)) {
+                    $erro = 'Erro ao remover responsável.';
+                }
+                continue;
+            }
+
+            $nome_resp = trim($resp_info['nome'] ?? '');
+            $email_resp = trim($resp_info['email'] ?? '');
+            $telefone_resp = trim($resp_info['telefone'] ?? '');
+
+            if($nome_resp === '' || $email_resp === '') {
+                $erro = 'Nome e email do responsável são obrigatórios.';
+                continue;
+            }
+
+            if(!$usuario->atualizarResponsavel($resp_id, [
+                'nome' => $nome_resp,
+                'email' => $email_resp,
+                'telefone' => $telefone_resp
+            ])) {
+                $erro = 'Erro ao atualizar responsável. Verifique se o email já está em uso.';
+            }
+        }
+
+        $novoResponsavel = $_POST['novo_responsavel'] ?? null;
+        if($novoResponsavel) {
+            $nomeNovo = trim($novoResponsavel['nome'] ?? '');
+            $emailNovo = trim($novoResponsavel['email'] ?? '');
+            $telefoneNovo = trim($novoResponsavel['telefone'] ?? '');
+
+            if($nomeNovo || $emailNovo || $telefoneNovo) {
+                if($nomeNovo === '' || $emailNovo === '') {
+                    $erro = 'Para adicionar um novo responsável, informe nome e email.';
+                } else {
+                    if(!$usuario->criarResponsavel([
+                        'nome' => $nomeNovo,
+                        'email' => $emailNovo,
+                        'telefone' => $telefoneNovo,
+                        'aluno_id' => $aluno_id
+                    ])) {
+                        $erro = 'Erro ao adicionar novo responsável. Verifique se o email já está cadastrado.';
+                    }
+                }
+            }
+        }
+
+        if($erro === '') {
+            $mensagem = 'Aluno e responsáveis atualizados!';
+        } else {
+            $mensagem = 'Aluno atualizado com avisos. Confira os responsáveis.';
+        }
+
+        $aluno_editando = $alunoClass->buscarPorId($aluno_id);
+        $responsaveis_aluno = $usuario->listarResponsaveisPorAluno($aluno_id);
     } else {
         $erro = 'Erro ao atualizar aluno.';
     }
@@ -152,6 +215,9 @@ $aluno_editando = null;
 if(isset($_GET['editar'])) {
     $aluno_id = (int)$_GET['editar'];
     $aluno_editando = $alunoClass->buscarPorId($aluno_id);
+    if($aluno_editando) {
+        $responsaveis_aluno = $usuario->listarResponsaveisPorAluno($aluno_id);
+    }
 }
 
 require __DIR__ . '/../View/alunos-gestor.view.php';

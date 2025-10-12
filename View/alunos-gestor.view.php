@@ -63,6 +63,41 @@
             
             <label>Telefone do Responsável:</label><br>
             <input type="text" name="Responsável_telefone" style="width: 200px; padding: 5px;"><br><br>
+        <?php else: ?>
+            <h3>Responsáveis do aluno</h3>
+            <?php if(!empty($responsaveis_aluno)): ?>
+                <?php foreach($responsaveis_aluno as $responsavel): ?>
+                    <fieldset style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc;">
+                        <legend><?= htmlspecialchars($responsavel['nome']) ?></legend>
+                        <label>Nome:</label><br>
+                        <input type="text" name="responsaveis[<?= (int)$responsavel['id'] ?>][nome]" value="<?= htmlspecialchars($responsavel['nome']) ?>" style="width: 300px; padding: 5px;"><br><br>
+
+                        <label>Email:</label><br>
+                        <input type="email" name="responsaveis[<?= (int)$responsavel['id'] ?>][email]" value="<?= htmlspecialchars($responsavel['email']) ?>" style="width: 300px; padding: 5px;"><br><br>
+
+                        <label>Telefone:</label><br>
+                        <input type="text" name="responsaveis[<?= (int)$responsavel['id'] ?>][telefone]" value="<?= htmlspecialchars($responsavel['telefone'] ?? '') ?>" style="width: 200px; padding: 5px;"><br><br>
+
+                        <label style="color: #c00;">
+                            <input type="checkbox" name="responsaveis[<?= (int)$responsavel['id'] ?>][remover]" value="1">
+                            Remover responsável
+                        </label>
+                    </fieldset>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>Nenhum responsável cadastrado para este aluno.</p>
+            <?php endif; ?>
+
+            <h3>Adicionar novo responsável</h3>
+            <p>Preencha os campos abaixo para incluir mais um responsável.</p>
+            <label>Nome:</label><br>
+            <input type="text" name="novo_responsavel[nome]" style="width: 300px; padding: 5px;"><br><br>
+
+            <label>Email:</label><br>
+            <input type="email" name="novo_responsavel[email]" style="width: 300px; padding: 5px;"><br><br>
+
+            <label>Telefone:</label><br>
+            <input type="text" name="novo_responsavel[telefone]" style="width: 200px; padding: 5px;"><br><br>
         <?php endif; ?>
         
         <button type="submit" name="<?= $aluno_editando ? 'editar_aluno' : 'adicionar_aluno' ?>" style="padding: 10px 20px;">

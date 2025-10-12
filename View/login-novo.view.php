@@ -33,6 +33,7 @@
                     <option value="Responsável">Responsável (Pai/Mãe)</option>
                     <option value="Fornecedor">Fornecedor</option>
                     <option value="Gestor">Gestor Escolar</option>
+                    <option value="Administrador">Administrador</option>
                 </select>
             </div>
             

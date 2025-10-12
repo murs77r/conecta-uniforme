@@ -30,6 +30,16 @@ CREATE TABLE IF NOT EXISTS Gestor (
     CONSTRAINT fk_Gestor_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE
 );
 
+-- Tabela de administradores do sistema
+CREATE TABLE IF NOT EXISTS Administrador (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(120) NOT NULL,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    telefone VARCHAR(40),
+    ativo TINYINT(1) DEFAULT 1,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabela de Fornecedores
 CREATE TABLE IF NOT EXISTS Fornecedor (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -84,7 +94,7 @@ CREATE TABLE IF NOT EXISTS codigo_acesso (
     id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(120) NOT NULL,
     codigo VARCHAR(10) NOT NULL,
-    tipo_usuario ENUM('Gestor', 'Fornecedor', 'Responsável') NOT NULL,
+    tipo_usuario ENUM('Gestor', 'Fornecedor', 'Responsável', 'Administrador') NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expira_em TIMESTAMP NOT NULL,
     usado TINYINT(1) DEFAULT 0,

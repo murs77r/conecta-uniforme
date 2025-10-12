@@ -23,6 +23,9 @@ class Usuario {
             case 'Responsável':
                 $tabela = 'Responsável';
                 break;
+            case 'Administrador':
+                $tabela = 'Administrador';
+                break;
             default:
                 return false;
         }
@@ -52,6 +55,20 @@ class Usuario {
         return $this->con->query($sql);
     }
     
+    public function criarAdministrador($dados) {
+        $nome = $this->con->real_escape_string($dados['nome']);
+        $email = $this->con->real_escape_string($dados['email']);
+        $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
+
+        $sql = "INSERT INTO Administrador (nome, email, telefone, ativo)
+                VALUES ('$nome', '$email', '$telefone', 1)";
+
+        if($this->con->query($sql)) {
+            return $this->con->insert_id;
+        }
+        return false;
+    }
+
     public function criarFornecedor($dados) {
         $nome = $this->con->real_escape_string($dados['nome']);
         $email = $this->con->real_escape_string($dados['email']);
@@ -65,6 +82,23 @@ class Usuario {
             return $this->con->insert_id;
         }
         return false;
+    }
+
+    public function atualizarFornecedor($id, $dados) {
+        $id = (int)$id;
+        $nome = $this->con->real_escape_string($dados['nome']);
+        $email = $this->con->real_escape_string($dados['email']);
+        $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
+        $cnpj = $this->con->real_escape_string($dados['cnpj'] ?? '');
+
+        $sql = "UPDATE Fornecedor SET nome = '$nome', email = '$email', telefone = '$telefone', cnpj = '$cnpj' WHERE id = $id";
+        return $this->con->query($sql);
+    }
+
+    public function removerFornecedor($id) {
+        $id = (int)$id;
+        $sql = "DELETE FROM Fornecedor WHERE id = $id";
+        return $this->con->query($sql);
     }
     
     public function criarResponsavel($dados) {
@@ -81,6 +115,29 @@ class Usuario {
         }
         return false;
     }
+
+    public function listarResponsaveisPorAluno($aluno_id) {
+        $aluno_id = (int)$aluno_id;
+        $sql = "SELECT * FROM Responsável WHERE aluno_id = $aluno_id ORDER BY nome";
+        $result = $this->con->query($sql);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    public function atualizarResponsavel($id, $dados) {
+        $id = (int)$id;
+        $nome = $this->con->real_escape_string($dados['nome']);
+        $email = $this->con->real_escape_string($dados['email']);
+        $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
+
+        $sql = "UPDATE Responsável SET nome = '$nome', email = '$email', telefone = '$telefone' WHERE id = $id";
+        return $this->con->query($sql);
+    }
+
+    public function removerResponsavel($id) {
+        $id = (int)$id;
+        $sql = "DELETE FROM Responsável WHERE id = $id";
+        return $this->con->query($sql);
+    }
     
     public function listarGestoresPorEscola($escola_id) {
         $escola_id = (int)$escola_id;
@@ -94,13 +151,69 @@ class Usuario {
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
+
+    public function listarEscolas() {
+        $sql = "SELECT * FROM escola ORDER BY nome";
+        $result = $this->con->query($sql);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
+    public function criarEscola($dados) {
+        $email = $this->con->real_escape_string($dados['email']);
+        $nome = $this->con->real_escape_string($dados['nome']);
+        $cnpj = $this->con->real_escape_string($dados['cnpj']);
+        $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
+        $cep = $this->con->real_escape_string($dados['cep'] ?? '');
+        $estado = $this->con->real_escape_string($dados['estado'] ?? '');
+        $cidade = $this->con->real_escape_string($dados['cidade'] ?? '');
+        $endereco = $this->con->real_escape_string($dados['endereco'] ?? '');
+        $complemento = $this->con->real_escape_string($dados['complemento'] ?? '');
+
+        $sql = "INSERT INTO escola (email, nome, cnpj, telefone, cep, estado, cidade, endereco, complemento, ativo)
+                VALUES ('$email', '$nome', '$cnpj', '$telefone', '$cep', '$estado', '$cidade', '$endereco', '$complemento', 1)";
+
+        if($this->con->query($sql)) {
+            return $this->con->insert_id;
+        }
+        return false;
+    }
+
+    public function atualizarEscola($id, $dados) {
+        $id = (int)$id;
+        $email = $this->con->real_escape_string($dados['email']);
+        $nome = $this->con->real_escape_string($dados['nome']);
+        $cnpj = $this->con->real_escape_string($dados['cnpj']);
+        $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
+        $cep = $this->con->real_escape_string($dados['cep'] ?? '');
+        $estado = $this->con->real_escape_string($dados['estado'] ?? '');
+        $cidade = $this->con->real_escape_string($dados['cidade'] ?? '');
+        $endereco = $this->con->real_escape_string($dados['endereco'] ?? '');
+        $complemento = $this->con->real_escape_string($dados['complemento'] ?? '');
+
+        $sql = "UPDATE escola SET email = '$email', nome = '$nome', cnpj = '$cnpj', telefone = '$telefone', cep = '$cep', estado = '$estado', cidade = '$cidade', endereco = '$endereco', complemento = '$complemento' WHERE id = $id";
+        return $this->con->query($sql);
+    }
+
+    public function removerEscola($id) {
+        $id = (int)$id;
+        $sql = "DELETE FROM escola WHERE id = $id";
+        return $this->con->query($sql);
+    }
     
     public function ativarDesativar($id, $tipo, $status) {
         $id = (int)$id;
         $status = $status ? 1 : 0;
         
-        $tabela = $tipo == 'Gestor' ? 'Gestor' : 'Fornecedor';
-        
+        switch($tipo) {
+            case 'Gestor':
+            case 'Fornecedor':
+            case 'Administrador':
+                $tabela = $tipo;
+                break;
+            default:
+                return false;
+        }
+
         $sql = "UPDATE $tabela SET ativo = $status WHERE id = $id";
         return $this->con->query($sql);
     }

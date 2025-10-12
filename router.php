@@ -45,6 +45,7 @@ if ($uri === '' || $uri === 'index.php') {
             'Gestor' => 'dashboard-gestor',
             'Fornecedor' => 'dashboard-fornecedor',
             'Responsável' => 'dashboard-responsavel',
+            'Administrador' => 'dashboard-administrador',
             'aluno' => 'catalogo-novo',
         ];
         if (isset($destinos[$role])) {
@@ -73,6 +74,7 @@ $routes = [
     'dashboard-gestor' => '/Model/dashboard-gestor.php',
     'dashboard-fornecedor' => '/Model/dashboard-fornecedor.php',
     'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
+    'dashboard-administrador' => '/Model/dashboard-administrador.php',
 
     // Gestão de alunos (Gestor)
     'alunos-gestor' => '/Model/alunos-gestor.php',

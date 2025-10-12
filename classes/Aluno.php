@@ -57,6 +57,17 @@ class Aluno {
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
+
+    public function listarTodos() {
+        $sql = "SELECT a.*, e.nome as escola_nome,
+                (SELECT COUNT(*) FROM Responsável WHERE aluno_id = a.id) as total_responsaveis
+                FROM aluno a
+                INNER JOIN escola e ON a.escola_id = e.id
+                ORDER BY e.nome, a.nome";
+
+        $result = $this->con->query($sql);
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
     
     public function importarLote($escola_id, $alunos_array) {
         $inseridos = 0;

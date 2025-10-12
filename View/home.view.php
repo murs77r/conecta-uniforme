@@ -60,6 +60,22 @@
                 </a>
             </p>
         </div>
+
+        <div style="border: 1px solid #ccc; padding: 20px; flex: 1; min-width: 250px;">
+            <h3>Administradores</h3>
+            <p>Gerencie as entidades do ecossistema</p>
+            <ul>
+                <li>Cadastrar e atualizar escolas</li>
+                <li>Gerenciar fornecedores homologados</li>
+                <li>Acompanhar visão geral de alunos</li>
+                <li>Delegar acessos aos demais perfis</li>
+            </ul>
+            <p>
+                <a href="/login-novo" style="padding: 10px 20px; background: #343a40; color: white; text-decoration: none; display: inline-block;">
+                    Acessar como Administrador
+                </a>
+            </p>
+        </div>
     </div>
     
     <hr style="margin: 40px 0;">
@@ -95,6 +111,15 @@
         <li>Habilite Fornecedores autorizados</li>
         <li>Monitore pedidos e ponto de coleta</li>
         <li>Gerencie credenciais de responsáveis</li>
+    </ol>
+
+    <h3>Para Administradores:</h3>
+    <ol>
+        <li>Entre com seu e-mail institucional</li>
+        <li>Receba o código temporário por e-mail</li>
+        <li>Cadastre ou atualize escolas e fornecedores</li>
+        <li>Acompanhe o cadastro de alunos e seus responsáveis</li>
+        <li>Disponibilize acessos para gestores e fornecedores</li>
     </ol>
     
     <hr style="margin: 40px 0;">

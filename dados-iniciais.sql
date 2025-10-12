@@ -29,6 +29,15 @@ VALUES (
     1
 );
 
+-- Inserir administrador padrão do sistema
+INSERT INTO Administrador (nome, email, telefone, ativo)
+VALUES (
+    'Administrador Geral',
+    'admin@conectauniforme.com.br',
+    '(11) 90000-0000',
+    1
+);
+
 -- Inserir Fornecedores de exemplo
 INSERT INTO Fornecedor (nome, email, telefone, cnpj, ativo) 
 VALUES 
@@ -206,4 +215,10 @@ SELECT
     'RESPONSAVEL' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM Responsável;
+FROM Responsável
+UNION ALL
+SELECT 
+    'ADMINISTRADOR' as Tipo,
+    email as Email,
+    'Use o sistema de login com código' as Senha
+FROM Administrador;
