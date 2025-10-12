@@ -1,49 +1,98 @@
 <?php
-$host = $_SERVER['HTTP_HOST'];
-$caminho = $_SERVER['REQUEST_URI'];
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-$caminho = substr($caminho, 1);
-$partes = explode('/',$caminho);
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
 
-$root = $host.'/conecta-uniforme/';
+if ($basePath !== '' && strpos($uri, $basePath) === 0) {
+    $uri = substr($uri, strlen($basePath));
+}
+
+$uri = trim($uri, '/');
+
+$redirectBase = $basePath === '' ? '' : $basePath;
+
+$redirect = function (string $path = '') use ($redirectBase): void {
+    $path = ltrim($path, '/');
+    $location = $redirectBase . '/' . $path;
+    if ($path === '') {
+        $location = $redirectBase ?: '/';
+    }
+    header('Location: ' . $location);
+    exit;
+};
+
+if ($uri === '' || $uri === 'index.php') {
+    $role = $_SESSION['user_tipo'] ?? $_SESSION['role'] ?? null;
+    $tipoAntigo = $_SESSION['tipo_usuario'] ?? null; // suporte ao login antigo numérico
+
+    if (!$role && $tipoAntigo) {
+        $map = [
+            1 => 'gestor',
+            2 => 'aluno',
+            3 => 'responsavel',
+            4 => 'fornecedor',
+        ];
+        $role = $map[$tipoAntigo] ?? null;
+    }
+
+    if ($role) {
+        $destinos = [
+            'gestor' => 'dashboard-gestor',
+            'fornecedor' => 'dashboard-fornecedor',
+            'responsavel' => 'dashboard-responsavel',
+            'aluno' => 'catalogo-novo',
+        ];
+        if (isset($destinos[$role])) {
+            $redirect($destinos[$role]);
+        }
+    }
+
+    $redirect('login-novo');
+}
+
 $routes = [
     // Rotas originais
-    $root => '/Model/home.php',
-    $root.'cadastro' => '/Model/cadastro.php',
-    $root.'login' => '/Model/login.php',
-    $root.'responsavel' => '/Model/responsavel.php',
-    $root.'usuarios' => '/Model/usuarios.php',
-    $root.'catalogo' => '/Model/catalogo.php',
-    
+    '' => '/Model/home.php',
+    'cadastro' => '/Model/cadastro.php',
+    'login' => '/Model/login.php',
+    'responsavel' => '/Model/responsavel.php',
+    'usuarios' => '/Model/usuarios.php',
+    'catalogo' => '/Model/catalogo.php',
+
     // Novas rotas do sistema
-    $root.'login-novo' => '/Model/login-novo.php',
-    $root.'logout' => '/Model/logout.php',
-    
+    'login-novo' => '/Model/login-novo.php',
+    'logout' => '/Model/logout.php',
+
     // Dashboards por perfil
-    $root.'dashboard-gestor' => '/Model/dashboard-gestor.php',
-    $root.'dashboard-fornecedor' => '/Model/dashboard-fornecedor.php',
-    $root.'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
-    
+    'dashboard-gestor' => '/Model/dashboard-gestor.php',
+    'dashboard-fornecedor' => '/Model/dashboard-fornecedor.php',
+    'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
+
     // Gestão de alunos (gestor)
-    $root.'alunos-gestor' => '/Model/alunos-gestor.php',
-    
+    'alunos-gestor' => '/Model/alunos-gestor.php',
+
     // Gestão de produtos (fornecedor)
-    $root.'produtos-fornecedor' => '/Model/produtos-fornecedor.php',
-    
+    'produtos-fornecedor' => '/Model/produtos-fornecedor.php',
+
     // Catálogo e carrinho (responsável)
-    $root.'catalogo-novo' => '/Model/catalogo-novo.php',
-    $root.'carrinho-novo' => '/Model/carrinho-novo.php',
-    
+    'catalogo-novo' => '/Model/catalogo-novo.php',
+    'carrinho-novo' => '/Model/carrinho-novo.php',
+
     // Pedidos (todos os perfis)
-    $root.'pedidos-gerenciar' => '/Model/pedidos-gerenciar.php',
-    
+    'pedidos-gerenciar' => '/Model/pedidos-gerenciar.php',
+
     // Comissões e relatórios
-    $root.'comissoes-relatorio' => '/Model/comissoes-relatorio.php',
+    'comissoes-relatorio' => '/Model/comissoes-relatorio.php',
 ];
 
-if (array_key_exists($host.'/'.$caminho,$routes)) {
-    $caminho_counteudo = $routes[$host.'/'.$caminho];
+if (array_key_exists($uri, $routes)) {
+    $caminho_counteudo = $routes[$uri];
 } else {
+    http_response_code(404);
     $caminho_counteudo = '/View/404.view.php';
 }
+
 include 'View/parciais/template.php';
