@@ -4,14 +4,14 @@ require_once __DIR__ . '/../classes/Produto.php';
 
 iniciarSessaoSegura();
 
-// Verificar se está logado como fornecedor
-if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'fornecedor') {
+// Verificar se está logado como Fornecedor
+if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'Fornecedor') {
     header('Location: /login-novo');
     exit;
 }
 
 $produto = new Produto();
-$fornecedor_id = $_SESSION['user_id'];
+$Fornecedor_id = $_SESSION['user_id'];
 
 $mensagem = '';
 $erro = '';
@@ -19,7 +19,7 @@ $erro = '';
 // Criar produto
 if(isset($_POST['criar_produto'])) {
     $dados = [
-        'fornecedor_id' => $fornecedor_id,
+        'Fornecedor_id' => $Fornecedor_id,
         'nome' => $_POST['nome'],
         'descricao' => $_POST['descricao'] ?? '',
         'preco' => $_POST['preco']
@@ -106,8 +106,8 @@ if(isset($_POST['atualizar_estoque'])) {
     }
 }
 
-// Buscar produtos do fornecedor
-$produtos = $produto->listarPorFornecedor($fornecedor_id);
+// Buscar produtos do Fornecedor
+$produtos = $produto->listarPorFornecedor($Fornecedor_id);
 
 // Buscar produto específico se editando
 $produto_editando = null;
@@ -122,9 +122,9 @@ if(isset($_GET['editar']) && $_GET['editar']) {
 $sql = "SELECT DISTINCT e.id, e.nome 
         FROM escola e 
         INNER JOIN homologacao h ON e.id = h.escola_id 
-        WHERE h.fornecedor_id = $fornecedor_id AND h.ativo = 1
+        WHERE h.Fornecedor_id = $Fornecedor_id AND h.ativo = 1
         ORDER BY e.nome";
 $result = $con->query($sql);
 $escolas_disponiveis = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
-require __DIR__ . '/../View/produtos-fornecedor.view.php';
+require __DIR__ . '/../View/produtos-Fornecedor.view.php';

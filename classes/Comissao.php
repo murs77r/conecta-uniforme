@@ -14,16 +14,16 @@ class Comissao {
         $data_inicio = $mes_referencia;
         $data_fim = date('Y-m-t', strtotime($mes_referencia));
         
-        // Buscar vendas do mês por fornecedor
-        $sql = "SELECT pi.fornecedor_id, f.nome as fornecedor_nome,
+        // Buscar vendas do mês por Fornecedor
+        $sql = "SELECT pi.Fornecedor_id, f.nome as Fornecedor_nome,
                 SUM(pi.subtotal) as total_vendas,
                 COUNT(DISTINCT pi.pedido_id) as total_pedidos
                 FROM pedido_item pi
                 INNER JOIN pedido p ON pi.pedido_id = p.id
-                INNER JOIN fornecedor f ON pi.fornecedor_id = f.id
-                WHERE p.status IN ('aprovado', 'em_producao', 'pronto_retirada', 'entregue')
+                INNER JOIN Fornecedor f ON pi.Fornecedor_id = f.id
+                WHERE p.status IN ('Aprovado', 'Em Produção', 'Disponível para Retirar', 'Entregue')
                 AND DATE(p.criado_em) BETWEEN '$data_inicio' AND '$data_fim'
-                GROUP BY pi.fornecedor_id, f.nome";
+                GROUP BY pi.Fornecedor_id, f.nome";
         
         $result = $this->con->query($sql);
         
@@ -35,11 +35,11 @@ class Comissao {
                 $valor_liquido = $total_vendas - $total_comissao;
                 
                 // Inserir ou atualizar comissão
-                $fornecedor_id = (int)$row['fornecedor_id'];
+                $Fornecedor_id = (int)$row['Fornecedor_id'];
                 
                 $sql_insert = "INSERT INTO comissao 
-                              (fornecedor_id, mes_referencia, total_vendas, total_comissao, valor_liquido, status) 
-                              VALUES ($fornecedor_id, '$mes_referencia', $total_vendas, $total_comissao, $valor_liquido, 'pendente')
+                              (Fornecedor_id, mes_referencia, total_vendas, total_comissao, valor_liquido, status) 
+                              VALUES ($Fornecedor_id, '$mes_referencia', $total_vendas, $total_comissao, $valor_liquido, 'Pendente')
                               ON DUPLICATE KEY UPDATE 
                               total_vendas = $total_vendas, 
                               total_comissao = $total_comissao, 
@@ -60,25 +60,25 @@ class Comissao {
         return [];
     }
     
-    public function registrarPagamento($comissao_id, $valor_pago, $data_pagamento = null) {
+    public function registrarPagamento($comissao_id, $valor_Pago, $data_pagamento = null) {
         $comissao_id = (int)$comissao_id;
-        $valor_pago = (float)$valor_pago;
+        $valor_Pago = (float)$valor_Pago;
         $data_pagamento = $data_pagamento ?: date('Y-m-d');
         
         $sql = "UPDATE comissao 
-                SET status = 'pago', 
+                SET status = 'Pago', 
                     data_pagamento = '$data_pagamento', 
-                    valor_pago = $valor_pago 
+                    valor_Pago = $valor_Pago 
                 WHERE id = $comissao_id";
         
         return $this->con->query($sql);
     }
     
-    public function listarPorFornecedor($fornecedor_id) {
-        $fornecedor_id = (int)$fornecedor_id;
+    public function listarPorFornecedor($Fornecedor_id) {
+        $Fornecedor_id = (int)$Fornecedor_id;
         
         $sql = "SELECT * FROM comissao 
-                WHERE fornecedor_id = $fornecedor_id 
+                WHERE Fornecedor_id = $Fornecedor_id 
                 ORDER BY mes_referencia DESC";
         
         $result = $this->con->query($sql);
@@ -92,9 +92,9 @@ class Comissao {
             $where = "WHERE c.status = '$status'";
         }
         
-        $sql = "SELECT c.*, f.nome as fornecedor_nome, f.email as fornecedor_email
+        $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
                 FROM comissao c
-                INNER JOIN fornecedor f ON c.fornecedor_id = f.id
+                INNER JOIN Fornecedor f ON c.Fornecedor_id = f.id
                 $where
                 ORDER BY c.mes_referencia DESC, f.nome";
         
@@ -105,30 +105,30 @@ class Comissao {
     public function buscarPorId($id) {
         $id = (int)$id;
         
-        $sql = "SELECT c.*, f.nome as fornecedor_nome, f.email as fornecedor_email
+        $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
                 FROM comissao c
-                INNER JOIN fornecedor f ON c.fornecedor_id = f.id
+                INNER JOIN Fornecedor f ON c.Fornecedor_id = f.id
                 WHERE c.id = $id";
         
         $result = $this->con->query($sql);
         return $result ? $result->fetch_assoc() : null;
     }
     
-    public function detalhesVendasMes($fornecedor_id, $mes_referencia) {
-        $fornecedor_id = (int)$fornecedor_id;
+    public function detalhesVendasMes($Fornecedor_id, $mes_referencia) {
+        $Fornecedor_id = (int)$Fornecedor_id;
         $mes_referencia = $this->con->real_escape_string($mes_referencia);
         $data_inicio = $mes_referencia;
         $data_fim = date('Y-m-t', strtotime($mes_referencia));
         
         $sql = "SELECT p.id as pedido_id, p.criado_em, p.status, p.total,
                 a.nome as aluno_nome, e.nome as escola_nome,
-                SUM(pi.subtotal) as valor_fornecedor
+                SUM(pi.subtotal) as valor_Fornecedor
                 FROM pedido p
                 INNER JOIN pedido_item pi ON p.id = pi.pedido_id
                 INNER JOIN aluno a ON p.aluno_id = a.id
                 INNER JOIN escola e ON p.escola_id = e.id
-                WHERE pi.fornecedor_id = $fornecedor_id
-                AND p.status IN ('aprovado', 'em_producao', 'pronto_retirada', 'entregue')
+                WHERE pi.Fornecedor_id = $Fornecedor_id
+                AND p.status IN ('Aprovado', 'Em Produção', 'Disponível para Retirar', 'Entregue')
                 AND DATE(p.criado_em) BETWEEN '$data_inicio' AND '$data_fim'
                 GROUP BY p.id, p.criado_em, p.status, p.total, a.nome, e.nome
                 ORDER BY p.criado_em DESC";

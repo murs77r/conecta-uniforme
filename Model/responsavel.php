@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($matricula)) $errors[] = 'Matrícula inválida.';
 
     if (empty($errors)) {
-        // cria responsavel na tabela responsavel
+        // cria Responsável na tabela Responsável
         $senha_temp = bin2hex(random_bytes(4));
         $resp = new Responsavel($nome, $email, $telefone, $senha_temp, $escola_id, $matricula);
         $resultado = $resp->salvar();
@@ -34,4 +34,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $escolas = consulta_sql('SELECT id, nome FROM escola');
 // sem tabela de alunos; o frontend deve coletar matrícula fornecida pela escola
 
-include __DIR__ . '/../View/responsavel.view.php';
+include __DIR__ . '/../View/Responsável.view.php';

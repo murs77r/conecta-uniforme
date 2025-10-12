@@ -27,8 +27,8 @@ if($pedido_id) {
     $itens = $pedidoClass->buscarItensPedido($pedido_id);
 }
 
-// Atualizar status (apenas fornecedor)
-if(isset($_POST['atualizar_status']) && $user_tipo == 'fornecedor') {
+// Atualizar status (apenas Fornecedor)
+if(isset($_POST['atualizar_status']) && $user_tipo == 'Fornecedor') {
     $pedido_id = $_POST['pedido_id'];
     $novo_status = $_POST['status'];
     
@@ -46,13 +46,13 @@ $pedidos = [];
 
 if(!$pedido_id) {
     switch($user_tipo) {
-        case 'responsavel':
+        case 'Responsável':
             $pedidos = $pedidoClass->listarPorResponsavel($user_id);
             break;
-        case 'fornecedor':
+        case 'Fornecedor':
             $pedidos = $pedidoClass->listarPorFornecedor($user_id);
             break;
-        case 'gestor':
+        case 'Gestor':
             $escola_id = $_SESSION['escola_id'];
             $pedidos = $pedidoClass->listarPorEscola($escola_id);
             break;
@@ -61,21 +61,21 @@ if(!$pedido_id) {
 
 // Definir status disponíveis para transição
 $status_labels = [
-    'pendente' => 'Pendente',
-    'aprovado' => 'Aprovado',
-    'em_producao' => 'Em Produção',
-    'pronto_retirada' => 'Pronto para Retirada',
-    'entregue' => 'Entregue',
-    'cancelado' => 'Cancelado'
+    'Pendente' => 'Pendente',
+    'Aprovado' => 'Aprovado',
+    'Em Produção' => 'Em Produção',
+    'Disponível para Retirar' => 'Pronto para Retirada',
+    'Entregue' => 'Entregue',
+    'Cancelado' => 'Cancelado'
 ];
 
 $proximos_status = [
-    'pendente' => ['aprovado', 'cancelado'],
-    'aprovado' => ['em_producao', 'cancelado'],
-    'em_producao' => ['pronto_retirada', 'cancelado'],
-    'pronto_retirada' => ['entregue'],
-    'entregue' => [],
-    'cancelado' => []
+    'Pendente' => ['Aprovado', 'Cancelado'],
+    'Aprovado' => ['Em Produção', 'Cancelado'],
+    'Em Produção' => ['Disponível para Retirar', 'Cancelado'],
+    'Disponível para Retirar' => ['Entregue'],
+    'Entregue' => [],
+    'Cancelado' => []
 ];
 
 require __DIR__ . '/../View/pedidos-gerenciar.view.php';

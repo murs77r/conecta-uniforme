@@ -22,7 +22,7 @@ class Responsavel {
     public function salvar() {
         global $con;
         try {
-            $stmt = $con->prepare('INSERT INTO responsavel (nome, email, telefone, senha, escola_id, matricula) VALUES (?,?,?,?,?,?)');
+            $stmt = $con->prepare('INSERT INTO Responsável (nome, email, telefone, senha, escola_id, matricula) VALUES (?,?,?,?,?,?)');
             $stmt->bind_param('sssssi', $this->nome, $this->email, $this->telefone, $this->senha, $this->escola_id, $this->matricula);
             if (!$stmt->execute()) {
                 throw new Exception('Erro ao salvar responsável: ' . $stmt->error);
@@ -36,7 +36,7 @@ class Responsavel {
     }
 
     public static function getPorId($id) {
-        $res = consulta_sql('SELECT * FROM responsavel WHERE id = ' . intval($id) . ' LIMIT 1');
+        $res = consulta_sql('SELECT * FROM Responsável WHERE id = ' . intval($id) . ' LIMIT 1');
         if (empty($res)) return null;
         $d = $res[0];
         $r = new Responsavel($d['nome'], $d['email'], $d['telefone'], $d['senha'], $d['escola_id'], $d['matricula']);
@@ -54,7 +54,7 @@ class Responsavel {
         if (!$e) return false;
         $escola_id = $e['id'];
 
-        $stmt = $con->prepare('SELECT id, senha FROM responsavel WHERE escola_id = ? AND matricula = ? LIMIT 1');
+        $stmt = $con->prepare('SELECT id, senha FROM Responsável WHERE escola_id = ? AND matricula = ? LIMIT 1');
         $stmt->bind_param('is', $escola_id, $matricula);
         $stmt->execute();
         $r = $stmt->get_result()->fetch_assoc();

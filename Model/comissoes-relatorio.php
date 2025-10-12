@@ -4,8 +4,8 @@ require_once __DIR__ . '/../classes/Comissao.php';
 
 iniciarSessaoSegura();
 
-// Verificar se está logado como fornecedor ou admin
-if(!isset($_SESSION['logado']) || !in_array($_SESSION['user_tipo'], ['fornecedor', 'gestor'])) {
+// Verificar se está logado como Fornecedor ou admin
+if(!isset($_SESSION['logado']) || !in_array($_SESSION['user_tipo'], ['Fornecedor', 'Gestor'])) {
     header('Location: /login-novo');
     exit;
 }
@@ -17,26 +17,26 @@ $mensagem = '';
 $erro = '';
 
 // Gerar relatório mensal (apenas admin)
-if(isset($_POST['gerar_relatorio']) && $user_tipo == 'gestor') {
+if(isset($_POST['gerar_relatorio']) && $user_tipo == 'Gestor') {
     $ano = $_POST['ano'];
     $mes = $_POST['mes'];
     
     $relatorios = $comissaoClass->gerarRelatorioMensal($ano, $mes);
     
     if(count($relatorios) > 0) {
-        $mensagem = 'Relatório gerado com sucesso! ' . count($relatorios) . ' fornecedores processados.';
+        $mensagem = 'Relatório gerado com sucesso! ' . count($relatorios) . ' Fornecedores processados.';
     } else {
         $erro = 'Nenhuma venda encontrada para o período.';
     }
 }
 
 // Registrar pagamento (apenas admin)
-if(isset($_POST['registrar_pagamento']) && $user_tipo == 'gestor') {
+if(isset($_POST['registrar_pagamento']) && $user_tipo == 'Gestor') {
     $comissao_id = $_POST['comissao_id'];
-    $valor_pago = $_POST['valor_pago'];
+    $valor_Pago = $_POST['valor_Pago'];
     $data_pagamento = $_POST['data_pagamento'];
     
-    if($comissaoClass->registrarPagamento($comissao_id, $valor_pago, $data_pagamento)) {
+    if($comissaoClass->registrarPagamento($comissao_id, $valor_Pago, $data_pagamento)) {
         $mensagem = 'Pagamento registrado com sucesso!';
     } else {
         $erro = 'Erro ao registrar pagamento.';
@@ -47,14 +47,14 @@ if(isset($_POST['registrar_pagamento']) && $user_tipo == 'gestor') {
 $comissoes = [];
 $detalhes_vendas = [];
 
-if($user_tipo == 'fornecedor') {
-    $fornecedor_id = $_SESSION['user_id'];
-    $comissoes = $comissaoClass->listarPorFornecedor($fornecedor_id);
+if($user_tipo == 'Fornecedor') {
+    $Fornecedor_id = $_SESSION['user_id'];
+    $comissoes = $comissaoClass->listarPorFornecedor($Fornecedor_id);
     
     // Se visualizando detalhes de um mês específico
     if(isset($_GET['mes'])) {
         $mes_referencia = $_GET['mes'];
-        $detalhes_vendas = $comissaoClass->detalhesVendasMes($fornecedor_id, $mes_referencia);
+        $detalhes_vendas = $comissaoClass->detalhesVendasMes($Fornecedor_id, $mes_referencia);
     }
 } else {
     // Admin vê todas

@@ -7,8 +7,8 @@ require_once __DIR__ . '/../classes/Pedido.php';
 
 iniciarSessaoSegura();
 
-// Verificar se está logado como gestor
-if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'gestor') {
+// Verificar se está logado como Gestor
+if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'Gestor') {
     header('Location: /login-novo');
     exit;
 }
@@ -18,9 +18,9 @@ $usuario = new Usuario();
 $aluno = new Aluno();
 $pedido = new Pedido();
 
-// Buscar escola do gestor
-$gestor_id = $_SESSION['user_id'];
-$sql = "SELECT escola_id FROM gestor WHERE id = $gestor_id";
+// Buscar escola do Gestor
+$Gestor_id = $_SESSION['user_id'];
+$sql = "SELECT escola_id FROM Gestor WHERE id = $Gestor_id";
 $result = $con->query($sql);
 $escola_data = $result->fetch_assoc();
 $escola_id = $escola_data['escola_id'];
@@ -31,21 +31,21 @@ $mensagem = '';
 $erro = '';
 
 // Ações
-if(isset($_POST['habilitar_fornecedor'])) {
-    $fornecedor_id = $_POST['fornecedor_id'];
-    if($homologacao->criar($escola_id, $fornecedor_id)) {
+if(isset($_POST['habilitar_Fornecedor'])) {
+    $Fornecedor_id = $_POST['Fornecedor_id'];
+    if($homologacao->criar($escola_id, $Fornecedor_id)) {
         $mensagem = 'Fornecedor habilitado com sucesso!';
     } else {
-        $erro = 'Erro ao habilitar fornecedor.';
+        $erro = 'Erro ao habilitar Fornecedor.';
     }
 }
 
-if(isset($_POST['desabilitar_fornecedor'])) {
-    $fornecedor_id = $_POST['fornecedor_id'];
-    if($homologacao->remover($escola_id, $fornecedor_id)) {
+if(isset($_POST['desabilitar_Fornecedor'])) {
+    $Fornecedor_id = $_POST['Fornecedor_id'];
+    if($homologacao->remover($escola_id, $Fornecedor_id)) {
         $mensagem = 'Fornecedor desabilitado com sucesso!';
     } else {
-        $erro = 'Erro ao desabilitar fornecedor.';
+        $erro = 'Erro ao desabilitar Fornecedor.';
     }
 }
 
@@ -56,14 +56,14 @@ if(isset($_POST['importar_alunos'])) {
 }
 
 // Buscar dados
-$fornecedores_homologados = $homologacao->listarFornecedoresHomologados($escola_id);
-$fornecedores_disponiveis = $homologacao->listarFornecedoresDisponiveis($escola_id);
+$Fornecedores_homologados = $homologacao->listarFornecedoresHomologados($escola_id);
+$Fornecedores_disponiveis = $homologacao->listarFornecedoresDisponiveis($escola_id);
 $alunos = $aluno->listarPorEscola($escola_id);
 $pedidos = $pedido->listarPorEscola($escola_id);
 
 // Estatísticas
 $total_alunos = count($alunos);
-$total_fornecedores = count($fornecedores_homologados);
+$total_Fornecedores = count($Fornecedores_homologados);
 $total_pedidos = count($pedidos);
 
-require __DIR__ . '/../View/dashboard-gestor.view.php';
+require __DIR__ . '/../View/dashboard-Gestor.view.php';

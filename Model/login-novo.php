@@ -73,14 +73,14 @@ if(isset($_POST['validar_codigo'])) {
                 
                 // Redirecionar para dashboard apropriado
                 switch($tipo) {
-                    case 'gestor':
-                        header('Location: /dashboard-gestor');
+                    case 'Gestor':
+                        header('Location: /dashboard-Gestor');
                         exit;
-                    case 'fornecedor':
-                        header('Location: /dashboard-fornecedor');
+                    case 'Fornecedor':
+                        header('Location: /dashboard-Fornecedor');
                         exit;
-                    case 'responsavel':
-                        header('Location: /dashboard-responsavel');
+                    case 'Responsável':
+                        header('Location: /dashboard-Responsável');
                         exit;
                 }
             }

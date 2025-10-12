@@ -32,19 +32,19 @@ if ($uri === '' || $uri === 'index.php') {
 
     if (!$role && $tipoAntigo) {
         $map = [
-            1 => 'gestor',
+            1 => 'Gestor',
             2 => 'aluno',
-            3 => 'responsavel',
-            4 => 'fornecedor',
+            3 => 'Responsável',
+            4 => 'Fornecedor',
         ];
         $role = $map[$tipoAntigo] ?? null;
     }
 
     if ($role) {
         $destinos = [
-            'gestor' => 'dashboard-gestor',
-            'fornecedor' => 'dashboard-fornecedor',
-            'responsavel' => 'dashboard-responsavel',
+            'Gestor' => 'dashboard-Gestor',
+            'Fornecedor' => 'dashboard-Fornecedor',
+            'Responsável' => 'dashboard-Responsável',
             'aluno' => 'catalogo-novo',
         ];
         if (isset($destinos[$role])) {
@@ -60,7 +60,7 @@ $routes = [
     '' => '/Model/home.php',
     'cadastro' => '/Model/cadastro.php',
     'login' => '/Model/login.php',
-    'responsavel' => '/Model/responsavel.php',
+    'Responsável' => '/Model/Responsável.php',
     'usuarios' => '/Model/usuarios.php',
     'catalogo' => '/Model/catalogo.php',
 
@@ -69,15 +69,15 @@ $routes = [
     'logout' => '/Model/logout.php',
 
     // Dashboards por perfil
-    'dashboard-gestor' => '/Model/dashboard-gestor.php',
-    'dashboard-fornecedor' => '/Model/dashboard-fornecedor.php',
-    'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
+    'dashboard-Gestor' => '/Model/dashboard-Gestor.php',
+    'dashboard-Fornecedor' => '/Model/dashboard-Fornecedor.php',
+    'dashboard-Responsável' => '/Model/dashboard-Responsável.php',
 
-    // Gestão de alunos (gestor)
-    'alunos-gestor' => '/Model/alunos-gestor.php',
+    // Gestão de alunos (Gestor)
+    'alunos-Gestor' => '/Model/alunos-Gestor.php',
 
-    // Gestão de produtos (fornecedor)
-    'produtos-fornecedor' => '/Model/produtos-fornecedor.php',
+    // Gestão de produtos (Fornecedor)
+    'produtos-Fornecedor' => '/Model/produtos-Fornecedor.php',
 
     // Catálogo e carrinho (responsável)
     'catalogo-novo' => '/Model/catalogo-novo.php',

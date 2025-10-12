@@ -10,7 +10,7 @@
     <p>Olá, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/dashboard-Responsável">Dashboard</a> |
         <a href="/catalogo-novo">Continuar Comprando</a> |
         <a href="/carrinho-novo">Carrinho</a> |
         <a href="/logout">Sair</a>
@@ -49,7 +49,7 @@
                 <?php foreach($itens as $item): ?>
                     <tr>
                         <td><?= htmlspecialchars($item['produto_nome']) ?></td>
-                        <td><?= htmlspecialchars($item['fornecedor_nome']) ?></td>
+                        <td><?= htmlspecialchars($item['Fornecedor_nome']) ?></td>
                         <td>
                             Tamanho: <?= htmlspecialchars($item['tamanho']) ?><br>
                             <?php if($item['cor']): ?>

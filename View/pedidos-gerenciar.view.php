@@ -9,14 +9,14 @@
     <p>Usuário: <?= htmlspecialchars($_SESSION['user_nome']) ?> (<?= htmlspecialchars($user_tipo) ?>)</p>
     
     <nav>
-        <?php if($user_tipo == 'responsavel'): ?>
-            <a href="/dashboard-responsavel">Dashboard</a> |
+        <?php if($user_tipo == 'Responsável'): ?>
+            <a href="/dashboard-Responsável">Dashboard</a> |
             <a href="/catalogo-novo">Catálogo</a> |
-        <?php elseif($user_tipo == 'fornecedor'): ?>
-            <a href="/dashboard-fornecedor">Dashboard</a> |
-            <a href="/produtos-fornecedor">Produtos</a> |
+        <?php elseif($user_tipo == 'Fornecedor'): ?>
+            <a href="/dashboard-Fornecedor">Dashboard</a> |
+            <a href="/produtos-Fornecedor">Produtos</a> |
         <?php else: ?>
-            <a href="/dashboard-gestor">Dashboard</a> |
+            <a href="/dashboard-Gestor">Dashboard</a> |
         <?php endif; ?>
         <a href="/pedidos-gerenciar">Pedidos</a> |
         <a href="/logout">Sair</a>
@@ -45,7 +45,7 @@
         <ul>
             <li><strong>Data:</strong> <?= date('d/m/Y H:i', strtotime($pedido['criado_em'])) ?></li>
             <li><strong>Status:</strong> <?= $status_labels[$pedido['status']] ?? $pedido['status'] ?></li>
-            <li><strong>Responsável:</strong> <?= htmlspecialchars($pedido['responsavel_nome']) ?> (<?= htmlspecialchars($pedido['responsavel_email']) ?>)</li>
+            <li><strong>Responsável:</strong> <?= htmlspecialchars($pedido['Responsável_nome']) ?> (<?= htmlspecialchars($pedido['Responsável_email']) ?>)</li>
             <li><strong>Aluno:</strong> <?= htmlspecialchars($pedido['aluno_nome']) ?> - Matrícula: <?= htmlspecialchars($pedido['aluno_matricula']) ?></li>
             <li><strong>Escola:</strong> <?= htmlspecialchars($pedido['escola_nome']) ?></li>
             <li><strong>Total:</strong> R$ <?= number_format($pedido['total'], 2, ',', '.') ?></li>
@@ -68,7 +68,7 @@
                 <?php foreach($itens as $item): ?>
                     <tr>
                         <td><?= htmlspecialchars($item['produto_nome']) ?></td>
-                        <td><?= htmlspecialchars($item['fornecedor_nome']) ?></td>
+                        <td><?= htmlspecialchars($item['Fornecedor_nome']) ?></td>
                         <td>
                             Tamanho: <?= htmlspecialchars($item['tamanho']) ?><br>
                             <?php if($item['cor']): ?>Cor: <?= htmlspecialchars($item['cor']) ?><br><?php endif; ?>
@@ -82,7 +82,7 @@
             </tbody>
         </table>
         
-        <?php if($user_tipo == 'fornecedor' && count($proximos_status[$pedido['status']] ?? []) > 0): ?>
+        <?php if($user_tipo == 'Fornecedor' && count($proximos_status[$pedido['status']] ?? []) > 0): ?>
             <h3>Atualizar Status</h3>
             <form method="POST">
                 <input type="hidden" name="pedido_id" value="<?= $pedido['id'] ?>">
@@ -107,9 +107,9 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <?php if($user_tipo != 'responsavel'): ?><th>Aluno</th><?php endif; ?>
-                        <?php if($user_tipo == 'fornecedor'): ?><th>Escola</th><?php endif; ?>
-                        <?php if($user_tipo == 'gestor'): ?><th>Responsável</th><?php endif; ?>
+                        <?php if($user_tipo != 'Responsável'): ?><th>Aluno</th><?php endif; ?>
+                        <?php if($user_tipo == 'Fornecedor'): ?><th>Escola</th><?php endif; ?>
+                        <?php if($user_tipo == 'Gestor'): ?><th>Responsável</th><?php endif; ?>
                         <th>Total</th>
                         <th>Status</th>
                         <th>Data</th>
@@ -120,14 +120,14 @@
                     <?php foreach($pedidos as $p): ?>
                         <tr>
                             <td><?= $p['id'] ?></td>
-                            <?php if($user_tipo != 'responsavel'): ?>
+                            <?php if($user_tipo != 'Responsável'): ?>
                                 <td><?= htmlspecialchars($p['aluno_nome']) ?></td>
                             <?php endif; ?>
-                            <?php if($user_tipo == 'fornecedor'): ?>
+                            <?php if($user_tipo == 'Fornecedor'): ?>
                                 <td><?= htmlspecialchars($p['escola_nome']) ?></td>
                             <?php endif; ?>
-                            <?php if($user_tipo == 'gestor'): ?>
-                                <td><?= htmlspecialchars($p['responsavel_nome']) ?></td>
+                            <?php if($user_tipo == 'Gestor'): ?>
+                                <td><?= htmlspecialchars($p['Responsável_nome']) ?></td>
                             <?php endif; ?>
                             <td>R$ <?= number_format($p['total'], 2, ',', '.') ?></td>
                             <td><?= $status_labels[$p['status']] ?? $p['status'] ?></td>

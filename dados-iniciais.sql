@@ -19,38 +19,38 @@ VALUES (
 
 SET @escola_id = LAST_INSERT_ID();
 
--- Inserir gestor escolar
-INSERT INTO gestor (nome, email, telefone, escola_id, ativo) 
+-- Inserir Gestor escolar
+INSERT INTO Gestor (nome, email, telefone, escola_id, ativo) 
 VALUES (
     'Maria Santos',
-    'maria.gestor@escolaexemplo.com.br',
+    'maria.Gestor@escolaexemplo.com.br',
     '(11) 98765-4321',
     @escola_id,
     1
 );
 
--- Inserir fornecedores de exemplo
-INSERT INTO fornecedor (nome, email, telefone, cnpj, ativo) 
+-- Inserir Fornecedores de exemplo
+INSERT INTO Fornecedor (nome, email, telefone, cnpj, ativo) 
 VALUES 
     ('Uniformes Alpha Ltda', 'contato@uniformesalpha.com.br', '(11) 3333-4444', '98765432000101', 1),
     ('Beta Confecções', 'vendas@betaconfeccoes.com.br', '(11) 5555-6666', '11223344000155', 1);
 
-SET @fornecedor1_id = 1;
-SET @fornecedor2_id = 2;
+SET @Fornecedor1_id = 1;
+SET @Fornecedor2_id = 2;
 
--- Criar homologações (fornecedores autorizados para a escola)
-INSERT INTO homologacao (escola_id, fornecedor_id, ativo) 
+-- Criar homologações (Fornecedores autorizados para a escola)
+INSERT INTO homologacao (escola_id, Fornecedor_id, ativo) 
 VALUES 
-    (@escola_id, @fornecedor1_id, 1),
-    (@escola_id, @fornecedor2_id, 1);
+    (@escola_id, @Fornecedor1_id, 1),
+    (@escola_id, @Fornecedor2_id, 1);
 
 -- Inserir alunos de exemplo
 INSERT INTO aluno (nome, matricula, escola_id, serie, genero, ativo) 
 VALUES 
-    ('João Silva', '2024001', @escola_id, '5º Ano', 'masculino', 1),
-    ('Maria Oliveira', '2024002', @escola_id, '5º Ano', 'feminino', 1),
-    ('Pedro Santos', '2024003', @escola_id, '4º Ano', 'masculino', 1),
-    ('Ana Costa', '2024004', @escola_id, '6º Ano', 'feminino', 1);
+    ('João Silva', '2024001', @escola_id, '5º Ano', 'Masculino', 1),
+    ('Maria Oliveira', '2024002', @escola_id, '5º Ano', 'Feminino', 1),
+    ('Pedro Santos', '2024003', @escola_id, '4º Ano', 'Masculino', 1),
+    ('Ana Costa', '2024004', @escola_id, '6º Ano', 'Feminino', 1);
 
 SET @aluno1_id = 1;
 SET @aluno2_id = 2;
@@ -58,7 +58,7 @@ SET @aluno3_id = 3;
 SET @aluno4_id = 4;
 
 -- Inserir responsáveis
-INSERT INTO responsavel (nome, email, telefone, aluno_id, ativo) 
+INSERT INTO Responsável (nome, email, telefone, aluno_id, ativo) 
 VALUES 
     ('Carlos Silva', 'carlos.silva@email.com', '(11) 91111-2222', @aluno1_id, 1),
     ('Fernanda Oliveira', 'fernanda.oliveira@email.com', '(11) 93333-4444', @aluno2_id, 1),
@@ -66,11 +66,11 @@ VALUES
     ('Juliana Costa', 'juliana.costa@email.com', '(11) 97777-8888', @aluno4_id, 1);
 
 -- Inserir produtos de exemplo (Fornecedor 1)
-INSERT INTO produto (fornecedor_id, nome, descricao, preco, ativo) 
+INSERT INTO produto (Fornecedor_id, nome, descricao, preco, ativo) 
 VALUES 
-    (@fornecedor1_id, 'Camiseta Polo Escolar', 'Camiseta polo manga curta com logo da escola. Tecido 100% algodão.', 45.90, 1),
-    (@fornecedor1_id, 'Bermuda Escolar', 'Bermuda tactel com bolsos. Cores variadas.', 39.90, 1),
-    (@fornecedor1_id, 'Calça Escolar', 'Calça social escolar em tecido resistente.', 59.90, 1);
+    (@Fornecedor1_id, 'Camiseta Polo Escolar', 'Camiseta polo manga curta com logo da escola. Tecido 100% algodão.', 45.90, 1),
+    (@Fornecedor1_id, 'Bermuda Escolar', 'Bermuda tactel com bolsos. Cores variadas.', 39.90, 1),
+    (@Fornecedor1_id, 'Calça Escolar', 'Calça social escolar em tecido resistente.', 59.90, 1);
 
 SET @produto1_id = 1;
 SET @produto2_id = 2;
@@ -100,43 +100,43 @@ VALUES
 -- Camiseta Polo
 INSERT INTO produto_variacao (produto_id, tamanho, cor, genero, quantidade_estoque) 
 VALUES 
-    (@produto1_id, 'P', 'Branca', 'masculino', 20),
-    (@produto1_id, 'M', 'Branca', 'masculino', 25),
-    (@produto1_id, 'G', 'Branca', 'masculino', 15),
-    (@produto1_id, 'P', 'Branca', 'feminino', 18),
-    (@produto1_id, 'M', 'Branca', 'feminino', 22),
-    (@produto1_id, 'G', 'Branca', 'feminino', 12);
+    (@produto1_id, 'P', 'Branca', 'Masculino', 20),
+    (@produto1_id, 'M', 'Branca', 'Masculino', 25),
+    (@produto1_id, 'G', 'Branca', 'Masculino', 15),
+    (@produto1_id, 'P', 'Branca', 'Feminino', 18),
+    (@produto1_id, 'M', 'Branca', 'Feminino', 22),
+    (@produto1_id, 'G', 'Branca', 'Feminino', 12);
 
 -- Bermuda
 INSERT INTO produto_variacao (produto_id, tamanho, cor, genero, quantidade_estoque) 
 VALUES 
-    (@produto2_id, 'P', 'Azul', 'masculino', 15),
-    (@produto2_id, 'M', 'Azul', 'masculino', 20),
-    (@produto2_id, 'G', 'Azul', 'masculino', 10),
-    (@produto2_id, 'P', 'Azul', 'feminino', 12),
-    (@produto2_id, 'M', 'Azul', 'feminino', 18),
-    (@produto2_id, 'G', 'Azul', 'feminino', 8);
+    (@produto2_id, 'P', 'Azul', 'Masculino', 15),
+    (@produto2_id, 'M', 'Azul', 'Masculino', 20),
+    (@produto2_id, 'G', 'Azul', 'Masculino', 10),
+    (@produto2_id, 'P', 'Azul', 'Feminino', 12),
+    (@produto2_id, 'M', 'Azul', 'Feminino', 18),
+    (@produto2_id, 'G', 'Azul', 'Feminino', 8);
 
 -- Calça
 INSERT INTO produto_variacao (produto_id, tamanho, cor, genero, quantidade_estoque) 
 VALUES 
-    (@produto3_id, 'P', 'Cinza', 'masculino', 10),
-    (@produto3_id, 'M', 'Cinza', 'masculino', 15),
-    (@produto3_id, 'G', 'Cinza', 'masculino', 8),
-    (@produto3_id, 'P', 'Cinza', 'feminino', 10),
-    (@produto3_id, 'M', 'Cinza', 'feminino', 12),
-    (@produto3_id, 'G', 'Cinza', 'feminino', 7);
+    (@produto3_id, 'P', 'Cinza', 'Masculino', 10),
+    (@produto3_id, 'M', 'Cinza', 'Masculino', 15),
+    (@produto3_id, 'G', 'Cinza', 'Masculino', 8),
+    (@produto3_id, 'P', 'Cinza', 'Feminino', 10),
+    (@produto3_id, 'M', 'Cinza', 'Feminino', 12),
+    (@produto3_id, 'G', 'Cinza', 'Feminino', 7);
 
 -- Inserir produtos do Fornecedor 2
-INSERT INTO produto (fornecedor_id, nome, descricao, preco, ativo) 
+INSERT INTO produto (Fornecedor_id, nome, descricao, preco, ativo) 
 VALUES 
-    (@fornecedor2_id, 'Mochila Escolar Grande', 'Mochila com compartimento para notebook, impermeável.', 89.90, 1),
-    (@fornecedor2_id, 'Jaqueta Escolar', 'Jaqueta de frio com logo bordado.', 79.90, 1);
+    (@Fornecedor2_id, 'Mochila Escolar Grande', 'Mochila com compartimento para notebook, impermeável.', 89.90, 1),
+    (@Fornecedor2_id, 'Jaqueta Escolar', 'Jaqueta de frio com logo bordado.', 79.90, 1);
 
 SET @produto4_id = 4;
 SET @produto5_id = 5;
 
--- Homologar produtos do fornecedor 2
+-- Homologar produtos do Fornecedor 2
 INSERT INTO produto_homologacao (produto_id, escola_id, serie) 
 VALUES 
     (@produto4_id, @escola_id, '4º Ano'),
@@ -145,13 +145,13 @@ VALUES
     (@produto5_id, @escola_id, '5º Ano'),
     (@produto5_id, @escola_id, '6º Ano');
 
--- Variações fornecedor 2
+-- Variações Fornecedor 2
 INSERT INTO produto_variacao (produto_id, tamanho, cor, genero, quantidade_estoque) 
 VALUES 
-    (@produto4_id, 'Único', 'Azul', 'unissex', 30),
-    (@produto5_id, 'P', 'Azul Marinho', 'unissex', 15),
-    (@produto5_id, 'M', 'Azul Marinho', 'unissex', 20),
-    (@produto5_id, 'G', 'Azul Marinho', 'unissex', 12);
+    (@produto4_id, 'Único', 'Azul', 'Unissex', 30),
+    (@produto5_id, 'P', 'Azul Marinho', 'Unissex', 15),
+    (@produto5_id, 'M', 'Azul Marinho', 'Unissex', 20),
+    (@produto5_id, 'G', 'Azul Marinho', 'Unissex', 12);
 
 SELECT 'Dados iniciais inseridos com sucesso!' as Status;
 
@@ -165,12 +165,12 @@ SELECT
     'Gestor criado:' as Info,
     nome as Nome,
     email as Email
-FROM gestor WHERE escola_id = @escola_id;
+FROM Gestor WHERE escola_id = @escola_id;
 
 SELECT 
     'Fornecedores criados:' as Info,
     COUNT(*) as Total
-FROM fornecedor;
+FROM Fornecedor;
 
 SELECT 
     'Alunos criados:' as Info,
@@ -180,7 +180,7 @@ FROM aluno;
 SELECT 
     'Responsáveis criados:' as Info,
     COUNT(*) as Total
-FROM responsavel;
+FROM Responsável;
 
 SELECT 
     'Produtos criados:' as Info,
@@ -194,16 +194,16 @@ SELECT
     'GESTOR' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM gestor 
+FROM Gestor 
 UNION ALL
 SELECT 
     'FORNECEDOR' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM fornecedor
+FROM Fornecedor
 UNION ALL
 SELECT 
     'RESPONSAVEL' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM responsavel;
+FROM Responsável;

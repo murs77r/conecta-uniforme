@@ -49,7 +49,7 @@ class Aluno {
         $escola_id = (int)$escola_id;
         
         $sql = "SELECT a.*, 
-                (SELECT COUNT(*) FROM responsavel WHERE aluno_id = a.id) as total_responsaveis
+                (SELECT COUNT(*) FROM Responsável WHERE aluno_id = a.id) as total_responsaveis
                 FROM aluno a
                 WHERE a.escola_id = $escola_id
                 ORDER BY a.serie, a.nome";

@@ -6,8 +6,8 @@ require_once __DIR__ . '/../classes/Comissao.php';
 
 iniciarSessaoSegura();
 
-// Verificar se está logado como fornecedor
-if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'fornecedor') {
+// Verificar se está logado como Fornecedor
+if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'Fornecedor') {
     header('Location: /login-novo');
     exit;
 }
@@ -16,7 +16,7 @@ $produto = new Produto();
 $pedido = new Pedido();
 $comissao = new Comissao();
 
-$fornecedor_id = $_SESSION['user_id'];
+$Fornecedor_id = $_SESSION['user_id'];
 
 $mensagem = '';
 $erro = '';
@@ -34,15 +34,15 @@ if(isset($_POST['atualizar_status_pedido'])) {
 }
 
 // Buscar dados
-$produtos = $produto->listarPorFornecedor($fornecedor_id);
-$pedidos = $pedido->listarPorFornecedor($fornecedor_id);
-$comissoes = $comissao->listarPorFornecedor($fornecedor_id);
+$produtos = $produto->listarPorFornecedor($Fornecedor_id);
+$pedidos = $pedido->listarPorFornecedor($Fornecedor_id);
+$comissoes = $comissao->listarPorFornecedor($Fornecedor_id);
 
 // Estatísticas
 $total_produtos = count($produtos);
 $total_pedidos = count($pedidos);
-$pedidos_pendentes = count(array_filter($pedidos, function($p) {
-    return $p['status'] == 'pendente' || $p['status'] == 'aprovado';
+$pedidos_Pendentes = count(array_filter($pedidos, function($p) {
+    return $p['status'] == 'Pendente' || $p['status'] == 'Aprovado';
 }));
 
-require __DIR__ . '/../View/dashboard-fornecedor.view.php';
+require __DIR__ . '/../View/dashboard-Fornecedor.view.php';

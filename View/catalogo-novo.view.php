@@ -10,7 +10,7 @@
     <p>Olá, <?= htmlspecialchars($_SESSION['user_nome']) ?>! | Aluno: <?= htmlspecialchars($aluno['nome']) ?></p>
     
     <nav>
-        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/dashboard-Responsável">Dashboard</a> |
         <a href="/catalogo-novo">Catálogo</a> |
         <a href="/carrinho-novo">Carrinho (<?= $total_carrinho ?>)</a> |
         <a href="/logout">Sair</a>
@@ -39,7 +39,7 @@
                 <?php foreach($produtos as $produto): ?>
                     <div style="border: 1px solid #ccc; padding: 10px;">
                         <h3><?= htmlspecialchars($produto['nome']) ?></h3>
-                        <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto['fornecedor_nome']) ?></p>
+                        <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto['Fornecedor_nome']) ?></p>
                         <p><strong>Preço:</strong> R$ <?= number_format($produto['preco'], 2, ',', '.') ?></p>
                         <p>
                             <a href="/catalogo-novo?produto_id=<?= $produto['id'] ?>">Ver Detalhes</a>
@@ -71,7 +71,7 @@
             
             <div style="flex: 1;">
                 <h3>Informações</h3>
-                <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto_selecionado['fornecedor_nome']) ?></p>
+                <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto_selecionado['Fornecedor_nome']) ?></p>
                 <p><strong>Preço:</strong> R$ <?= number_format($produto_selecionado['preco'], 2, ',', '.') ?></p>
                 <p><strong>Descrição:</strong></p>
                 <p><?= nl2br(htmlspecialchars($produto_selecionado['descricao'])) ?></p>

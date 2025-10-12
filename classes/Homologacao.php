@@ -9,22 +9,22 @@ class Homologacao {
         $this->con = $con;
     }
     
-    public function criar($escola_id, $fornecedor_id) {
+    public function criar($escola_id, $Fornecedor_id) {
         $escola_id = (int)$escola_id;
-        $fornecedor_id = (int)$fornecedor_id;
+        $Fornecedor_id = (int)$Fornecedor_id;
         
-        $sql = "INSERT INTO homologacao (escola_id, fornecedor_id, ativo) 
-                VALUES ($escola_id, $fornecedor_id, 1)
+        $sql = "INSERT INTO homologacao (escola_id, Fornecedor_id, ativo) 
+                VALUES ($escola_id, $Fornecedor_id, 1)
                 ON DUPLICATE KEY UPDATE ativo = 1, data_homologacao = CURRENT_TIMESTAMP";
         
         return $this->con->query($sql);
     }
     
-    public function remover($escola_id, $fornecedor_id) {
+    public function remover($escola_id, $Fornecedor_id) {
         $escola_id = (int)$escola_id;
-        $fornecedor_id = (int)$fornecedor_id;
+        $Fornecedor_id = (int)$Fornecedor_id;
         
-        $sql = "UPDATE homologacao SET ativo = 0 WHERE escola_id = $escola_id AND fornecedor_id = $fornecedor_id";
+        $sql = "UPDATE homologacao SET ativo = 0 WHERE escola_id = $escola_id AND Fornecedor_id = $Fornecedor_id";
         return $this->con->query($sql);
     }
     
@@ -32,8 +32,8 @@ class Homologacao {
         $escola_id = (int)$escola_id;
         
         $sql = "SELECT f.*, h.data_homologacao, h.ativo
-                FROM fornecedor f
-                INNER JOIN homologacao h ON f.id = h.fornecedor_id
+                FROM Fornecedor f
+                INNER JOIN homologacao h ON f.id = h.Fornecedor_id
                 WHERE h.escola_id = $escola_id
                 ORDER BY f.nome";
         
@@ -45,10 +45,10 @@ class Homologacao {
         $escola_id = (int)$escola_id;
         
         $sql = "SELECT f.*
-                FROM fornecedor f
+                FROM Fornecedor f
                 WHERE f.ativo = 1
                 AND f.id NOT IN (
-                    SELECT fornecedor_id FROM homologacao 
+                    SELECT Fornecedor_id FROM homologacao 
                     WHERE escola_id = $escola_id AND ativo = 1
                 )
                 ORDER BY f.nome";
@@ -57,12 +57,12 @@ class Homologacao {
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
     
-    public function verificarHomologacao($escola_id, $fornecedor_id) {
+    public function verificarHomologacao($escola_id, $Fornecedor_id) {
         $escola_id = (int)$escola_id;
-        $fornecedor_id = (int)$fornecedor_id;
+        $Fornecedor_id = (int)$Fornecedor_id;
         
         $sql = "SELECT * FROM homologacao 
-                WHERE escola_id = $escola_id AND fornecedor_id = $fornecedor_id AND ativo = 1";
+                WHERE escola_id = $escola_id AND Fornecedor_id = $Fornecedor_id AND ativo = 1";
         
         $result = $this->con->query($sql);
         return $result && $result->num_rows > 0;

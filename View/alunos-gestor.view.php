@@ -9,8 +9,8 @@
     <p>Gestor: <?= htmlspecialchars($_SESSION['user_nome']) ?></p>
     
     <nav>
-        <a href="/dashboard-gestor">Dashboard</a> |
-        <a href="/alunos-gestor">Alunos</a> |
+        <a href="/dashboard-Gestor">Dashboard</a> |
+        <a href="/alunos-Gestor">Alunos</a> |
         <a href="/logout">Sair</a>
     </nav>
     
@@ -49,20 +49,20 @@
         <label>Gênero:</label><br>
         <select name="genero" required style="width: 200px; padding: 5px;">
             <option value="">Selecione...</option>
-            <option value="masculino" <?= ($aluno_editando['genero'] ?? '') == 'masculino' ? 'selected' : '' ?>>Masculino</option>
-            <option value="feminino" <?= ($aluno_editando['genero'] ?? '') == 'feminino' ? 'selected' : '' ?>>Feminino</option>
+            <option value="Masculino" <?= ($aluno_editando['genero'] ?? '') == 'Masculino' ? 'selected' : '' ?>>Masculino</option>
+            <option value="Feminino" <?= ($aluno_editando['genero'] ?? '') == 'Feminino' ? 'selected' : '' ?>>Feminino</option>
         </select><br><br>
         
         <?php if(!$aluno_editando): ?>
             <h3>Dados do Responsável (opcional)</h3>
             <label>Nome do Responsável:</label><br>
-            <input type="text" name="responsavel_nome" style="width: 300px; padding: 5px;"><br><br>
+            <input type="text" name="Responsável_nome" style="width: 300px; padding: 5px;"><br><br>
             
             <label>Email do Responsável:</label><br>
-            <input type="email" name="responsavel_email" style="width: 300px; padding: 5px;"><br><br>
+            <input type="email" name="Responsável_email" style="width: 300px; padding: 5px;"><br><br>
             
             <label>Telefone do Responsável:</label><br>
-            <input type="text" name="responsavel_telefone" style="width: 200px; padding: 5px;"><br><br>
+            <input type="text" name="Responsável_telefone" style="width: 200px; padding: 5px;"><br><br>
         <?php endif; ?>
         
         <button type="submit" name="<?= $aluno_editando ? 'editar_aluno' : 'adicionar_aluno' ?>" style="padding: 10px 20px;">
@@ -70,14 +70,14 @@
         </button>
         
         <?php if($aluno_editando): ?>
-            <a href="/alunos-gestor" style="margin-left: 10px;">Cancelar</a>
+            <a href="/alunos-Gestor" style="margin-left: 10px;">Cancelar</a>
         <?php endif; ?>
     </form>
     
     <hr>
     
     <h2>Importar Alunos em Lote (CSV)</h2>
-    <p>Formato do CSV: nome, matricula, serie, genero, responsavel_nome, responsavel_email, responsavel_telefone</p>
+    <p>Formato do CSV: nome, matricula, serie, genero, Responsável_nome, Responsável_email, Responsável_telefone</p>
     <form method="POST" enctype="multipart/form-data">
         <input type="file" name="arquivo_csv" accept=".csv" required>
         <button type="submit" name="importar_csv">Importar CSV</button>
@@ -110,7 +110,7 @@
                         <td><?= $aluno['total_responsaveis'] ?></td>
                         <td><?= $aluno['ativo'] ? 'Ativo' : 'Inativo' ?></td>
                         <td>
-                            <a href="/alunos-gestor?editar=<?= $aluno['id'] ?>">Editar</a> |
+                            <a href="/alunos-Gestor?editar=<?= $aluno['id'] ?>">Editar</a> |
                             <form method="POST" style="display: inline;">
                                 <input type="hidden" name="aluno_id" value="<?= $aluno['id'] ?>">
                                 <input type="hidden" name="status" value="<?= $aluno['ativo'] ? 0 : 1 ?>">

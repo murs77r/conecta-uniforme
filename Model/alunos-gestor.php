@@ -5,8 +5,8 @@ require_once __DIR__ . '/../classes/Usuario.php';
 require_once __DIR__ . '/../classes/Escola.php';
 iniciarSessaoSegura();
 
-// Verificar se está logado como gestor
-if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'gestor') {
+// Verificar se está logado como Gestor
+if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'Gestor') {
     header('Location: /login-novo');
     exit;
 }
@@ -33,11 +33,11 @@ if(isset($_POST['adicionar_aluno'])) {
     
     if($aluno_id) {
         // Criar responsável se fornecido
-        if(!empty($_POST['responsavel_nome']) && !empty($_POST['responsavel_email'])) {
+        if(!empty($_POST['Responsável_nome']) && !empty($_POST['Responsável_email'])) {
             $dados_resp = [
-                'nome' => $_POST['responsavel_nome'],
-                'email' => $_POST['responsavel_email'],
-                'telefone' => $_POST['responsavel_telefone'] ?? '',
+                'nome' => $_POST['Responsável_nome'],
+                'email' => $_POST['Responsável_email'],
+                'telefone' => $_POST['Responsável_telefone'] ?? '',
                 'aluno_id' => $aluno_id
             ];
             
@@ -60,16 +60,16 @@ if(isset($_POST['importar_csv']) && isset($_FILES['arquivo_csv'])) {
         
         $alunos_array = [];
         while(($row = fgetcsv($handle)) !== false) {
-            // Espera-se: nome, matricula, serie, genero, responsavel_nome, responsavel_email, responsavel_telefone
+            // Espera-se: nome, matricula, serie, genero, Responsável_nome, Responsável_email, Responsável_telefone
             if(count($row) >= 4) {
                 $alunos_array[] = [
                     'nome' => $row[0],
                     'matricula' => $row[1],
                     'serie' => $row[2],
                     'genero' => $row[3],
-                    'responsavel_nome' => $row[4] ?? '',
-                    'responsavel_email' => $row[5] ?? '',
-                    'responsavel_telefone' => $row[6] ?? ''
+                    'Responsável_nome' => $row[4] ?? '',
+                    'Responsável_email' => $row[5] ?? '',
+                    'Responsável_telefone' => $row[6] ?? ''
                 ];
             }
         }
@@ -94,11 +94,11 @@ if(isset($_POST['importar_csv']) && isset($_FILES['arquivo_csv'])) {
                 $inseridos++;
                 
                 // Criar responsável se fornecido
-                if(!empty($dados_aluno['responsavel_email'])) {
+                if(!empty($dados_aluno['Responsável_email'])) {
                     $dados_resp = [
-                        'nome' => $dados_aluno['responsavel_nome'],
-                        'email' => $dados_aluno['responsavel_email'],
-                        'telefone' => $dados_aluno['responsavel_telefone'],
+                        'nome' => $dados_aluno['Responsável_nome'],
+                        'email' => $dados_aluno['Responsável_email'],
+                        'telefone' => $dados_aluno['Responsável_telefone'],
                         'aluno_id' => $aluno_id
                     ];
                     
@@ -154,4 +154,4 @@ if(isset($_GET['editar'])) {
     $aluno_editando = $alunoClass->buscarPorId($aluno_id);
 }
 
-require __DIR__ . '/../View/alunos-gestor.view.php';
+require __DIR__ . '/../View/alunos-Gestor.view.php';

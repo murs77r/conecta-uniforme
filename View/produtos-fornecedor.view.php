@@ -9,8 +9,8 @@
     <p>Fornecedor: <?= htmlspecialchars($_SESSION['user_nome']) ?></p>
     
     <nav>
-        <a href="/dashboard-fornecedor">Dashboard</a> |
-        <a href="/produtos-fornecedor">Produtos</a> |
+        <a href="/dashboard-Fornecedor">Dashboard</a> |
+        <a href="/produtos-Fornecedor">Produtos</a> |
         <a href="/pedidos-gerenciar">Pedidos</a> |
         <a href="/logout">Sair</a>
     </nav>
@@ -66,7 +66,7 @@
                 <?= $produto_editando ? 'Atualizar Produto' : 'Criar Produto' ?>
             </button>
             
-            <a href="/produtos-fornecedor" style="margin-left: 10px;">Cancelar</a>
+            <a href="/produtos-Fornecedor" style="margin-left: 10px;">Cancelar</a>
         </form>
         
         <?php if($produto_editando): ?>
@@ -85,9 +85,9 @@
                 
                 <label>Gênero:</label>
                 <select name="genero" required style="padding: 5px;">
-                    <option value="masculino">Masculino</option>
-                    <option value="feminino">Feminino</option>
-                    <option value="unissex">Unissex</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Unissex">Unissex</option>
                 </select>
                 
                 <label>Quantidade em Estoque:</label>
@@ -131,7 +131,7 @@
         
     <?php else: ?>
         <h2>Meus Produtos</h2>
-        <p><a href="/produtos-fornecedor?novo=1" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; display: inline-block;">Adicionar Novo Produto</a></p>
+        <p><a href="/produtos-Fornecedor?novo=1" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; display: inline-block;">Adicionar Novo Produto</a></p>
         
         <?php if(count($produtos) > 0): ?>
             <table border="1" cellpadding="5" cellspacing="0" style="width: 100%;">
@@ -154,7 +154,7 @@
                             <td><?= $produto['total_variacoes'] ?></td>
                             <td><?= $produto['ativo'] ? 'Ativo' : 'Inativo' ?></td>
                             <td>
-                                <a href="/produtos-fornecedor?editar=<?= $produto['id'] ?>">Editar</a> |
+                                <a href="/produtos-Fornecedor?editar=<?= $produto['id'] ?>">Editar</a> |
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="produto_id" value="<?= $produto['id'] ?>">
                                     <input type="hidden" name="status" value="<?= $produto['ativo'] ? 0 : 1 ?>">

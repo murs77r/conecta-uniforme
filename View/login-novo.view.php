@@ -30,9 +30,9 @@
                 <label>Tipo de usuário:</label><br>
                 <select name="tipo_usuario" required style="width: 310px; padding: 5px;">
                     <option value="">Selecione...</option>
-                    <option value="responsavel">Responsável (Pai/Mãe)</option>
-                    <option value="fornecedor">Fornecedor</option>
-                    <option value="gestor">Gestor Escolar</option>
+                    <option value="Responsável">Responsável (Pai/Mãe)</option>
+                    <option value="Fornecedor">Fornecedor</option>
+                    <option value="Gestor">Gestor Escolar</option>
                 </select>
             </div>
             

@@ -10,7 +10,7 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/dashboard-Responsável">Dashboard</a> |
         <a href="/catalogo-novo">Catálogo de Uniformes</a> |
         <a href="/carrinho-novo">Meu Carrinho (<?= $total_carrinho ?>)</a> |
         <a href="/pedidos-gerenciar">Meus Pedidos</a> |

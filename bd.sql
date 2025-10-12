@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS escola (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de gestores escolares
-CREATE TABLE IF NOT EXISTS gestor (
+-- Tabela de Gestores escolares
+CREATE TABLE IF NOT EXISTS Gestor (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -27,11 +27,11 @@ CREATE TABLE IF NOT EXISTS gestor (
     escola_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_gestor_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE
+    CONSTRAINT fk_Gestor_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE
 );
 
--- Tabela de fornecedores
-CREATE TABLE IF NOT EXISTS fornecedor (
+-- Tabela de Fornecedores
+CREATE TABLE IF NOT EXISTS Fornecedor (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -41,16 +41,16 @@ CREATE TABLE IF NOT EXISTS fornecedor (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de homologação (escola x fornecedor)
+-- Tabela de homologação (escola x Fornecedor)
 CREATE TABLE IF NOT EXISTS homologacao (
     id INT PRIMARY KEY AUTO_INCREMENT,
     escola_id INT NOT NULL,
-    fornecedor_id INT NOT NULL,
+    Fornecedor_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     data_homologacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_homologacao_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE,
-    CONSTRAINT fk_homologacao_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id) ON DELETE CASCADE,
-    UNIQUE (escola_id, fornecedor_id)
+    CONSTRAINT fk_homologacao_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE,
+    UNIQUE (escola_id, Fornecedor_id)
 );
 
 -- Tabela de alunos
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS aluno (
     matricula VARCHAR(50) NOT NULL,
     escola_id INT NOT NULL,
     serie VARCHAR(50) NOT NULL,
-    genero ENUM('masculino', 'feminino', 'unissex') NOT NULL,
+    genero ENUM('Masculino', 'Feminino', 'Unissex') NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_aluno_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS aluno (
 );
 
 -- Tabela de responsáveis
-CREATE TABLE IF NOT EXISTS responsavel (
+CREATE TABLE IF NOT EXISTS Responsável (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS responsavel (
     aluno_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_responsavel_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id) ON DELETE CASCADE
+    CONSTRAINT fk_Responsável_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id) ON DELETE CASCADE
 );
 
 -- Tabela de códigos de acesso (login sem senha)
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS codigo_acesso (
     id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(120) NOT NULL,
     codigo VARCHAR(10) NOT NULL,
-    tipo_usuario ENUM('gestor', 'fornecedor', 'responsavel') NOT NULL,
+    tipo_usuario ENUM('Gestor', 'Fornecedor', 'Responsável') NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expira_em TIMESTAMP NOT NULL,
     usado TINYINT(1) DEFAULT 0,
@@ -95,13 +95,13 @@ CREATE TABLE IF NOT EXISTS codigo_acesso (
 -- Tabela de produtos (uniformes)
 CREATE TABLE IF NOT EXISTS produto (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    fornecedor_id INT NOT NULL,
+    Fornecedor_id INT NOT NULL,
     nome VARCHAR(200) NOT NULL,
     descricao TEXT,
     preco DECIMAL(10,2) NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_produto_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id) ON DELETE CASCADE
+    CONSTRAINT fk_produto_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE
 );
 
 -- Tabela de fotos dos produtos
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS produto_variacao (
     produto_id INT NOT NULL,
     tamanho VARCHAR(10) NOT NULL,
     cor VARCHAR(50),
-    genero ENUM('masculino', 'feminino', 'unissex') NOT NULL,
+    genero ENUM('Masculino', 'Feminino', 'Unissex') NOT NULL,
     quantidade_estoque INT DEFAULT 0,
     CONSTRAINT fk_variacao_produto FOREIGN KEY (produto_id) REFERENCES produto(id) ON DELETE CASCADE,
     UNIQUE (produto_id, tamanho, cor, genero)
@@ -139,15 +139,15 @@ CREATE TABLE IF NOT EXISTS produto_variacao (
 -- Tabela de pedidos
 CREATE TABLE IF NOT EXISTS pedido (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    responsavel_id INT NOT NULL,
+    Responsável_id INT NOT NULL,
     aluno_id INT NOT NULL,
     escola_id INT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     comissao DECIMAL(10,2) NOT NULL DEFAULT 0,
-    status ENUM('pendente', 'aprovado', 'em_producao', 'pronto_retirada', 'entregue', 'cancelado') DEFAULT 'pendente',
+    status ENUM('Pendente', 'Aprovado', 'Em Produção', 'Disponível para Retirar', 'Entregue', 'Cancelado') DEFAULT 'Pendente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_pedido_responsavel FOREIGN KEY (responsavel_id) REFERENCES responsavel(id),
+    CONSTRAINT fk_pedido_Responsável FOREIGN KEY (Responsável_id) REFERENCES Responsável(id),
     CONSTRAINT fk_pedido_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id),
     CONSTRAINT fk_pedido_escola FOREIGN KEY (escola_id) REFERENCES escola(id)
 );
@@ -158,25 +158,25 @@ CREATE TABLE IF NOT EXISTS pedido_item (
     pedido_id INT NOT NULL,
     produto_id INT NOT NULL,
     variacao_id INT NOT NULL,
-    fornecedor_id INT NOT NULL,
+    Fornecedor_id INT NOT NULL,
     quantidade INT NOT NULL,
     preco_unitario DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedido(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produto(id),
     CONSTRAINT fk_item_variacao FOREIGN KEY (variacao_id) REFERENCES produto_variacao(id),
-    CONSTRAINT fk_item_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id)
+    CONSTRAINT fk_item_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id)
 );
 
 -- Tabela de carrinho temporário
 CREATE TABLE IF NOT EXISTS carrinho (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    responsavel_id INT NOT NULL,
+    Responsável_id INT NOT NULL,
     produto_id INT NOT NULL,
     variacao_id INT NOT NULL,
     quantidade INT NOT NULL,
     adicionado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_carrinho_responsavel FOREIGN KEY (responsavel_id) REFERENCES responsavel(id) ON DELETE CASCADE,
+    CONSTRAINT fk_carrinho_Responsável FOREIGN KEY (Responsável_id) REFERENCES Responsável(id) ON DELETE CASCADE,
     CONSTRAINT fk_carrinho_produto FOREIGN KEY (produto_id) REFERENCES produto(id) ON DELETE CASCADE,
     CONSTRAINT fk_carrinho_variacao FOREIGN KEY (variacao_id) REFERENCES produto_variacao(id) ON DELETE CASCADE
 );
@@ -184,17 +184,17 @@ CREATE TABLE IF NOT EXISTS carrinho (
 -- Tabela de comissões
 CREATE TABLE IF NOT EXISTS comissao (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    fornecedor_id INT NOT NULL,
+    Fornecedor_id INT NOT NULL,
     mes_referencia DATE NOT NULL,
     total_vendas DECIMAL(10,2) NOT NULL DEFAULT 0,
     total_comissao DECIMAL(10,2) NOT NULL DEFAULT 0,
     valor_liquido DECIMAL(10,2) NOT NULL DEFAULT 0,
-    status ENUM('pendente', 'pago') DEFAULT 'pendente',
+    status ENUM('Pendente', 'Pago') DEFAULT 'Pendente',
     data_pagamento DATE NULL,
-    valor_pago DECIMAL(10,2) NULL,
+    valor_Pago DECIMAL(10,2) NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_comissao_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id),
-    UNIQUE (fornecedor_id, mes_referencia)
+    CONSTRAINT fk_comissao_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id),
+    UNIQUE (Fornecedor_id, mes_referencia)
 );
 
 -- Tabela de auditoria
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS auditoria (
     dados_anteriores JSON,
     dados_atualizados JSON,
     data_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    responsavel VARCHAR(255) NOT NULL
+    Responsável VARCHAR(255) NOT NULL
 );
 
 
@@ -265,7 +265,7 @@ BEGIN
             'DROP TRIGGER IF EXISTS trig_audit_insert_', nome_tabela, ';',
             'CREATE TRIGGER trig_audit_insert_', nome_tabela, ' AFTER INSERT ON `', nome_tabela, '` FOR EACH ROW ',
             'BEGIN ',
-            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, responsavel) ',
+            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, Responsável) ',
             'VALUES (\'', nome_tabela, '\', \'INSERT\', ', @pk_new, ', JSON_OBJECT(', @colunas_new, '), COALESCE(@app_user, USER()));',
             'END;'
         );
@@ -278,7 +278,7 @@ BEGIN
             'DROP TRIGGER IF EXISTS trig_audit_update_', nome_tabela, ';',
             'CREATE TRIGGER trig_audit_update_', nome_tabela, ' AFTER UPDATE ON `', nome_tabela, '` FOR EACH ROW ',
             'BEGIN ',
-            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, responsavel) ',
+            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, Responsável) ',
             'VALUES (\'', nome_tabela, '\', \'UPDATE\', ', @pk_new, ', JSON_OBJECT(', @colunas_old, '), JSON_OBJECT(', @colunas_new, '), COALESCE(@app_user, USER()));',
             'END;'
         );
@@ -291,7 +291,7 @@ BEGIN
             'DROP TRIGGER IF EXISTS trig_audit_delete_', nome_tabela, ';',
             'CREATE TRIGGER trig_audit_delete_', nome_tabela, ' AFTER DELETE ON `', nome_tabela, '` FOR EACH ROW ',
             'BEGIN ',
-            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, responsavel) ',
+            'INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, Responsável) ',
             'VALUES (\'', nome_tabela, '\', \'DELETE\', ', @pk_old, ', JSON_OBJECT(', @colunas_old, '), COALESCE(@app_user, USER()));',
             'END;'
         );

@@ -50,7 +50,7 @@
             <p>Acesse para gerenciar sua escola</p>
             <ul>
                 <li>Gerenciar alunos</li>
-                <li>Habilitar fornecedores</li>
+                <li>Habilitar Fornecedores</li>
                 <li>Monitorar pedidos</li>
                 <li>Relatórios gerenciais</li>
             </ul>
@@ -92,7 +92,7 @@
     <ol>
         <li>Acesse com seu e-mail cadastrado</li>
         <li>Importe lista de alunos (CSV ou individual)</li>
-        <li>Habilite fornecedores autorizados</li>
+        <li>Habilite Fornecedores autorizados</li>
         <li>Monitore pedidos e ponto de coleta</li>
         <li>Gerencie credenciais de responsáveis</li>
     </ol>

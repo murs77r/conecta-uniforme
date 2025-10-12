@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if ($res) {
                                 $hash = $res['senha'];
                                 if ($hash && strlen($hash) >= 60) {
-                                    if (password_verify($senha, $hash)) { $sucesso_login = true; $id = $res['id']; $_SESSION['role'] = 'gestor'; }
+                                    if (password_verify($senha, $hash)) { $sucesso_login = true; $id = $res['id']; $_SESSION['role'] = 'Gestor'; }
                                 } else {
-                                    if (hash_equals(hash('sha256', $senha), $hash)) { $sucesso_login = true; $id = $res['id']; $_SESSION['role'] = 'gestor'; }
+                                    if (hash_equals(hash('sha256', $senha), $hash)) { $sucesso_login = true; $id = $res['id']; $_SESSION['role'] = 'Gestor'; }
                                 }
                             }
                         }
@@ -69,15 +69,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $senha = $_POST['senha'] ?? '';
                         if ($codigo_escola && $matricula && $senha) {
                             $res_id = \Responsavel::autenticarPorCodigoEMatricula($codigo_escola, $matricula, $senha);
-                            if ($res_id !== false) { $sucesso_login = true; $id = $res_id; $_SESSION['role'] = 'responsavel'; }
+                            if ($res_id !== false) { $sucesso_login = true; $id = $res_id; $_SESSION['role'] = 'Responsável'; }
                         }
 
-                    } else if ($tipo === 4) { // Fornecedor (tabela fornecedor)
+                    } else if ($tipo === 4) { // Fornecedor (tabela Fornecedor)
                         $email = $_POST['email'] ?? '';
                         $senha = $_POST['senha'] ?? '';
                         if ($email && $senha) {
                             $for_id = Fornecedor::autenticar($email, $senha);
-                            if ($for_id !== false) { $sucesso_login = true; $id = $for_id; $_SESSION['role'] = 'fornecedor'; }
+                            if ($for_id !== false) { $sucesso_login = true; $id = $for_id; $_SESSION['role'] = 'Fornecedor'; }
                         }
                     }
 

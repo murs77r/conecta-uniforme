@@ -14,14 +14,14 @@ class Usuario {
         
         $tabela = '';
         switch($tipo) {
-            case 'gestor':
-                $tabela = 'gestor';
+            case 'Gestor':
+                $tabela = 'Gestor';
                 break;
-            case 'fornecedor':
-                $tabela = 'fornecedor';
+            case 'Fornecedor':
+                $tabela = 'Fornecedor';
                 break;
-            case 'responsavel':
-                $tabela = 'responsavel';
+            case 'Responsável':
+                $tabela = 'Responsável';
                 break;
             default:
                 return false;
@@ -46,7 +46,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone']);
         $escola_id = (int)$dados['escola_id'];
         
-        $sql = "INSERT INTO gestor (nome, email, telefone, escola_id, ativo) 
+        $sql = "INSERT INTO Gestor (nome, email, telefone, escola_id, ativo) 
                 VALUES ('$nome', '$email', '$telefone', $escola_id, 1)";
         
         return $this->con->query($sql);
@@ -58,7 +58,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
         $cnpj = $this->con->real_escape_string($dados['cnpj'] ?? '');
         
-        $sql = "INSERT INTO fornecedor (nome, email, telefone, cnpj, ativo) 
+        $sql = "INSERT INTO Fornecedor (nome, email, telefone, cnpj, ativo) 
                 VALUES ('$nome', '$email', '$telefone', '$cnpj', 1)";
         
         if($this->con->query($sql)) {
@@ -73,7 +73,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
         $aluno_id = (int)$dados['aluno_id'];
         
-        $sql = "INSERT INTO responsavel (nome, email, telefone, aluno_id, ativo) 
+        $sql = "INSERT INTO Responsável (nome, email, telefone, aluno_id, ativo) 
                 VALUES ('$nome', '$email', '$telefone', $aluno_id, 1)";
         
         if($this->con->query($sql)) {
@@ -84,13 +84,13 @@ class Usuario {
     
     public function listarGestoresPorEscola($escola_id) {
         $escola_id = (int)$escola_id;
-        $sql = "SELECT * FROM gestor WHERE escola_id = $escola_id ORDER BY nome";
+        $sql = "SELECT * FROM Gestor WHERE escola_id = $escola_id ORDER BY nome";
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
     
     public function listarFornecedores() {
-        $sql = "SELECT * FROM fornecedor ORDER BY nome";
+        $sql = "SELECT * FROM Fornecedor ORDER BY nome";
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
@@ -99,7 +99,7 @@ class Usuario {
         $id = (int)$id;
         $status = $status ? 1 : 0;
         
-        $tabela = $tipo == 'gestor' ? 'gestor' : 'fornecedor';
+        $tabela = $tipo == 'Gestor' ? 'Gestor' : 'Fornecedor';
         
         $sql = "UPDATE $tabela SET ativo = $status WHERE id = $id";
         return $this->con->query($sql);
