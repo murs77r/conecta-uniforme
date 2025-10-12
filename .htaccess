@@ -1,8 +1,8 @@
 # Habilitar RewriteEngine
 RewriteEngine On
 
-# Definir base path
-RewriteBase /conecta-uniforme/
+# Definir base path (raiz para Railway/produção)
+RewriteBase /
 
 # Redirecionar requisições para o router
 # Se o arquivo ou diretório não existir, redirecionar para index.php
