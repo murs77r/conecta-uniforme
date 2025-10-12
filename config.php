@@ -1,19 +1,25 @@
 <?php
 /**
  * Arquivo de Configuração Central
- * Carrega variáveis de ambiente do arquivo .env
+ * Carrega variáveis de ambiente do arquivo .env (dev) ou do ambiente (produção/Railway)
  */
 
-// Carrega o arquivo .env
+// Carrega o arquivo .env apenas se existir (desenvolvimento local)
 function carregarEnv($caminho = __DIR__ . '/.env') {
+    // No Railway e Docker, não precisa do arquivo .env
     if (!file_exists($caminho)) {
-        die("Erro: Arquivo .env não encontrado. Copie o arquivo .env.example para .env e configure as variáveis.");
+        return; // Variáveis já estão no ambiente
     }
     
     $linhas = file($caminho, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($linhas as $linha) {
         // Ignora comentários
         if (strpos(trim($linha), '#') === 0) {
+            continue;
+        }
+        
+        // Ignora linhas sem "="
+        if (strpos($linha, '=') === false) {
             continue;
         }
         
@@ -36,7 +42,7 @@ function carregarEnv($caminho = __DIR__ . '/.env') {
     }
 }
 
-// Carrega as variáveis de ambiente
+// Carrega as variáveis de ambiente (se o arquivo existir)
 carregarEnv();
 
 // Função auxiliar para pegar valores do .env com fallback
