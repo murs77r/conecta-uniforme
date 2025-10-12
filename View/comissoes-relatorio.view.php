@@ -10,9 +10,9 @@
     
     <nav>
         <?php if($user_tipo == 'Fornecedor'): ?>
-            <a href="/dashboard-Fornecedor">Dashboard</a> |
+            <a href="/dashboard-fornecedor">Dashboard</a> |
         <?php else: ?>
-            <a href="/dashboard-Gestor">Dashboard</a> |
+            <a href="/dashboard-gestor">Dashboard</a> |
         <?php endif; ?>
         <a href="/comissoes-relatorio">Relatórios</a> |
         <a href="/logout">Sair</a>

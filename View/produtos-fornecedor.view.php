@@ -9,7 +9,7 @@
     <p>Fornecedor: <?= htmlspecialchars($_SESSION['user_nome']) ?></p>
     
     <nav>
-        <a href="/dashboard-Fornecedor">Dashboard</a> |
+        <a href="/dashboard-fornecedor">Dashboard</a> |
         <a href="/produtos-Fornecedor">Produtos</a> |
         <a href="/pedidos-gerenciar">Pedidos</a> |
         <a href="/logout">Sair</a>

@@ -42,9 +42,9 @@ if ($uri === '' || $uri === 'index.php') {
 
     if ($role) {
         $destinos = [
-            'Gestor' => 'dashboard-Gestor',
-            'Fornecedor' => 'dashboard-Fornecedor',
-            'Responsável' => 'dashboard-Responsável',
+            'Gestor' => 'dashboard-gestor',
+            'Fornecedor' => 'dashboard-fornecedor',
+            'Responsável' => 'dashboard-responsavel',
             'aluno' => 'catalogo-novo',
         ];
         if (isset($destinos[$role])) {
@@ -69,9 +69,9 @@ $routes = [
     'logout' => '/Model/logout.php',
 
     // Dashboards por perfil
-    'dashboard-Gestor' => '/Model/dashboard-Gestor.php',
-    'dashboard-Fornecedor' => '/Model/dashboard-Fornecedor.php',
-    'dashboard-Responsável' => '/Model/dashboard-Responsável.php',
+    'dashboard-gestor' => '/Model/dashboard-gestor.php',
+    'dashboard-fornecedor' => '/Model/dashboard-fornecedor.php',
+    'dashboard-responsavel' => '/Model/dashboard-responsavel.php',
 
     // Gestão de alunos (Gestor)
     'alunos-Gestor' => '/Model/alunos-Gestor.php',

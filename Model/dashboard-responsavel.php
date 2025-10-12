@@ -42,4 +42,4 @@ $meus_pedidos = $pedido->listarPorResponsavel($Responsável_id);
 $total_carrinho = $carrinho->contarItens($Responsável_id);
 $total_pedidos = count($meus_pedidos);
 
-require __DIR__ . '/../View/dashboard-responsável.view.php';
+require __DIR__ . '/../View/dashboard-responsavel.view.php';

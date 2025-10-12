@@ -10,13 +10,13 @@
     
     <nav>
         <?php if($user_tipo == 'Responsável'): ?>
-            <a href="/dashboard-Responsável">Dashboard</a> |
+            <a href="/dashboard-responsavel">Dashboard</a> |
             <a href="/catalogo-novo">Catálogo</a> |
         <?php elseif($user_tipo == 'Fornecedor'): ?>
-            <a href="/dashboard-Fornecedor">Dashboard</a> |
+            <a href="/dashboard-fornecedor">Dashboard</a> |
             <a href="/produtos-Fornecedor">Produtos</a> |
         <?php else: ?>
-            <a href="/dashboard-Gestor">Dashboard</a> |
+            <a href="/dashboard-gestor">Dashboard</a> |
         <?php endif; ?>
         <a href="/pedidos-gerenciar">Pedidos</a> |
         <a href="/logout">Sair</a>

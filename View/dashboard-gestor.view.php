@@ -10,7 +10,7 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/dashboard-Gestor">Dashboard</a> |
+        <a href="/dashboard-gestor">Dashboard</a> |
         <a href="/alunos-Gestor">Gerenciar Alunos</a> |
         <a href="/Fornecedores-Gestor">Gerenciar Fornecedores</a> |
         <a href="/pedidos-gerenciar">Ver Pedidos</a> |

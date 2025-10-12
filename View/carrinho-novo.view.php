@@ -10,7 +10,7 @@
     <p>Olá, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/dashboard-Responsável">Dashboard</a> |
+        <a href="/dashboard-responsavel">Dashboard</a> |
         <a href="/catalogo-novo">Continuar Comprando</a> |
         <a href="/carrinho-novo">Carrinho</a> |
         <a href="/logout">Sair</a>

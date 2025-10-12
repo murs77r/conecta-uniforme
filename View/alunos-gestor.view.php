@@ -9,7 +9,7 @@
     <p>Gestor: <?= htmlspecialchars($_SESSION['user_nome']) ?></p>
     
     <nav>
-        <a href="/dashboard-Gestor">Dashboard</a> |
+        <a href="/dashboard-gestor">Dashboard</a> |
         <a href="/alunos-Gestor">Alunos</a> |
         <a href="/logout">Sair</a>
     </nav>
