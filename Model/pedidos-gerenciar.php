@@ -1,7 +1,8 @@
 <?php
-session_start();
-require_once 'conexao.php';
-require_once 'classes/Pedido.php';
+require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../classes/Pedido.php';
+
+iniciarSessaoSegura();
 
 // Verificar se está logado
 if(!isset($_SESSION['logado'])) {

@@ -1,7 +1,8 @@
 <?php
-session_start();
-require_once 'conexao.php';
-require_once 'classes/Comissao.php';
+require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../classes/Comissao.php';
+
+iniciarSessaoSegura();
 
 // Verificar se está logado como fornecedor ou admin
 if(!isset($_SESSION['logado']) || !in_array($_SESSION['user_tipo'], ['fornecedor', 'gestor'])) {

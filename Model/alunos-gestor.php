@@ -1,8 +1,9 @@
 <?php
-session_start();
-require_once 'conexao.php';
-require_once 'classes/Aluno.php';
-require_once 'classes/Usuario.php';
+require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../classes/Aluno.php';
+require_once __DIR__ . '/../classes/Usuario.php';
+require_once __DIR__ . '/../classes/Escola.php';
+iniciarSessaoSegura();
 
 // Verificar se está logado como gestor
 if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'gestor') {

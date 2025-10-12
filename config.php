@@ -127,8 +127,23 @@ if (env('APP_ENV') === 'production') {
 }
 
 // Configurações de sessão
-ini_set('session.gc_maxlifetime', env('SESSION_TIMEOUT', 3600));
-ini_set('session.cookie_lifetime', env('SESSION_TIMEOUT', 3600));
+$sessionTimeout = (int)env('SESSION_TIMEOUT', 3600);
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    ini_set('session.gc_maxlifetime', (string)$sessionTimeout);
+    ini_set('session.cookie_lifetime', (string)$sessionTimeout);
+} else {
+    // Mantém o tempo configurado para próximos requests sem gerar warnings
+    $GLOBALS['__conecta_uniforme_session_timeout'] = $sessionTimeout;
+}
 
 // Timezone
 date_default_timezone_set('America/Sao_Paulo');
+
+if (!function_exists('iniciarSessaoSegura')) {
+    function iniciarSessaoSegura(): void
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+}

@@ -1,7 +1,8 @@
 <?php
-session_start();
-require_once 'conexao.php';
-require_once 'classes/Produto.php';
+require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../classes/Produto.php';
+
+iniciarSessaoSegura();
 
 // Verificar se está logado como fornecedor
 if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'fornecedor') {

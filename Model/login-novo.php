@@ -1,8 +1,9 @@
 <?php
-session_start();
-require_once 'conexao.php';
-require_once 'classes/Usuario.php';
-require_once 'classes/CodigoAcesso.php';
+require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../classes/Usuario.php';
+require_once __DIR__ . '/../classes/CodigoAcesso.php';
+
+iniciarSessaoSegura();
 
 $usuario = new Usuario();
 $codigoAcesso = new CodigoAcesso();
@@ -113,3 +114,5 @@ if(isset($_POST['reenviar_codigo'])) {
 if(isset($_SESSION['login_email']) && !isset($_POST['enviar_email'])) {
     $step = 'codigo';
 }
+
+require __DIR__ . '/../View/login-novo.view.php';
