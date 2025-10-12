@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Servidor Web (PHP + Apache)
+  web:
+    build: .
+    container_name: conecta-uniforme-web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/conecta-uniforme
+      - ./logs/apache:/var/log/apache2
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/conecta-uniforme
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - conecta-network
+    restart: unless-stopped
+
+  # Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: conecta-uniforme-db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_123
+      MYSQL_DATABASE: conecta_uniformes
+      MYSQL_USER: uniforme_user
+      MYSQL_PASSWORD: uniforme_pass_123
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./bd.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./dados-iniciais.sql:/docker-entrypoint-initdb.d/02-dados.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password_123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conecta-network
+    restart: unless-stopped
+
+  # phpMyAdmin (opcional - para gerenciar banco)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: conecta-uniforme-phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_password_123
+      UPLOAD_LIMIT: 100M
+    depends_on:
+      - db
+    networks:
+      - conecta-network
+    restart: unless-stopped
+
+networks:
+  conecta-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

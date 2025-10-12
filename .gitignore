@@ -1,0 +1,38 @@
+# Arquivo de ambiente (NUNCA commitar!)
+.env
+
+# Docker
+.env.docker.local
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+apache_logs/
+
+# Cache
+cache/
+tmp/
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependências (se usar Composer no futuro)
+vendor/
+composer.lock
+
+# Backups
+*.bak
+*.backup
+backup/

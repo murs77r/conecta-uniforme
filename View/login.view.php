@@ -1,6 +1,8 @@
 <div id="div-login">
     <button onclick='carregarForm(1)'>Escola</button>
     <button onclick='carregarForm(2)'>Aluno</button>
+    <button onclick='carregarForm(3)'>Responsável</button>
+    <button onclick='carregarForm(4)'>Fornecedor</button>
 </div>
 <script>
     const divLogin = document.getElementById("div-login");
@@ -19,6 +21,27 @@
             <form method="post">
                 Código de acesso da escola: <input type="text" name="codacesso" required>
                 <input type="hidden" name="tipo_login" value='2'>
+                <input type="submit" value="Login">
+            </form>
+            `;
+        }
+        if (tipo == 3) {
+            divLogin.innerHTML = `
+            <form method="post">
+                Código da escola: <input type="text" name="codigo_escola" required><br>
+                Matrícula: <input type="text" name="matricula" required><br>
+                Senha: <input type="password" name="senha" required>
+                <input type="hidden" name="tipo_login" value='3'>
+                <input type="submit" value="Login">
+            </form>
+            `;
+        }
+        if (tipo == 4) {
+            divLogin.innerHTML = `
+            <form method="post">
+                Email: <input type="email" name="email" required><br>
+                Senha: <input type="password" name="senha" required>
+                <input type="hidden" name="tipo_login" value='4'>
                 <input type="submit" value="Login">
             </form>
             `;
