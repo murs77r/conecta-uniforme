@@ -27,7 +27,7 @@ class Usuario {
                 return false;
         }
         
-        $sql = "SELECT id, email, ativo FROM $tabela WHERE email = '$email' AND ativo = 1";
+    $sql = "SELECT id, nome, email, ativo FROM $tabela WHERE email = '$email' AND ativo = 1";
         $result = $this->con->query($sql);
         
         if($result && $result->num_rows > 0) {

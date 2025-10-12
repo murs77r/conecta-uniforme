@@ -63,11 +63,13 @@ if(isset($_POST['validar_codigo'])) {
             
             if($user) {
                 // Criar sessão
+                session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_nome'] = $user['nome'];
                 $_SESSION['user_tipo'] = $tipo;
                 $_SESSION['logado'] = true;
+                unset($_SESSION['login_email'], $_SESSION['login_tipo']);
                 
                 // Redirecionar para dashboard apropriado
                 switch($tipo) {
