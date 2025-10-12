@@ -9,7 +9,6 @@
 		</a>
 		<nav>
 			<a href="/login-novo" style="color:#fff;margin-right:1rem;text-decoration:none;">Login</a>
-			<a href="/cadastro" style="color:#fff;text-decoration:none;">Cadastro</a>
 		</nav>
 	</div>
 </header>
