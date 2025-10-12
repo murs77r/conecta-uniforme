@@ -17,17 +17,19 @@ $status = [
 try {
     require_once __DIR__ . '/config.php';
     
-    $dbHost = env('DB_HOST');
-    $dbUser = env('DB_USER');
-    $dbPass = env('DB_PASS');
-    $dbName = env('DB_NAME');
+    $dbHost = env('DB_HOST', env('MYSQLHOST'));
+    $dbUser = env('DB_USER', env('MYSQLUSER'));
+    $dbPass = env('DB_PASS', env('MYSQLPASSWORD'));
+    $dbName = env('DB_NAME', env('MYSQLDATABASE'));
+    $dbPort = (int)env('DB_PORT', env('MYSQLPORT', 3306));
+    $dbSocket = env('DB_SOCKET');
     
     if ($dbHost && $dbUser && $dbName) {
-        $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+        $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName, $dbPort ?: null, $dbSocket ?: null);
         
         if ($conn->connect_error) {
             $status['database'] = 'error';
-            $status['database_message'] = 'Connection failed';
+            $status['database_message'] = $conn->connect_error;
             http_response_code(503); // Service Unavailable
         } else {
             $status['database'] = 'connected';

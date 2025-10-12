@@ -45,6 +45,64 @@ function carregarEnv($caminho = __DIR__ . '/.env') {
 // Carrega as variáveis de ambiente (se o arquivo existir)
 carregarEnv();
 
+// Harmoniza variáveis de ambiente comuns do Railway com o padrão da aplicação
+function definirEnvSeAusente($chave, $valor)
+{
+    if ($valor === null || $valor === false || $valor === '') {
+        return;
+    }
+
+    if (!defined($chave)) {
+        define($chave, $valor);
+    }
+
+    if (getenv($chave) === false) {
+        putenv($chave . '=' . $valor);
+    }
+
+    $_ENV[$chave] = $valor;
+}
+
+(function () {
+    $mapeamentos = [
+        'DB_HOST' => ['DB_HOST', 'MYSQLHOST', 'JAWSDB_HOST'],
+        'DB_PORT' => ['DB_PORT', 'MYSQLPORT', 'JAWSDB_PORT'],
+        'DB_USER' => ['DB_USER', 'MYSQLUSER', 'JAWSDB_USER'],
+        'DB_PASS' => ['DB_PASS', 'MYSQLPASSWORD', 'JAWSDB_PASS'],
+        'DB_NAME' => ['DB_NAME', 'MYSQLDATABASE', 'JAWSDB_DB'],
+    ];
+
+    foreach ($mapeamentos as $alvo => $origens) {
+        $valorExistente = defined($alvo) ? constant($alvo) : getenv($alvo);
+        if ($valorExistente !== false && $valorExistente !== null && $valorExistente !== '') {
+            continue;
+        }
+
+        foreach ($origens as $origem) {
+            $valorOrigem = getenv($origem);
+            if ($valorOrigem !== false && $valorOrigem !== null && $valorOrigem !== '') {
+                definirEnvSeAusente($alvo, $valorOrigem);
+                break;
+            }
+        }
+    }
+
+    // Railway também expõe DATABASE_URL no formato mysql://usuario:senha@host:porta/banco
+    $databaseUrl = getenv('DATABASE_URL');
+    if ($databaseUrl && (!getenv('DB_HOST') || !getenv('DB_USER'))) {
+        $componentes = parse_url($databaseUrl);
+        if ($componentes !== false) {
+            definirEnvSeAusente('DB_HOST', $componentes['host'] ?? null);
+            definirEnvSeAusente('DB_PORT', $componentes['port'] ?? null);
+            definirEnvSeAusente('DB_USER', $componentes['user'] ?? null);
+            definirEnvSeAusente('DB_PASS', $componentes['pass'] ?? null);
+            if (!empty($componentes['path'])) {
+                definirEnvSeAusente('DB_NAME', ltrim($componentes['path'], '/'));
+            }
+        }
+    }
+})();
+
 // Função auxiliar para pegar valores do .env com fallback
 function env($chave, $padrao = null) {
     if (defined($chave)) {
