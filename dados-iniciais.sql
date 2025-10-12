@@ -1,7 +1,7 @@
 -- Script de dados iniciais para teste do sistema Conecta Uniforme
 -- Execute este script após criar o banco de dados com bd.sql
 
-USE conecta_uniformes;
+USE conecta_uniforme;
 
 -- Inserir escola de exemplo
 INSERT INTO escola (email, nome, cnpj, telefone, cep, estado, cidade, endereco, ativo) 

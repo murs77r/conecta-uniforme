@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS conecta_uniformes;
+CREATE DATABASE IF NOT EXISTS conecta_uniforme;
 
-USE conecta_uniformes;
+USE conecta_uniforme;
 
 -- Tabela de escolas
 CREATE TABLE IF NOT EXISTS escola (

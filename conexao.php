@@ -11,7 +11,7 @@ require_once __DIR__ . '/config.php';
 $servidor = env('DB_HOST', env('MYSQLHOST', '127.0.0.1'));
 $usuario = env('DB_USER', env('MYSQLUSER', 'root'));
 $senha = env('DB_PASS', env('MYSQLPASSWORD', ''));
-$banco = env('DB_NAME', env('MYSQLDATABASE', 'conecta_uniformes'));
+$banco = env('DB_NAME', env('MYSQLDATABASE', 'conecta_uniforme'));
 $porta = (int)env('DB_PORT', env('MYSQLPORT', 3306));
 $socket = env('DB_SOCKET');
 
