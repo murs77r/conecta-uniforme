@@ -55,21 +55,8 @@
         <h2><?= htmlspecialchars($produto_selecionado['nome']) ?></h2>
         <p><a href="/catalogo-novo">← Voltar ao catálogo</a></p>
         
-        <div style="display: flex; gap: 20px;">
-            <div style="flex: 1;">
-                <h3>Fotos</h3>
-                <?php if(count($fotos) > 0): ?>
-                    <?php foreach($fotos as $foto): ?>
-                        <div style="margin-bottom: 10px;">
-                            <img src="<?= htmlspecialchars($foto['caminho_foto']) ?>" alt="Foto do produto" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p>Sem fotos disponíveis</p>
-                <?php endif; ?>
-            </div>
-            
-            <div style="flex: 1;">
+        <div style="max-width: 600px;">
+            <div>
                 <h3>Informações</h3>
                 <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto_selecionado['Fornecedor_nome']) ?></p>
                 <p><strong>Preço:</strong> R$ <?= number_format($produto_selecionado['preco'], 2, ',', '.') ?></p>
@@ -108,7 +95,6 @@
                         <p style="color: red;">Produto sem variações disponíveis.</p>
                     <?php endif; ?>
                 </form>
-            </div>
         </div>
     <?php endif; ?>
 </body>

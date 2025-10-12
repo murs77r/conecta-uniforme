@@ -96,7 +96,7 @@
     <h3>Para Fornecedores:</h3>
     <ol>
         <li>Acesse com seu e-mail cadastrado</li>
-        <li>Cadastre seus produtos com fotos e descrição</li>
+    <li>Cadastre seus produtos com descrições detalhadas</li>
         <li>Defina variações (tamanhos, cores, gêneros)</li>
         <li>Homologue produtos para escolas e séries</li>
         <li>Receba e gerencie pedidos</li>

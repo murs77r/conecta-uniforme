@@ -46,13 +46,11 @@ $produtos = $produto->listarPorEscolaSerieGenero($escola_id, $serie, $genero);
 
 // Buscar detalhes do produto se selecionado
 $produto_selecionado = null;
-$fotos = [];
 $variacoes = [];
 
 if(isset($_GET['produto_id'])) {
     $produto_id = (int)$_GET['produto_id'];
     $produto_selecionado = $produto->buscarPorId($produto_id);
-    $fotos = $produto->buscarFotos($produto_id);
     $variacoes = $produto->buscarVariacoes($produto_id);
     
     // Filtrar variações pelo gênero do aluno

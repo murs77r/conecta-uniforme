@@ -114,15 +114,6 @@ CREATE TABLE IF NOT EXISTS produto (
     CONSTRAINT fk_produto_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE
 );
 
--- Tabela de fotos dos produtos
-CREATE TABLE IF NOT EXISTS produto_foto (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    produto_id INT NOT NULL,
-    caminho_foto VARCHAR(255) NOT NULL,
-    ordem INT DEFAULT 0,
-    CONSTRAINT fk_foto_produto FOREIGN KEY (produto_id) REFERENCES produto(id) ON DELETE CASCADE
-);
-
 -- Tabela de homologação de produtos (produto x escola x série)
 CREATE TABLE IF NOT EXISTS produto_homologacao (
     id INT PRIMARY KEY AUTO_INCREMENT,

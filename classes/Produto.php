@@ -41,23 +41,6 @@ class Produto {
         return $this->con->query($sql);
     }
     
-    public function adicionarFoto($produto_id, $caminho_foto, $ordem = 0) {
-        $produto_id = (int)$produto_id;
-        $caminho_foto = $this->con->real_escape_string($caminho_foto);
-        $ordem = (int)$ordem;
-        
-        $sql = "INSERT INTO produto_foto (produto_id, caminho_foto, ordem) 
-                VALUES ($produto_id, '$caminho_foto', $ordem)";
-        
-        return $this->con->query($sql);
-    }
-    
-    public function removerFoto($foto_id) {
-        $foto_id = (int)$foto_id;
-        $sql = "DELETE FROM produto_foto WHERE id = $foto_id";
-        return $this->con->query($sql);
-    }
-    
     public function homologarProduto($produto_id, $escola_id, $serie) {
         $produto_id = (int)$produto_id;
         $escola_id = (int)$escola_id;
@@ -125,14 +108,6 @@ class Produto {
         
         $result = $this->con->query($sql);
         return $result ? $result->fetch_assoc() : null;
-    }
-    
-    public function buscarFotos($produto_id) {
-        $produto_id = (int)$produto_id;
-        
-        $sql = "SELECT * FROM produto_foto WHERE produto_id = $produto_id ORDER BY ordem, id";
-        $result = $this->con->query($sql);
-        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
     
     public function buscarVariacoes($produto_id) {

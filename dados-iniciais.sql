@@ -97,14 +97,6 @@ VALUES
     (@produto3_id, @escola_id, '5º Ano'),
     (@produto3_id, @escola_id, '6º Ano');
 
--- Adicionar fotos dos produtos (URLs de exemplo)
-INSERT INTO produto_foto (produto_id, caminho_foto, ordem) 
-VALUES 
-    (@produto1_id, '/uploads/produtos/camiseta-polo-1.jpg', 1),
-    (@produto1_id, '/uploads/produtos/camiseta-polo-2.jpg', 2),
-    (@produto2_id, '/uploads/produtos/bermuda-1.jpg', 1),
-    (@produto3_id, '/uploads/produtos/calca-1.jpg', 1);
-
 -- Adicionar variações dos produtos (tamanhos e estoque)
 -- Camiseta Polo
 INSERT INTO produto_variacao (produto_id, tamanho, cor, genero, quantidade_estoque) 
