@@ -84,3 +84,5 @@ if(isset($_POST['finalizar_pedido'])) {
 $itens = $carrinho->listar($responsavel_id);
 $total = $carrinho->calcularTotal($responsavel_id);
 $total_itens = $carrinho->contarItens($responsavel_id);
+
+require __DIR__ . '/../View/carrinho-novo.view.php';

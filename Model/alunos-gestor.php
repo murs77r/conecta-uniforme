@@ -153,3 +153,5 @@ if(isset($_GET['editar'])) {
     $aluno_id = (int)$_GET['editar'];
     $aluno_editando = $alunoClass->buscarPorId($aluno_id);
 }
+
+require __DIR__ . '/../View/alunos-gestor.view.php';

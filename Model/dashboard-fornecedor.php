@@ -44,3 +44,5 @@ $total_pedidos = count($pedidos);
 $pedidos_pendentes = count(array_filter($pedidos, function($p) {
     return $p['status'] == 'pendente' || $p['status'] == 'aprovado';
 }));
+
+require __DIR__ . '/../View/dashboard-fornecedor.view.php';

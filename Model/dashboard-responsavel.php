@@ -41,3 +41,5 @@ $meus_pedidos = $pedido->listarPorResponsavel($responsavel_id);
 // Estatísticas
 $total_carrinho = $carrinho->contarItens($responsavel_id);
 $total_pedidos = count($meus_pedidos);
+
+require __DIR__ . '/../View/dashboard-responsavel.view.php';

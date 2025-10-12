@@ -62,3 +62,5 @@ if(isset($_GET['produto_id'])) {
 }
 
 $total_carrinho = $carrinho->contarItens($responsavel_id);
+
+require __DIR__ . '/../View/catalogo-novo.view.php';

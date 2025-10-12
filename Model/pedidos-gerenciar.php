@@ -77,3 +77,5 @@ $proximos_status = [
     'entregue' => [],
     'cancelado' => []
 ];
+
+require __DIR__ . '/../View/pedidos-gerenciar.view.php';

@@ -65,3 +65,5 @@ $pedidos = $pedido->listarPorEscola($escola_id);
 $total_alunos = count($alunos);
 $total_fornecedores = count($fornecedores_homologados);
 $total_pedidos = count($pedidos);
+
+require __DIR__ . '/../View/dashboard-gestor.view.php';

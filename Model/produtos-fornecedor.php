@@ -126,3 +126,5 @@ $sql = "SELECT DISTINCT e.id, e.nome
         ORDER BY e.nome";
 $result = $con->query($sql);
 $escolas_disponiveis = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
+require __DIR__ . '/../View/produtos-fornecedor.view.php';

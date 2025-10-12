@@ -68,3 +68,5 @@ if(isset($_GET['editar'])) {
     $comissao_id = (int)$_GET['editar'];
     $comissao_editando = $comissaoClass->buscarPorId($comissao_id);
 }
+
+require __DIR__ . '/../View/comissoes-relatorio.view.php';
