@@ -89,6 +89,12 @@ class CodigoAcesso {
     public function enviarCodigoPorEmail($email, $codigo, $nome = '') {
         $minutos_expiracao = (int)env('CODIGO_ACESSO_EXPIRACAO', 600) / 60;
         $app_name = env('APP_NAME', 'Conecta Uniforme');
+        $appEnv = strtolower(env('APP_ENV', 'production'));
+
+        if ($appEnv === 'development') {
+            error_log(sprintf('[APP_ENV=development] Código de acesso %s enviado para %s (expira em %d minutos).', $codigo, $email, $minutos_expiracao));
+            return true;
+        }
         
         $saudacao_nome = $nome ? " <strong>" . htmlspecialchars($nome) . "</strong>" : "";
         $saudacao_texto = $nome ? " " . $nome : "";

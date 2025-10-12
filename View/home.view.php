@@ -23,7 +23,7 @@
                 <li>Acompanhar status</li>
             </ul>
             <p>
-                <a href="/conecta-uniforme/login-novo" style="padding: 10px 20px; background: #007bff; color: white; text-decoration: none; display: inline-block;">
+                <a href="/login-novo" style="padding: 10px 20px; background: #007bff; color: white; text-decoration: none; display: inline-block;">
                     Acessar como Responsável
                 </a>
             </p>
@@ -39,7 +39,7 @@
                 <li>Ver relatórios</li>
             </ul>
             <p>
-                <a href="/conecta-uniforme/login-novo" style="padding: 10px 20px; background: #28a745; color: white; text-decoration: none; display: inline-block;">
+                <a href="/login-novo" style="padding: 10px 20px; background: #28a745; color: white; text-decoration: none; display: inline-block;">
                     Acessar como Fornecedor
                 </a>
             </p>
@@ -55,7 +55,7 @@
                 <li>Relatórios gerenciais</li>
             </ul>
             <p>
-                <a href="/conecta-uniforme/login-novo" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; display: inline-block;">
+                <a href="/login-novo" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; display: inline-block;">
                     Acessar como Gestor
                 </a>
             </p>
@@ -102,8 +102,8 @@
     <footer>
         <p>&copy; 2025 Conecta Uniforme</p>
         <p>
-            <a href="/conecta-uniforme/login-novo">Login</a> |
-            <a href="/conecta-uniforme/cadastro">Cadastro de Escola (Antigo)</a>
+            <a href="/login-novo">Login</a> |
+            <a href="/cadastro">Cadastro de Escola (Antigo)</a>
         </p>
     </footer>
 </body>

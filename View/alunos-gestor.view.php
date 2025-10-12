@@ -9,9 +9,9 @@
     <p>Gestor: <?= htmlspecialchars($_SESSION['user_nome']) ?></p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-gestor">Dashboard</a> |
-        <a href="/conecta-uniforme/alunos-gestor">Alunos</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-gestor">Dashboard</a> |
+        <a href="/alunos-gestor">Alunos</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -70,7 +70,7 @@
         </button>
         
         <?php if($aluno_editando): ?>
-            <a href="/conecta-uniforme/alunos-gestor" style="margin-left: 10px;">Cancelar</a>
+            <a href="/alunos-gestor" style="margin-left: 10px;">Cancelar</a>
         <?php endif; ?>
     </form>
     
@@ -110,7 +110,7 @@
                         <td><?= $aluno['total_responsaveis'] ?></td>
                         <td><?= $aluno['ativo'] ? 'Ativo' : 'Inativo' ?></td>
                         <td>
-                            <a href="/conecta-uniforme/alunos-gestor?editar=<?= $aluno['id'] ?>">Editar</a> |
+                            <a href="/alunos-gestor?editar=<?= $aluno['id'] ?>">Editar</a> |
                             <form method="POST" style="display: inline;">
                                 <input type="hidden" name="aluno_id" value="<?= $aluno['id'] ?>">
                                 <input type="hidden" name="status" value="<?= $aluno['ativo'] ? 0 : 1 ?>">

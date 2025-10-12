@@ -11,6 +11,10 @@ $pageCharset = $pageCharset ?? 'UTF-8';
 $pageLanguage = $pageLanguage ?? 'pt-BR';
 
 ?>
+<!-- TODO Yuri: substituir os estilos inline por classes utilitárias do Bootstrap e carregar os assets aqui.
+	1. Adicionar o link do Bootstrap CSS (v5.x) antes de quaisquer estilos customizados.
+	2. Incluir o bundle JS do Bootstrap (com Popper) antes do fechamento do <body> no footer.
+	3. Centralizar regras próprias em um CSS separado, mantendo este arquivo apenas para imports globais. -->
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($pageLanguage, ENT_QUOTES, 'UTF-8') ?>">
 <head>

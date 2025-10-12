@@ -6,7 +6,7 @@ iniciarSessaoSegura();
 
 // Verificar se está logado como fornecedor ou admin
 if(!isset($_SESSION['logado']) || !in_array($_SESSION['user_tipo'], ['fornecedor', 'gestor'])) {
-    header('Location: /conecta-uniforme/login-novo');
+    header('Location: /login-novo');
     exit;
 }
 

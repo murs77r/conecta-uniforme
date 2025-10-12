@@ -6,5 +6,5 @@ iniciarSessaoSegura();
 
 $_SESSION = [];
 session_destroy();
-header('Location: /conecta-uniforme/');
+header('Location: /');
 exit;

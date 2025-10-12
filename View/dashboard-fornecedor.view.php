@@ -10,11 +10,11 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-fornecedor">Dashboard</a> |
-        <a href="/conecta-uniforme/produtos-fornecedor">Meus Produtos</a> |
-        <a href="/conecta-uniforme/pedidos-gerenciar">Pedidos</a> |
-        <a href="/conecta-uniforme/comissoes-relatorio">Relatórios Financeiros</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-fornecedor">Dashboard</a> |
+        <a href="/produtos-fornecedor">Meus Produtos</a> |
+        <a href="/pedidos-gerenciar">Pedidos</a> |
+        <a href="/comissoes-relatorio">Relatórios Financeiros</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -62,7 +62,7 @@
                         <td><?= htmlspecialchars($pedido['status']) ?></td>
                         <td><?= date('d/m/Y H:i', strtotime($pedido['criado_em'])) ?></td>
                         <td>
-                            <a href="/conecta-uniforme/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver/Atualizar</a>
+                            <a href="/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver/Atualizar</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -73,8 +73,8 @@
     <?php endif; ?>
     
     <h2>Meus Produtos</h2>
-    <p><a href="/conecta-uniforme/produtos-fornecedor">Gerenciar Produtos</a> | 
-       <a href="/conecta-uniforme/produtos-fornecedor?novo=1">Adicionar Novo Produto</a></p>
+    <p><a href="/produtos-fornecedor">Gerenciar Produtos</a> | 
+       <a href="/produtos-fornecedor?novo=1">Adicionar Novo Produto</a></p>
     
     <?php if(count($produtos) > 0): ?>
         <table border="1" cellpadding="5" cellspacing="0" style="width: 100%;">
@@ -97,7 +97,7 @@
                         <td><?= $produto['total_variacoes'] ?></td>
                         <td><?= $produto['ativo'] ? 'Ativo' : 'Inativo' ?></td>
                         <td>
-                            <a href="/conecta-uniforme/produtos-fornecedor?editar=<?= $produto['id'] ?>">Editar</a>
+                            <a href="/produtos-fornecedor?editar=<?= $produto['id'] ?>">Editar</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -129,7 +129,7 @@
                         <td>R$ <?= number_format($comissao['valor_liquido'], 2, ',', '.') ?></td>
                         <td><?= $comissao['status'] == 'pago' ? 'Pago' : 'Pendente' ?></td>
                         <td>
-                            <a href="/conecta-uniforme/comissoes-relatorio?mes=<?= $comissao['mes_referencia'] ?>">Ver Detalhes</a>
+                            <a href="/comissoes-relatorio?mes=<?= $comissao['mes_referencia'] ?>">Ver Detalhes</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

@@ -10,10 +10,10 @@
     <p>Olá, <?= htmlspecialchars($_SESSION['user_nome']) ?>! | Aluno: <?= htmlspecialchars($aluno['nome']) ?></p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-responsavel">Dashboard</a> |
-        <a href="/conecta-uniforme/catalogo-novo">Catálogo</a> |
-        <a href="/conecta-uniforme/carrinho-novo">Carrinho (<?= $total_carrinho ?>)</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/catalogo-novo">Catálogo</a> |
+        <a href="/carrinho-novo">Carrinho (<?= $total_carrinho ?>)</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -42,7 +42,7 @@
                         <p><strong>Fornecedor:</strong> <?= htmlspecialchars($produto['fornecedor_nome']) ?></p>
                         <p><strong>Preço:</strong> R$ <?= number_format($produto['preco'], 2, ',', '.') ?></p>
                         <p>
-                            <a href="/conecta-uniforme/catalogo-novo?produto_id=<?= $produto['id'] ?>">Ver Detalhes</a>
+                            <a href="/catalogo-novo?produto_id=<?= $produto['id'] ?>">Ver Detalhes</a>
                         </p>
                     </div>
                 <?php endforeach; ?>
@@ -53,7 +53,7 @@
         
     <?php else: ?>
         <h2><?= htmlspecialchars($produto_selecionado['nome']) ?></h2>
-        <p><a href="/conecta-uniforme/catalogo-novo">← Voltar ao catálogo</a></p>
+        <p><a href="/catalogo-novo">← Voltar ao catálogo</a></p>
         
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">

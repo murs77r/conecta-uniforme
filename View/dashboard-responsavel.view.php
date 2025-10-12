@@ -10,11 +10,11 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-responsavel">Dashboard</a> |
-        <a href="/conecta-uniforme/catalogo-novo">Catálogo de Uniformes</a> |
-        <a href="/conecta-uniforme/carrinho-novo">Meu Carrinho (<?= $total_carrinho ?>)</a> |
-        <a href="/conecta-uniforme/pedidos-gerenciar">Meus Pedidos</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/catalogo-novo">Catálogo de Uniformes</a> |
+        <a href="/carrinho-novo">Meu Carrinho (<?= $total_carrinho ?>)</a> |
+        <a href="/pedidos-gerenciar">Meus Pedidos</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -48,14 +48,14 @@
     
     <h2>Ações Rápidas</h2>
     <p>
-        <a href="/conecta-uniforme/catalogo-novo" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; display: inline-block;">
+        <a href="/catalogo-novo" style="padding: 10px 15px; background: #007bff; color: white; text-decoration: none; display: inline-block;">
             Ver Catálogo de Uniformes
         </a>
     </p>
     
     <?php if($total_carrinho > 0): ?>
         <p>
-            <a href="/conecta-uniforme/carrinho-novo" style="padding: 10px 15px; background: #28a745; color: white; text-decoration: none; display: inline-block;">
+            <a href="/carrinho-novo" style="padding: 10px 15px; background: #28a745; color: white; text-decoration: none; display: inline-block;">
                 Ver Carrinho (<?= $total_carrinho ?> itens)
             </a>
         </p>
@@ -81,18 +81,18 @@
                         <td>R$ <?= number_format($pedido['total'], 2, ',', '.') ?></td>
                         <td><?= htmlspecialchars($pedido['status']) ?></td>
                         <td>
-                            <a href="/conecta-uniforme/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver Detalhes</a>
+                            <a href="/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver Detalhes</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
         <?php if(count($meus_pedidos) > 5): ?>
-            <p><a href="/conecta-uniforme/pedidos-gerenciar">Ver todos os pedidos</a></p>
+            <p><a href="/pedidos-gerenciar">Ver todos os pedidos</a></p>
         <?php endif; ?>
     <?php else: ?>
         <p>Você ainda não realizou nenhum pedido.</p>
-        <p><a href="/conecta-uniforme/catalogo-novo">Começar a comprar</a></p>
+        <p><a href="/catalogo-novo">Começar a comprar</a></p>
     <?php endif; ?>
 </body>
 </html>

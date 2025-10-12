@@ -10,10 +10,10 @@
     <p>Olá, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-responsavel">Dashboard</a> |
-        <a href="/conecta-uniforme/catalogo-novo">Continuar Comprando</a> |
-        <a href="/conecta-uniforme/carrinho-novo">Carrinho</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-responsavel">Dashboard</a> |
+        <a href="/catalogo-novo">Continuar Comprando</a> |
+        <a href="/carrinho-novo">Carrinho</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -101,7 +101,7 @@
         
     <?php else: ?>
         <p>Seu carrinho está vazio.</p>
-        <p><a href="/conecta-uniforme/catalogo-novo">Ver produtos disponíveis</a></p>
+        <p><a href="/catalogo-novo">Ver produtos disponíveis</a></p>
     <?php endif; ?>
 </body>
 </html>

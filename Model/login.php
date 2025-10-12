@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($sucesso_login) {
                         $_SESSION['user_id'] = $id;
                         $_SESSION['tipo_usuario'] = $tipo;
-                        header('Location: '.'/conecta-uniforme/catalogo');
+                        header('Location: '.'/catalogo');
                         exit;
                     } else {
                         $error = 'Credenciais inválidas ou conta inativa.';

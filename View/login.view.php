@@ -1,3 +1,6 @@
+<!-- TODO Yuri: migrar este login antigo para componentes Bootstrap ou removê-lo se não for mais usado.
+    - Substituir os botões por `.btn btn-outline-primary` com `btn-group`.
+    - Cada formulário pode virar um modal ou abas usando `nav nav-tabs` para reduzir JS inline. -->
 <div id="div-login">
     <button onclick='carregarForm(1)'>Escola</button>
     <button onclick='carregarForm(2)'>Aluno</button>

@@ -6,7 +6,7 @@ iniciarSessaoSegura();
 
 // Verificar se está logado
 if(!isset($_SESSION['logado'])) {
-    header('Location: /conecta-uniforme/login-novo');
+    header('Location: /login-novo');
     exit;
 }
 

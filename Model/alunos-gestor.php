@@ -7,7 +7,7 @@ iniciarSessaoSegura();
 
 // Verificar se está logado como gestor
 if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'gestor') {
-    header('Location: /conecta-uniforme/login-novo');
+    header('Location: /login-novo');
     exit;
 }
 

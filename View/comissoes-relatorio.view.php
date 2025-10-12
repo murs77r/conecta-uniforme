@@ -10,12 +10,12 @@
     
     <nav>
         <?php if($user_tipo == 'fornecedor'): ?>
-            <a href="/conecta-uniforme/dashboard-fornecedor">Dashboard</a> |
+            <a href="/dashboard-fornecedor">Dashboard</a> |
         <?php else: ?>
-            <a href="/conecta-uniforme/dashboard-gestor">Dashboard</a> |
+            <a href="/dashboard-gestor">Dashboard</a> |
         <?php endif; ?>
-        <a href="/conecta-uniforme/comissoes-relatorio">Relatórios</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/comissoes-relatorio">Relatórios</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -52,9 +52,9 @@
         
         <h2>Filtrar Comissões</h2>
         <p>
-            <a href="/conecta-uniforme/comissoes-relatorio">Todas</a> |
-            <a href="/conecta-uniforme/comissoes-relatorio?status=pendente">Pendentes</a> |
-            <a href="/conecta-uniforme/comissoes-relatorio?status=pago">Pagas</a>
+            <a href="/comissoes-relatorio">Todas</a> |
+            <a href="/comissoes-relatorio?status=pendente">Pendentes</a> |
+            <a href="/comissoes-relatorio?status=pago">Pagas</a>
         </p>
     <?php endif; ?>
     
@@ -90,10 +90,10 @@
                         <td><?= $comissao['data_pagamento'] ? date('d/m/Y', strtotime($comissao['data_pagamento'])) : '-' ?></td>
                         <td>
                             <?php if($user_tipo == 'fornecedor'): ?>
-                                <a href="/conecta-uniforme/comissoes-relatorio?mes=<?= $comissao['mes_referencia'] ?>">Ver Vendas</a>
+                                <a href="/comissoes-relatorio?mes=<?= $comissao['mes_referencia'] ?>">Ver Vendas</a>
                             <?php else: ?>
                                 <?php if($comissao['status'] == 'pendente'): ?>
-                                    <a href="/conecta-uniforme/comissoes-relatorio?editar=<?= $comissao['id'] ?>">Registrar Pagamento</a>
+                                    <a href="/comissoes-relatorio?editar=<?= $comissao['id'] ?>">Registrar Pagamento</a>
                                 <?php else: ?>
                                     Pago em <?= date('d/m/Y', strtotime($comissao['data_pagamento'])) ?>
                                 <?php endif; ?>
@@ -124,14 +124,14 @@
             <input type="date" name="data_pagamento" required value="<?= date('Y-m-d') ?>" style="padding: 5px;"><br><br>
             
             <button type="submit" name="registrar_pagamento">Registrar Pagamento</button>
-            <a href="/conecta-uniforme/comissoes-relatorio" style="margin-left: 10px;">Cancelar</a>
+            <a href="/comissoes-relatorio" style="margin-left: 10px;">Cancelar</a>
         </form>
     <?php endif; ?>
     
     <?php if(count($detalhes_vendas) > 0 && $user_tipo == 'fornecedor'): ?>
         <hr>
         <h2>Detalhes das Vendas</h2>
-        <p><a href="/conecta-uniforme/comissoes-relatorio">← Voltar</a></p>
+        <p><a href="/comissoes-relatorio">← Voltar</a></p>
         
         <table border="1" cellpadding="5" cellspacing="0" style="width: 100%;">
             <thead>

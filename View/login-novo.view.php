@@ -1,18 +1,24 @@
+<!-- TODO Yuri: usar `.container` + `.row` para centralizar este bloco e aplicar responsividade.
+     Sugestão: `container py-5`, com uma coluna central `.col-12 col-md-8 col-lg-5` usando `card` do Bootstrap. -->
 <h1>Conecta Uniforme - Login</h1>
     
     <?php if($erro): ?>
+        <!-- TODO Yuri: substituir por `alert alert-danger` -->
         <div style="color: red; border: 1px solid red; padding: 10px; margin: 10px 0;">
             <?= htmlspecialchars($erro) ?>
         </div>
     <?php endif; ?>
     
     <?php if($mensagem): ?>
+        <!-- TODO Yuri: substituir por `alert alert-success` -->
         <div style="color: green; border: 1px solid green; padding: 10px; margin: 10px 0;">
             <?= htmlspecialchars($mensagem) ?>
         </div>
     <?php endif; ?>
     
     <?php if($step == 'email'): ?>
+        <!-- TODO Yuri: transformar os formulários em `.card` com `.card-body` e componentes `form-floating`/`form-group`.
+             Aplicar `.btn btn-primary w-100` nos botões principais e `.form-select` para o `<select>`. -->
         <h2>Digite seu e-mail para entrar</h2>
         <form method="POST">
             <div>
@@ -38,10 +44,11 @@
         </form>
         
         <p style="margin-top: 30px;">
-            <a href="/conecta-uniforme/">Voltar para a página inicial</a>
+            <a href="/">Voltar para a página inicial</a>
         </p>
         
     <?php else: ?>
+        <!-- TODO Yuri: repetir a mesma estrutura de card aqui e alinhar os botões usando a grid (`d-grid gap-2`). -->
         <h2>Digite o código recebido por e-mail</h2>
         <p>Um código foi enviado para: <strong><?= htmlspecialchars($_SESSION['login_email'] ?? '') ?></strong></p>
         
@@ -67,6 +74,6 @@
         </form>
         
         <p style="margin-top: 20px;">
-            <a href="/conecta-uniforme/login-novo">Voltar para digitar outro e-mail</a>
+            <a href="/login-novo">Voltar para digitar outro e-mail</a>
         </p>
     <?php endif; ?>

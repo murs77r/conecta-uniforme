@@ -8,7 +8,7 @@ iniciarSessaoSegura();
 
 // Verificar se está logado como responsável
 if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'responsavel') {
-    header('Location: /conecta-uniforme/login-novo');
+    header('Location: /login-novo');
     exit;
 }
 

@@ -10,16 +10,16 @@
     
     <nav>
         <?php if($user_tipo == 'responsavel'): ?>
-            <a href="/conecta-uniforme/dashboard-responsavel">Dashboard</a> |
-            <a href="/conecta-uniforme/catalogo-novo">Catálogo</a> |
+            <a href="/dashboard-responsavel">Dashboard</a> |
+            <a href="/catalogo-novo">Catálogo</a> |
         <?php elseif($user_tipo == 'fornecedor'): ?>
-            <a href="/conecta-uniforme/dashboard-fornecedor">Dashboard</a> |
-            <a href="/conecta-uniforme/produtos-fornecedor">Produtos</a> |
+            <a href="/dashboard-fornecedor">Dashboard</a> |
+            <a href="/produtos-fornecedor">Produtos</a> |
         <?php else: ?>
-            <a href="/conecta-uniforme/dashboard-gestor">Dashboard</a> |
+            <a href="/dashboard-gestor">Dashboard</a> |
         <?php endif; ?>
-        <a href="/conecta-uniforme/pedidos-gerenciar">Pedidos</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/pedidos-gerenciar">Pedidos</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -39,7 +39,7 @@
     <?php if($pedido): ?>
         <!-- Detalhes do Pedido -->
         <h2>Pedido #<?= $pedido['id'] ?></h2>
-        <p><a href="/conecta-uniforme/pedidos-gerenciar">← Voltar para lista</a></p>
+        <p><a href="/pedidos-gerenciar">← Voltar para lista</a></p>
         
         <h3>Informações do Pedido</h3>
         <ul>
@@ -133,7 +133,7 @@
                             <td><?= $status_labels[$p['status']] ?? $p['status'] ?></td>
                             <td><?= date('d/m/Y H:i', strtotime($p['criado_em'])) ?></td>
                             <td>
-                                <a href="/conecta-uniforme/pedidos-gerenciar?id=<?= $p['id'] ?>">Ver Detalhes</a>
+                                <a href="/pedidos-gerenciar?id=<?= $p['id'] ?>">Ver Detalhes</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

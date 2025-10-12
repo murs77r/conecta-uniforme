@@ -10,12 +10,12 @@
     <p>Bem-vindo, <?= htmlspecialchars($_SESSION['user_nome']) ?>!</p>
     
     <nav>
-        <a href="/conecta-uniforme/dashboard-gestor">Dashboard</a> |
-        <a href="/conecta-uniforme/alunos-gestor">Gerenciar Alunos</a> |
-        <a href="/conecta-uniforme/fornecedores-gestor">Gerenciar Fornecedores</a> |
-        <a href="/conecta-uniforme/pedidos-gerenciar">Ver Pedidos</a> |
-        <a href="/conecta-uniforme/comissoes-relatorio">Relatórios de Comissão</a> |
-        <a href="/conecta-uniforme/logout">Sair</a>
+        <a href="/dashboard-gestor">Dashboard</a> |
+        <a href="/alunos-gestor">Gerenciar Alunos</a> |
+        <a href="/fornecedores-gestor">Gerenciar Fornecedores</a> |
+        <a href="/pedidos-gerenciar">Ver Pedidos</a> |
+        <a href="/comissoes-relatorio">Relatórios de Comissão</a> |
+        <a href="/logout">Sair</a>
     </nav>
     
     <hr>
@@ -124,14 +124,14 @@
                         <td><?= htmlspecialchars($pedido['status']) ?></td>
                         <td><?= date('d/m/Y H:i', strtotime($pedido['criado_em'])) ?></td>
                         <td>
-                            <a href="/conecta-uniforme/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver Detalhes</a>
+                            <a href="/pedidos-gerenciar?id=<?= $pedido['id'] ?>">Ver Detalhes</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
         <?php if(count($pedidos) > 10): ?>
-            <p><a href="/conecta-uniforme/pedidos-gerenciar">Ver todos os pedidos</a></p>
+            <p><a href="/pedidos-gerenciar">Ver todos os pedidos</a></p>
         <?php endif; ?>
     <?php else: ?>
         <p>Nenhum pedido realizado ainda.</p>

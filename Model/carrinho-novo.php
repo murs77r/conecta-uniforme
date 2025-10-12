@@ -8,7 +8,7 @@ iniciarSessaoSegura();
 
 // Verificar se está logado como responsável
 if(!isset($_SESSION['logado']) || $_SESSION['user_tipo'] != 'responsavel') {
-    header('Location: /conecta-uniforme/login-novo');
+    header('Location: /login-novo');
     exit;
 }
 
@@ -72,7 +72,7 @@ if(isset($_POST['finalizar_pedido'])) {
         
         if($pedido_id) {
             $_SESSION['pedido_realizado'] = $pedido_id;
-            header('Location: /conecta-uniforme/pedido-sucesso');
+            header('Location: /pedido-sucesso');
             exit;
         } else {
             $erro = 'Erro ao finalizar pedido. Tente novamente.';
