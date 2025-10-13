@@ -27,8 +27,11 @@ $destinos = [
 			<?php endif; ?>
 		</nav>
 	</div>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wdth,wght,YTLC@0,6..12,75..125,200..1000,440..540;1,6..12,75..125,200..1000,440..540&display=swap" rel="stylesheet">
     <style>
-        body {margin: 0!important}
+        body {margin: 0!important; font-family: "Nunito Sans", sans-serif;}
     </style>
 </header>
 <!-- TODO Yuri: envolver o conteúdo em um `.container` ou `.container-fluid` conforme a página precisar,
