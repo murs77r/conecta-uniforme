@@ -30,4 +30,4 @@ $destinos = [
 </header>
 <!-- TODO Yuri: envolver o conteúdo em um `.container` ou `.container-fluid` conforme a página precisar,
 	 aplicando utilitários como `.py-4`/`.pb-5` no lugar destas dimensões fixas. -->
-<main style="max-width:960px;margin:0 auto;padding:0 1rem 3rem;">
+<main style="max-width:960px;margin:0;padding:0 1rem 3rem;">
