@@ -17,7 +17,7 @@ class Usuario {
     }
     
     public function verificarEmailExiste($email, $tipo) {
-        $email = $this->con->real_escape_string($email);
+        $email = strtolower($this->con->real_escape_string($email));
         
         $tabela = self::MAPA_TABELAS[$tipo] ?? null;
         if(!$tabela) {

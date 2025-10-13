@@ -33,7 +33,7 @@ class CodigoAcesso {
     }
     
     public function criarCodigo($email, $tipo_usuario) {
-        $email = $this->con->real_escape_string($email);
+        $email = strtolower($this->con->real_escape_string($email));
         $tipo_usuario = $this->con->real_escape_string($tipo_usuario);
         
         // Invalidar códigos anteriores não usados
@@ -59,7 +59,7 @@ class CodigoAcesso {
     }
     
     public function validarCodigo($email, $codigo) {
-        $email = $this->con->real_escape_string($email);
+        $email = strtolower($this->con->real_escape_string($email));
         $codigo = $this->con->real_escape_string($codigo);
         $agora = date('Y-m-d H:i:s');
         
