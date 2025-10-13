@@ -24,8 +24,8 @@ class Pedido {
             $comissao = $total * 0.15;
             
             // Criar pedido
-            $sql = "INSERT INTO pedido (Responsável_id, aluno_id, escola_id, total, comissao, status) 
-                    VALUES ($Responsável_id, $aluno_id, $escola_id, $total, $comissao, 'Pendente')";
+    $sql = "INSERT INTO pedido (Responsável_id, aluno_id, escola_id, total, comissao, status) 
+            VALUES ($Responsável_id, $aluno_id, $escola_id, $total, $comissao, 'Pendente')";
             
             if(!$this->con->query($sql)) {
                 throw new Exception('Erro ao criar pedido');
@@ -75,11 +75,11 @@ class Pedido {
     public function buscarPorId($id) {
         $id = (int)$id;
         
-        $sql = "SELECT p.*, r.nome as Responsável_nome, r.email as Responsável_email,
+    $sql = "SELECT p.*, r.nome as Responsável_nome, r.email as Responsável_email,
                 a.nome as aluno_nome, a.matricula as aluno_matricula,
                 e.nome as escola_nome
                 FROM pedido p
-                INNER JOIN Responsável r ON p.Responsável_id = r.id
+    INNER JOIN responsavel r ON p.Responsável_id = r.id
                 INNER JOIN aluno a ON p.aluno_id = a.id
                 INNER JOIN escola e ON p.escola_id = e.id
                 WHERE p.id = $id";
@@ -97,7 +97,7 @@ class Pedido {
                 FROM pedido_item pi
                 INNER JOIN produto p ON pi.produto_id = p.id
                 INNER JOIN produto_variacao pv ON pi.variacao_id = pv.id
-                INNER JOIN Fornecedor f ON pi.Fornecedor_id = f.id
+                INNER JOIN fornecedor f ON pi.Fornecedor_id = f.id
                 WHERE pi.pedido_id = $pedido_id";
         
         $result = $this->con->query($sql);
@@ -138,7 +138,7 @@ class Pedido {
         $sql = "SELECT p.*, a.nome as aluno_nome, r.nome as Responsável_nome
                 FROM pedido p
                 INNER JOIN aluno a ON p.aluno_id = a.id
-                INNER JOIN Responsável r ON p.Responsável_id = r.id
+                INNER JOIN responsavel r ON p.Responsável_id = r.id
                 WHERE p.escola_id = $escola_id
                 ORDER BY p.criado_em DESC";
         
@@ -158,7 +158,7 @@ class Pedido {
         $data_inicio = "$ano-$mes-01";
         $data_fim = date('Y-m-t', strtotime($data_inicio));
         
-        $sql = "SELECT pi.Fornecedor_id, 
+    $sql = "SELECT pi.Fornecedor_id, 
                 SUM(pi.subtotal) as total_vendas,
                 SUM(p.comissao) as total_comissao
                 FROM pedido_item pi

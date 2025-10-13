@@ -15,12 +15,12 @@ class Comissao {
         $data_fim = date('Y-m-t', strtotime($mes_referencia));
         
         // Buscar vendas do mês por Fornecedor
-        $sql = "SELECT pi.Fornecedor_id, f.nome as Fornecedor_nome,
+    $sql = "SELECT pi.Fornecedor_id, f.nome as Fornecedor_nome,
                 SUM(pi.subtotal) as total_vendas,
                 COUNT(DISTINCT pi.pedido_id) as total_pedidos
                 FROM pedido_item pi
                 INNER JOIN pedido p ON pi.pedido_id = p.id
-                INNER JOIN Fornecedor f ON pi.Fornecedor_id = f.id
+        INNER JOIN fornecedor f ON pi.Fornecedor_id = f.id
                 WHERE p.status IN ('Aprovado', 'Em Produção', 'Disponível para Retirar', 'Entregue')
                 AND DATE(p.criado_em) BETWEEN '$data_inicio' AND '$data_fim'
                 GROUP BY pi.Fornecedor_id, f.nome";
@@ -92,9 +92,9 @@ class Comissao {
             $where = "WHERE c.status = '$status'";
         }
         
-        $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
-                FROM comissao c
-                INNER JOIN Fornecedor f ON c.Fornecedor_id = f.id
+    $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
+        FROM comissao c
+        INNER JOIN fornecedor f ON c.Fornecedor_id = f.id
                 $where
                 ORDER BY c.mes_referencia DESC, f.nome";
         
@@ -105,9 +105,9 @@ class Comissao {
     public function buscarPorId($id) {
         $id = (int)$id;
         
-        $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
-                FROM comissao c
-                INNER JOIN Fornecedor f ON c.Fornecedor_id = f.id
+    $sql = "SELECT c.*, f.nome as Fornecedor_nome, f.email as Fornecedor_email
+        FROM comissao c
+        INNER JOIN fornecedor f ON c.Fornecedor_id = f.id
                 WHERE c.id = $id";
         
         $result = $this->con->query($sql);

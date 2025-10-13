@@ -16,7 +16,7 @@ $carrinho = new Carrinho();
 $pedido = new Pedido();
 $alunoClass = new Aluno();
 
-$Responsável_id = $_SESSION['user_id'];
+$responsavel_id = $_SESSION['user_id'];
 $aluno_id = $_SESSION['aluno_id'];
 $escola_id = $_SESSION['escola_id'];
 
@@ -49,12 +49,12 @@ if(isset($_POST['remover_item'])) {
 // Finalizar pedido
 if(isset($_POST['finalizar_pedido'])) {
     // Validar estoque
-    $erros_estoque = $carrinho->validarEstoque($Responsável_id);
-    
+    $erros_estoque = $carrinho->validarEstoque($responsavel_id);
+
     if(count($erros_estoque) > 0) {
         $erro = 'Alguns produtos não têm estoque suficiente.';
     } else {
-        $itens = $carrinho->listar($Responsável_id);
+        $itens = $carrinho->listar($responsavel_id);
         
         // Preparar itens para o pedido
         $itens_pedido = [];
@@ -62,16 +62,16 @@ if(isset($_POST['finalizar_pedido'])) {
             $itens_pedido[] = [
                 'produto_id' => $item['produto_id'],
                 'variacao_id' => $item['variacao_id'],
-                'Fornecedor_id' => $item['Fornecedor_id'],
+                'fornecedor_id' => $item['fornecedor_id'],
                 'quantidade' => $item['quantidade'],
                 'preco_unitario' => $item['preco']
             ];
         }
         
-        $pedido_id = $pedido->criar($Responsável_id, $aluno_id, $escola_id, $itens_pedido);
+        $pedido_id = $pedido->criar($responsavel_id, $aluno_id, $escola_id, $itens_pedido);
         
         if($pedido_id) {
-            $carrinho->limpar($Responsável_id);
+            $carrinho->limpar($responsavel_id);
             $mensagem = 'Pedido #' . $pedido_id . ' registrado com sucesso! '
                 . 'Ele estará disponível para pagamento e retirada diretamente na escola.';
         } else {
@@ -81,8 +81,8 @@ if(isset($_POST['finalizar_pedido'])) {
 }
 
 // Buscar itens do carrinho
-$itens = $carrinho->listar($Responsável_id);
-$total = $carrinho->calcularTotal($Responsável_id);
-$total_itens = $carrinho->contarItens($Responsável_id);
+$itens = $carrinho->listar($responsavel_id);
+$total = $carrinho->calcularTotal($responsavel_id);
+$total_itens = $carrinho->contarItens($responsavel_id);
 
 require __DIR__ . '/../View/carrinho-novo.view.php';

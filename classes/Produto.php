@@ -10,13 +10,13 @@ class Produto {
     }
     
     public function criar($dados) {
-        $Fornecedor_id = (int)$dados['Fornecedor_id'];
+        $fornecedor_id = (int)$dados['fornecedor_id'];
         $nome = $this->con->real_escape_string($dados['nome']);
         $descricao = $this->con->real_escape_string($dados['descricao'] ?? '');
         $preco = (float)$dados['preco'];
         
-        $sql = "INSERT INTO produto (Fornecedor_id, nome, descricao, preco, ativo) 
-                VALUES ($Fornecedor_id, '$nome', '$descricao', $preco, 1)";
+    $sql = "INSERT INTO produto (fornecedor_id, nome, descricao, preco, ativo) 
+        VALUES ($fornecedor_id, '$nome', '$descricao', $preco, 1)";
         
         if($this->con->query($sql)) {
             return $this->con->insert_id;
@@ -85,13 +85,13 @@ class Produto {
         return $this->con->query($sql);
     }
     
-    public function listarPorFornecedor($Fornecedor_id) {
-        $Fornecedor_id = (int)$Fornecedor_id;
+    public function listarPorFornecedor($fornecedor_id) {
+        $fornecedor_id = (int)$fornecedor_id;
         
         $sql = "SELECT p.*, 
                 (SELECT COUNT(*) FROM produto_variacao WHERE produto_id = p.id) as total_variacoes
                 FROM produto p
-                WHERE p.Fornecedor_id = $Fornecedor_id
+                WHERE p.fornecedor_id = $fornecedor_id
                 ORDER BY p.criado_em DESC";
         
         $result = $this->con->query($sql);
@@ -101,9 +101,9 @@ class Produto {
     public function buscarPorId($id) {
         $id = (int)$id;
         
-        $sql = "SELECT p.*, f.nome as Fornecedor_nome
-                FROM produto p
-                INNER JOIN Fornecedor f ON p.Fornecedor_id = f.id
+    $sql = "SELECT p.*, f.nome as Fornecedor_nome
+        FROM produto p
+        INNER JOIN fornecedor f ON p.fornecedor_id = f.id
                 WHERE p.id = $id";
         
         $result = $this->con->query($sql);
@@ -123,11 +123,11 @@ class Produto {
         $serie = $this->con->real_escape_string($serie);
         $genero = $this->con->real_escape_string($genero);
         
-        $sql = "SELECT DISTINCT p.*, f.nome as Fornecedor_nome
-                FROM produto p
-                INNER JOIN Fornecedor f ON p.Fornecedor_id = f.id
+    $sql = "SELECT DISTINCT p.*, f.nome as Fornecedor_nome
+        FROM produto p
+        INNER JOIN fornecedor f ON p.fornecedor_id = f.id
                 INNER JOIN produto_homologacao ph ON p.id = ph.produto_id
-                INNER JOIN homologacao h ON f.id = h.Fornecedor_id AND ph.escola_id = h.escola_id
+                INNER JOIN homologacao h ON f.id = h.fornecedor_id AND ph.escola_id = h.escola_id
                 WHERE ph.escola_id = $escola_id 
                 AND ph.serie = '$serie'
                 AND h.ativo = 1

@@ -3,6 +3,13 @@ require_once 'conexao.php';
 
 class Usuario {
     private $con;
+    private const MAPA_TABELAS = [
+        'Gestor' => 'gestor',
+        'Fornecedor' => 'fornecedor',
+        'Responsável' => 'responsavel',
+        'Responsavel' => 'responsavel',
+        'Administrador' => 'administrador',
+    ];
     
     public function __construct() {
         global $con;
@@ -12,22 +19,9 @@ class Usuario {
     public function verificarEmailExiste($email, $tipo) {
         $email = $this->con->real_escape_string($email);
         
-        $tabela = '';
-        switch($tipo) {
-            case 'Gestor':
-                $tabela = 'Gestor';
-                break;
-            case 'Fornecedor':
-                $tabela = 'Fornecedor';
-                break;
-            case 'Responsável':
-                $tabela = 'Responsável';
-                break;
-            case 'Administrador':
-                $tabela = 'Administrador';
-                break;
-            default:
-                return false;
+        $tabela = self::MAPA_TABELAS[$tipo] ?? null;
+        if(!$tabela) {
+            return false;
         }
         
     $sql = "SELECT id, nome, email, ativo FROM $tabela WHERE email = '$email' AND ativo = 1";
@@ -49,7 +43,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone']);
         $escola_id = (int)$dados['escola_id'];
         
-        $sql = "INSERT INTO Gestor (nome, email, telefone, escola_id, ativo) 
+    $sql = "INSERT INTO gestor (nome, email, telefone, escola_id, ativo) 
                 VALUES ('$nome', '$email', '$telefone', $escola_id, 1)";
         
         return $this->con->query($sql);
@@ -60,7 +54,7 @@ class Usuario {
         $email = $this->con->real_escape_string($dados['email']);
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
 
-        $sql = "INSERT INTO Administrador (nome, email, telefone, ativo)
+    $sql = "INSERT INTO administrador (nome, email, telefone, ativo)
                 VALUES ('$nome', '$email', '$telefone', 1)";
 
         if($this->con->query($sql)) {
@@ -75,7 +69,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
         $cnpj = $this->con->real_escape_string($dados['cnpj'] ?? '');
         
-        $sql = "INSERT INTO Fornecedor (nome, email, telefone, cnpj, ativo) 
+    $sql = "INSERT INTO fornecedor (nome, email, telefone, cnpj, ativo) 
                 VALUES ('$nome', '$email', '$telefone', '$cnpj', 1)";
         
         if($this->con->query($sql)) {
@@ -91,13 +85,13 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
         $cnpj = $this->con->real_escape_string($dados['cnpj'] ?? '');
 
-        $sql = "UPDATE Fornecedor SET nome = '$nome', email = '$email', telefone = '$telefone', cnpj = '$cnpj' WHERE id = $id";
+    $sql = "UPDATE fornecedor SET nome = '$nome', email = '$email', telefone = '$telefone', cnpj = '$cnpj' WHERE id = $id";
         return $this->con->query($sql);
     }
 
     public function removerFornecedor($id) {
         $id = (int)$id;
-        $sql = "DELETE FROM Fornecedor WHERE id = $id";
+    $sql = "DELETE FROM fornecedor WHERE id = $id";
         return $this->con->query($sql);
     }
     
@@ -107,7 +101,7 @@ class Usuario {
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
         $aluno_id = (int)$dados['aluno_id'];
         
-        $sql = "INSERT INTO Responsável (nome, email, telefone, aluno_id, ativo) 
+    $sql = "INSERT INTO responsavel (nome, email, telefone, aluno_id, ativo) 
                 VALUES ('$nome', '$email', '$telefone', $aluno_id, 1)";
         
         if($this->con->query($sql)) {
@@ -118,7 +112,7 @@ class Usuario {
 
     public function listarResponsaveisPorAluno($aluno_id) {
         $aluno_id = (int)$aluno_id;
-        $sql = "SELECT * FROM Responsável WHERE aluno_id = $aluno_id ORDER BY nome";
+    $sql = "SELECT * FROM responsavel WHERE aluno_id = $aluno_id ORDER BY nome";
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
@@ -129,25 +123,25 @@ class Usuario {
         $email = $this->con->real_escape_string($dados['email']);
         $telefone = $this->con->real_escape_string($dados['telefone'] ?? '');
 
-        $sql = "UPDATE Responsável SET nome = '$nome', email = '$email', telefone = '$telefone' WHERE id = $id";
+    $sql = "UPDATE responsavel SET nome = '$nome', email = '$email', telefone = '$telefone' WHERE id = $id";
         return $this->con->query($sql);
     }
 
     public function removerResponsavel($id) {
         $id = (int)$id;
-        $sql = "DELETE FROM Responsável WHERE id = $id";
+    $sql = "DELETE FROM responsavel WHERE id = $id";
         return $this->con->query($sql);
     }
     
     public function listarGestoresPorEscola($escola_id) {
         $escola_id = (int)$escola_id;
-        $sql = "SELECT * FROM Gestor WHERE escola_id = $escola_id ORDER BY nome";
+    $sql = "SELECT * FROM gestor WHERE escola_id = $escola_id ORDER BY nome";
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
     
     public function listarFornecedores() {
-        $sql = "SELECT * FROM Fornecedor ORDER BY nome";
+    $sql = "SELECT * FROM fornecedor ORDER BY nome";
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
@@ -204,14 +198,9 @@ class Usuario {
         $id = (int)$id;
         $status = $status ? 1 : 0;
         
-        switch($tipo) {
-            case 'Gestor':
-            case 'Fornecedor':
-            case 'Administrador':
-                $tabela = $tipo;
-                break;
-            default:
-                return false;
+        $tabela = self::MAPA_TABELAS[$tipo] ?? null;
+        if(!$tabela) {
+            return false;
         }
 
         $sql = "UPDATE $tabela SET ativo = $status WHERE id = $id";

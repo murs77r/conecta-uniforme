@@ -19,8 +19,8 @@ VALUES (
 
 SET @escola_id = LAST_INSERT_ID();
 
--- Inserir Gestor escolar
-INSERT INTO Gestor (nome, email, telefone, escola_id, ativo) 
+-- Inserir gestor escolar
+INSERT INTO gestor (nome, email, telefone, escola_id, ativo) 
 VALUES (
     'Maria Santos',
     'maria.Gestor@escolaexemplo.com.br',
@@ -30,7 +30,7 @@ VALUES (
 );
 
 -- Inserir administrador padrão do sistema
-INSERT INTO Administrador (nome, email, telefone, ativo)
+INSERT INTO administrador (nome, email, telefone, ativo)
 VALUES (
     'Administrador Geral',
     'admin@conectauniforme.com.br',
@@ -38,8 +38,8 @@ VALUES (
     1
 );
 
--- Inserir Fornecedores de exemplo
-INSERT INTO Fornecedor (nome, email, telefone, cnpj, ativo) 
+-- Inserir fornecedores de exemplo
+INSERT INTO fornecedor (nome, email, telefone, cnpj, ativo) 
 VALUES 
     ('Uniformes Alpha Ltda', 'contato@uniformesalpha.com.br', '(11) 3333-4444', '98765432000101', 1),
     ('Beta Confecções', 'vendas@betaconfeccoes.com.br', '(11) 5555-6666', '11223344000155', 1);
@@ -48,7 +48,7 @@ SET @Fornecedor1_id = 1;
 SET @Fornecedor2_id = 2;
 
 -- Criar homologações (Fornecedores autorizados para a escola)
-INSERT INTO homologacao (escola_id, Fornecedor_id, ativo) 
+INSERT INTO homologacao (escola_id, fornecedor_id, ativo) 
 VALUES 
     (@escola_id, @Fornecedor1_id, 1),
     (@escola_id, @Fornecedor2_id, 1);
@@ -67,7 +67,7 @@ SET @aluno3_id = 3;
 SET @aluno4_id = 4;
 
 -- Inserir responsáveis
-INSERT INTO Responsável (nome, email, telefone, aluno_id, ativo) 
+INSERT INTO responsavel (nome, email, telefone, aluno_id, ativo) 
 VALUES 
     ('Carlos Silva', 'carlos.silva@email.com', '(11) 91111-2222', @aluno1_id, 1),
     ('Fernanda Oliveira', 'fernanda.oliveira@email.com', '(11) 93333-4444', @aluno2_id, 1),
@@ -75,7 +75,7 @@ VALUES
     ('Juliana Costa', 'juliana.costa@email.com', '(11) 97777-8888', @aluno4_id, 1);
 
 -- Inserir produtos de exemplo (Fornecedor 1)
-INSERT INTO produto (Fornecedor_id, nome, descricao, preco, ativo) 
+INSERT INTO produto (fornecedor_id, nome, descricao, preco, ativo) 
 VALUES 
     (@Fornecedor1_id, 'Camiseta Polo Escolar', 'Camiseta polo manga curta com logo da escola. Tecido 100% algodão.', 45.90, 1),
     (@Fornecedor1_id, 'Bermuda Escolar', 'Bermuda tactel com bolsos. Cores variadas.', 39.90, 1),
@@ -129,7 +129,7 @@ VALUES
     (@produto3_id, 'G', 'Cinza', 'Feminino', 7);
 
 -- Inserir produtos do Fornecedor 2
-INSERT INTO produto (Fornecedor_id, nome, descricao, preco, ativo) 
+INSERT INTO produto (fornecedor_id, nome, descricao, preco, ativo) 
 VALUES 
     (@Fornecedor2_id, 'Mochila Escolar Grande', 'Mochila com compartimento para notebook, impermeável.', 89.90, 1),
     (@Fornecedor2_id, 'Jaqueta Escolar', 'Jaqueta de frio com logo bordado.', 79.90, 1);
@@ -166,12 +166,12 @@ SELECT
     'Gestor criado:' as Info,
     nome as Nome,
     email as Email
-FROM Gestor WHERE escola_id = @escola_id;
+FROM gestor WHERE escola_id = @escola_id;
 
 SELECT 
     'Fornecedores criados:' as Info,
     COUNT(*) as Total
-FROM Fornecedor;
+FROM fornecedor;
 
 SELECT 
     'Alunos criados:' as Info,
@@ -181,7 +181,7 @@ FROM aluno;
 SELECT 
     'Responsáveis criados:' as Info,
     COUNT(*) as Total
-FROM Responsável;
+FROM responsavel;
 
 SELECT 
     'Produtos criados:' as Info,
@@ -195,22 +195,22 @@ SELECT
     'GESTOR' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM Gestor 
+FROM gestor 
 UNION ALL
 SELECT 
     'FORNECEDOR' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM Fornecedor
+FROM fornecedor
 UNION ALL
 SELECT 
     'RESPONSAVEL' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM Responsável
+FROM responsavel
 UNION ALL
 SELECT 
     'ADMINISTRADOR' as Tipo,
     email as Email,
     'Use o sistema de login com código' as Senha
-FROM Administrador;
+FROM administrador;

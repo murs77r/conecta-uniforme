@@ -9,15 +9,15 @@ class Carrinho {
         $this->con = $con;
     }
     
-    public function adicionar($Responsável_id, $produto_id, $variacao_id, $quantidade) {
-        $Responsável_id = (int)$Responsável_id;
+    public function adicionar($responsavel_id, $produto_id, $variacao_id, $quantidade) {
+        $responsavel_id = (int)$responsavel_id;
         $produto_id = (int)$produto_id;
         $variacao_id = (int)$variacao_id;
         $quantidade = (int)$quantidade;
         
         // Verificar se já existe
-        $sql = "SELECT id, quantidade FROM carrinho 
-                WHERE Responsável_id = $Responsável_id 
+    $sql = "SELECT id, quantidade FROM carrinho 
+        WHERE responsavel_id = $responsavel_id 
                 AND produto_id = $produto_id 
                 AND variacao_id = $variacao_id";
         
@@ -32,8 +32,8 @@ class Carrinho {
             $sql = "UPDATE carrinho SET quantidade = $nova_quantidade WHERE id = $id";
         } else {
             // Inserir novo
-            $sql = "INSERT INTO carrinho (Responsável_id, produto_id, variacao_id, quantidade) 
-                    VALUES ($Responsável_id, $produto_id, $variacao_id, $quantidade)";
+        $sql = "INSERT INTO carrinho (responsavel_id, produto_id, variacao_id, quantidade) 
+            VALUES ($responsavel_id, $produto_id, $variacao_id, $quantidade)";
         }
         
         return $this->con->query($sql);
@@ -57,35 +57,35 @@ class Carrinho {
         return $this->con->query($sql);
     }
     
-    public function limpar($Responsável_id) {
-        $Responsável_id = (int)$Responsável_id;
-        $sql = "DELETE FROM carrinho WHERE Responsável_id = $Responsável_id";
+    public function limpar($responsavel_id) {
+        $responsavel_id = (int)$responsavel_id;
+        $sql = "DELETE FROM carrinho WHERE responsavel_id = $responsavel_id";
         return $this->con->query($sql);
     }
     
-    public function listar($Responsável_id) {
-        $Responsável_id = (int)$Responsável_id;
+    public function listar($responsavel_id) {
+        $responsavel_id = (int)$responsavel_id;
         
         $sql = "SELECT c.*, 
-                p.nome as produto_nome, p.preco, p.Fornecedor_id,
+                p.nome as produto_nome, p.preco, p.fornecedor_id,
                 pv.tamanho, pv.cor, pv.genero, pv.quantidade_estoque,
                 f.nome as Fornecedor_nome,
                 (p.preco * c.quantidade) as subtotal
                 FROM carrinho c
                 INNER JOIN produto p ON c.produto_id = p.id
                 INNER JOIN produto_variacao pv ON c.variacao_id = pv.id
-                INNER JOIN Fornecedor f ON p.Fornecedor_id = f.id
-                WHERE c.Responsável_id = $Responsável_id
+                INNER JOIN fornecedor f ON p.fornecedor_id = f.id
+                WHERE c.responsavel_id = $responsavel_id
                 ORDER BY c.adicionado_em DESC";
         
         $result = $this->con->query($sql);
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
     
-    public function contarItens($Responsável_id) {
-        $Responsável_id = (int)$Responsável_id;
+    public function contarItens($responsavel_id) {
+        $responsavel_id = (int)$responsavel_id;
         
-        $sql = "SELECT SUM(quantidade) as total FROM carrinho WHERE Responsável_id = $Responsável_id";
+        $sql = "SELECT SUM(quantidade) as total FROM carrinho WHERE responsavel_id = $responsavel_id";
         $result = $this->con->query($sql);
         
         if($result) {
@@ -95,13 +95,13 @@ class Carrinho {
         return 0;
     }
     
-    public function calcularTotal($Responsável_id) {
-        $Responsável_id = (int)$Responsável_id;
+    public function calcularTotal($responsavel_id) {
+        $responsavel_id = (int)$responsavel_id;
         
         $sql = "SELECT SUM(p.preco * c.quantidade) as total
                 FROM carrinho c
                 INNER JOIN produto p ON c.produto_id = p.id
-                WHERE c.Responsável_id = $Responsável_id";
+                WHERE c.responsavel_id = $responsavel_id";
         
         $result = $this->con->query($sql);
         
@@ -112,8 +112,8 @@ class Carrinho {
         return 0;
     }
     
-    public function validarEstoque($Responsável_id) {
-        $itens = $this->listar($Responsável_id);
+    public function validarEstoque($responsavel_id) {
+        $itens = $this->listar($responsavel_id);
         $erros = [];
         
         foreach($itens as $item) {

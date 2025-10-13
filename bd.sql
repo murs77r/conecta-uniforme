@@ -2,7 +2,6 @@ CREATE DATABASE IF NOT EXISTS conecta_uniforme;
 
 USE conecta_uniforme;
 
--- Tabela de escolas
 CREATE TABLE IF NOT EXISTS escola (
     id INT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -18,8 +17,8 @@ CREATE TABLE IF NOT EXISTS escola (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Gestores escolares
-CREATE TABLE IF NOT EXISTS Gestor (
+-- Tabela de gestores escolares
+CREATE TABLE IF NOT EXISTS gestor (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -27,11 +26,11 @@ CREATE TABLE IF NOT EXISTS Gestor (
     escola_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_Gestor_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE
+    CONSTRAINT fk_gestor_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE
 );
 
 -- Tabela de administradores do sistema
-CREATE TABLE IF NOT EXISTS Administrador (
+CREATE TABLE IF NOT EXISTS administrador (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -40,8 +39,8 @@ CREATE TABLE IF NOT EXISTS Administrador (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabela de Fornecedores
-CREATE TABLE IF NOT EXISTS Fornecedor (
+-- Tabela de fornecedores
+CREATE TABLE IF NOT EXISTS fornecedor (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -55,12 +54,12 @@ CREATE TABLE IF NOT EXISTS Fornecedor (
 CREATE TABLE IF NOT EXISTS homologacao (
     id INT PRIMARY KEY AUTO_INCREMENT,
     escola_id INT NOT NULL,
-    Fornecedor_id INT NOT NULL,
+    fornecedor_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     data_homologacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_homologacao_escola FOREIGN KEY (escola_id) REFERENCES escola(id) ON DELETE CASCADE,
-    CONSTRAINT fk_homologacao_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE,
-    UNIQUE (escola_id, Fornecedor_id)
+    CONSTRAINT fk_homologacao_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id) ON DELETE CASCADE,
+    UNIQUE (escola_id, fornecedor_id)
 );
 
 -- Tabela de alunos
@@ -78,7 +77,7 @@ CREATE TABLE IF NOT EXISTS aluno (
 );
 
 -- Tabela de responsáveis
-CREATE TABLE IF NOT EXISTS Responsável (
+CREATE TABLE IF NOT EXISTS responsavel (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(120) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -86,7 +85,7 @@ CREATE TABLE IF NOT EXISTS Responsável (
     aluno_id INT NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_Responsável_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id) ON DELETE CASCADE
+    CONSTRAINT fk_responsavel_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id) ON DELETE CASCADE
 );
 
 -- Tabela de códigos de acesso (login sem senha)
@@ -105,13 +104,13 @@ CREATE TABLE IF NOT EXISTS codigo_acesso (
 -- Tabela de produtos (uniformes)
 CREATE TABLE IF NOT EXISTS produto (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    Fornecedor_id INT NOT NULL,
+    fornecedor_id INT NOT NULL,
     nome VARCHAR(200) NOT NULL,
     descricao TEXT,
     preco DECIMAL(10,2) NOT NULL,
     ativo TINYINT(1) DEFAULT 1,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_produto_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id) ON DELETE CASCADE
+    CONSTRAINT fk_produto_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id) ON DELETE CASCADE
 );
 
 -- Tabela de homologação de produtos (produto x escola x série)
@@ -140,7 +139,7 @@ CREATE TABLE IF NOT EXISTS produto_variacao (
 -- Tabela de pedidos
 CREATE TABLE IF NOT EXISTS pedido (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    Responsável_id INT NOT NULL,
+    responsavel_id INT NOT NULL,
     aluno_id INT NOT NULL,
     escola_id INT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
@@ -148,7 +147,7 @@ CREATE TABLE IF NOT EXISTS pedido (
     status ENUM('Pendente', 'Aprovado', 'Em Produção', 'Disponível para Retirar', 'Entregue', 'Cancelado') DEFAULT 'Pendente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_pedido_Responsável FOREIGN KEY (Responsável_id) REFERENCES Responsável(id),
+    CONSTRAINT fk_pedido_responsavel FOREIGN KEY (responsavel_id) REFERENCES responsavel(id),
     CONSTRAINT fk_pedido_aluno FOREIGN KEY (aluno_id) REFERENCES aluno(id),
     CONSTRAINT fk_pedido_escola FOREIGN KEY (escola_id) REFERENCES escola(id)
 );
@@ -159,25 +158,25 @@ CREATE TABLE IF NOT EXISTS pedido_item (
     pedido_id INT NOT NULL,
     produto_id INT NOT NULL,
     variacao_id INT NOT NULL,
-    Fornecedor_id INT NOT NULL,
+    fornecedor_id INT NOT NULL,
     quantidade INT NOT NULL,
     preco_unitario DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedido(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produto(id),
     CONSTRAINT fk_item_variacao FOREIGN KEY (variacao_id) REFERENCES produto_variacao(id),
-    CONSTRAINT fk_item_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id)
+    CONSTRAINT fk_item_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id)
 );
 
 -- Tabela de carrinho temporário
 CREATE TABLE IF NOT EXISTS carrinho (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    Responsável_id INT NOT NULL,
+    responsavel_id INT NOT NULL,
     produto_id INT NOT NULL,
     variacao_id INT NOT NULL,
     quantidade INT NOT NULL,
     adicionado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_carrinho_Responsável FOREIGN KEY (Responsável_id) REFERENCES Responsável(id) ON DELETE CASCADE,
+    CONSTRAINT fk_carrinho_responsavel FOREIGN KEY (responsavel_id) REFERENCES responsavel(id) ON DELETE CASCADE,
     CONSTRAINT fk_carrinho_produto FOREIGN KEY (produto_id) REFERENCES produto(id) ON DELETE CASCADE,
     CONSTRAINT fk_carrinho_variacao FOREIGN KEY (variacao_id) REFERENCES produto_variacao(id) ON DELETE CASCADE
 );
@@ -185,17 +184,17 @@ CREATE TABLE IF NOT EXISTS carrinho (
 -- Tabela de comissões
 CREATE TABLE IF NOT EXISTS comissao (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    Fornecedor_id INT NOT NULL,
+    fornecedor_id INT NOT NULL,
     mes_referencia DATE NOT NULL,
     total_vendas DECIMAL(10,2) NOT NULL DEFAULT 0,
     total_comissao DECIMAL(10,2) NOT NULL DEFAULT 0,
     valor_liquido DECIMAL(10,2) NOT NULL DEFAULT 0,
     status ENUM('Pendente', 'Pago') DEFAULT 'Pendente',
     data_pagamento DATE NULL,
-    valor_Pago DECIMAL(10,2) NULL,
+    valor_pago DECIMAL(10,2) NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_comissao_Fornecedor FOREIGN KEY (Fornecedor_id) REFERENCES Fornecedor(id),
-    UNIQUE (Fornecedor_id, mes_referencia)
+    CONSTRAINT fk_comissao_fornecedor FOREIGN KEY (fornecedor_id) REFERENCES fornecedor(id),
+    UNIQUE (fornecedor_id, mes_referencia)
 );
 
 -- Tabela de auditoria
@@ -207,24 +206,24 @@ CREATE TABLE IF NOT EXISTS auditoria (
     dados_anteriores JSON,
     dados_atualizados JSON,
     data_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Responsável VARCHAR(255) NOT NULL
+    responsavel VARCHAR(255) NOT NULL
 );
 
 
 /* CÓDIGO PARA GERAR AS TRIGGERS DE AUDITORIA. DEVE SER RODADO AO FINAL DE TUDO */
 -- =====================================================================
--- GATILHOS PARA A TABELA: Administrador
+-- GATILHOS PARA A TABELA: administrador
 -- =====================================================================
 
-DROP TRIGGER IF EXISTS trig_audit_insert_Administrador;
+DROP TRIGGER IF EXISTS trig_audit_insert_administrador;
 DELIMITER $$
-CREATE TRIGGER trig_audit_insert_Administrador
-AFTER INSERT ON `Administrador`
+CREATE TRIGGER trig_audit_insert_administrador
+AFTER INSERT ON `administrador`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, responsavel)
     VALUES (
-        'Administrador',
+    'administrador',
         'INSERT',
         NEW.id,
         JSON_OBJECT(
@@ -240,15 +239,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_update_Administrador;
+DROP TRIGGER IF EXISTS trig_audit_update_administrador;
 DELIMITER $$
-CREATE TRIGGER trig_audit_update_Administrador
-AFTER UPDATE ON `Administrador`
+CREATE TRIGGER trig_audit_update_administrador
+AFTER UPDATE ON `administrador`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, responsavel)
     VALUES (
-        'Administrador',
+    'administrador',
         'UPDATE',
         NEW.id,
         JSON_OBJECT(
@@ -272,15 +271,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_delete_Administrador;
+DROP TRIGGER IF EXISTS trig_audit_delete_administrador;
 DELIMITER $$
-CREATE TRIGGER trig_audit_delete_Administrador
-AFTER DELETE ON `Administrador`
+CREATE TRIGGER trig_audit_delete_administrador
+AFTER DELETE ON `administrador`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, responsavel)
     VALUES (
-        'Administrador',
+    'administrador',
         'DELETE',
         OLD.id,
         JSON_OBJECT(
@@ -297,18 +296,18 @@ END$$
 DELIMITER ;
 
 -- =====================================================================
--- GATILHOS PARA A TABELA: Fornecedor
+-- GATILHOS PARA A TABELA: fornecedor
 -- =====================================================================
 
-DROP TRIGGER IF EXISTS trig_audit_insert_Fornecedor;
+DROP TRIGGER IF EXISTS trig_audit_insert_fornecedor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_insert_Fornecedor
-AFTER INSERT ON `Fornecedor`
+CREATE TRIGGER trig_audit_insert_fornecedor
+AFTER INSERT ON `fornecedor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, responsavel)
     VALUES (
-        'Fornecedor',
+    'fornecedor',
         'INSERT',
         NEW.id,
         JSON_OBJECT(
@@ -325,15 +324,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_update_Fornecedor;
+DROP TRIGGER IF EXISTS trig_audit_update_fornecedor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_update_Fornecedor
-AFTER UPDATE ON `Fornecedor`
+CREATE TRIGGER trig_audit_update_fornecedor
+AFTER UPDATE ON `fornecedor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, responsavel)
     VALUES (
-        'Fornecedor',
+    'fornecedor',
         'UPDATE',
         NEW.id,
         JSON_OBJECT(
@@ -359,15 +358,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_delete_Fornecedor;
+DROP TRIGGER IF EXISTS trig_audit_delete_fornecedor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_delete_Fornecedor
-AFTER DELETE ON `Fornecedor`
+CREATE TRIGGER trig_audit_delete_fornecedor
+AFTER DELETE ON `fornecedor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, responsavel)
     VALUES (
-        'Fornecedor',
+    'fornecedor',
         'DELETE',
         OLD.id,
         JSON_OBJECT(
@@ -385,18 +384,18 @@ END$$
 DELIMITER ;
 
 -- =====================================================================
--- GATILHOS PARA A TABELA: Gestor
+-- GATILHOS PARA A TABELA: gestor
 -- =====================================================================
 
-DROP TRIGGER IF EXISTS trig_audit_insert_Gestor;
+DROP TRIGGER IF EXISTS trig_audit_insert_gestor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_insert_Gestor
-AFTER INSERT ON `Gestor`
+CREATE TRIGGER trig_audit_insert_gestor
+AFTER INSERT ON `gestor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, responsavel)
     VALUES (
-        'Gestor',
+    'gestor',
         'INSERT',
         NEW.id,
         JSON_OBJECT(
@@ -413,15 +412,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_update_Gestor;
+DROP TRIGGER IF EXISTS trig_audit_update_gestor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_update_Gestor
-AFTER UPDATE ON `Gestor`
+CREATE TRIGGER trig_audit_update_gestor
+AFTER UPDATE ON `gestor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, responsavel)
     VALUES (
-        'Gestor',
+    'gestor',
         'UPDATE',
         NEW.id,
         JSON_OBJECT(
@@ -447,15 +446,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_delete_Gestor;
+DROP TRIGGER IF EXISTS trig_audit_delete_gestor;
 DELIMITER $$
-CREATE TRIGGER trig_audit_delete_Gestor
-AFTER DELETE ON `Gestor`
+CREATE TRIGGER trig_audit_delete_gestor
+AFTER DELETE ON `gestor`
 FOR EACH ROW
 BEGIN
-    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, Responsavel)
+    INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, responsavel)
     VALUES (
-        'Gestor',
+    'gestor',
         'DELETE',
         OLD.id,
         JSON_OBJECT(
@@ -473,18 +472,18 @@ END$$
 DELIMITER ;
 
 -- =====================================================================
--- GATILHOS PARA A TABELA: Responsável
+-- GATILHOS PARA A TABELA: responsavel
 -- =====================================================================
 
-DROP TRIGGER IF EXISTS trig_audit_insert_Responsável;
+DROP TRIGGER IF EXISTS trig_audit_insert_responsavel;
 DELIMITER $$
-CREATE TRIGGER trig_audit_insert_Responsável
-AFTER INSERT ON `Responsável`
+CREATE TRIGGER trig_audit_insert_responsavel
+AFTER INSERT ON `responsavel`
 FOR EACH ROW
 BEGIN
     INSERT INTO auditoria (tabela, operacao, registro_id, dados_atualizados, Responsavel)
     VALUES (
-        'Responsável',
+    'responsavel',
         'INSERT',
         NEW.id,
         JSON_OBJECT(
@@ -501,15 +500,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_update_Responsável;
+DROP TRIGGER IF EXISTS trig_audit_update_responsavel;
 DELIMITER $$
-CREATE TRIGGER trig_audit_update_Responsável
-AFTER UPDATE ON `Responsável`
+CREATE TRIGGER trig_audit_update_responsavel
+AFTER UPDATE ON `responsavel`
 FOR EACH ROW
 BEGIN
     INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, dados_atualizados, Responsavel)
     VALUES (
-        'Responsável',
+    'responsavel',
         'UPDATE',
         NEW.id,
         JSON_OBJECT(
@@ -535,15 +534,15 @@ BEGIN
 END$$
 DELIMITER ;
 
-DROP TRIGGER IF EXISTS trig_audit_delete_Responsável;
+DROP TRIGGER IF EXISTS trig_audit_delete_responsavel;
 DELIMITER $$
-CREATE TRIGGER trig_audit_delete_Responsável
-AFTER DELETE ON `Responsável`
+CREATE TRIGGER trig_audit_delete_responsavel
+AFTER DELETE ON `responsavel`
 FOR EACH ROW
 BEGIN
     INSERT INTO auditoria (tabela, operacao, registro_id, dados_anteriores, Responsavel)
     VALUES (
-        'Responsável',
+    'responsavel',
         'DELETE',
         OLD.id,
         JSON_OBJECT(
@@ -672,7 +671,7 @@ BEGIN
             'id', NEW.id,
             'produto_id', NEW.produto_id,
             'quantidade', NEW.quantidade,
-            'Responsável_id', NEW.Responsável_id,
+            'responsavel_id', NEW.responsavel_id,
             'variacao_id', NEW.variacao_id
         ),
         COALESCE(@app_user, USER())
@@ -696,7 +695,7 @@ BEGIN
             'id', OLD.id,
             'produto_id', OLD.produto_id,
             'quantidade', OLD.quantidade,
-            'Responsável_id', OLD.Responsável_id,
+            'responsavel_id', OLD.responsavel_id,
             'variacao_id', OLD.variacao_id
         ),
         JSON_OBJECT(
@@ -704,7 +703,7 @@ BEGIN
             'id', NEW.id,
             'produto_id', NEW.produto_id,
             'quantidade', NEW.quantidade,
-            'Responsável_id', NEW.Responsável_id,
+            'responsavel_id', NEW.responsavel_id,
             'variacao_id', NEW.variacao_id
         ),
         COALESCE(@app_user, USER())
@@ -728,7 +727,7 @@ BEGIN
             'id', OLD.id,
             'produto_id', OLD.produto_id,
             'quantidade', OLD.quantidade,
-            'Responsável_id', OLD.Responsável_id,
+            'responsavel_id', OLD.responsavel_id,
             'variacao_id', OLD.variacao_id
         ),
         COALESCE(@app_user, USER())
@@ -842,14 +841,14 @@ BEGIN
         JSON_OBJECT(
             'criado_em', NEW.criado_em,
             'data_pagamento', NEW.data_pagamento,
-            'Fornecedor_id', NEW.Fornecedor_id,
+            'fornecedor_id', NEW.fornecedor_id,
             'id', NEW.id,
             'mes_referencia', NEW.mes_referencia,
             'status', NEW.status,
             'total_comissao', NEW.total_comissao,
             'total_vendas', NEW.total_vendas,
             'valor_liquido', NEW.valor_liquido,
-            'valor_Pago', NEW.valor_Pago
+            'valor_pago', NEW.valor_pago
         ),
         COALESCE(@app_user, USER())
     );
@@ -870,26 +869,26 @@ BEGIN
         JSON_OBJECT(
             'criado_em', OLD.criado_em,
             'data_pagamento', OLD.data_pagamento,
-            'Fornecedor_id', OLD.Fornecedor_id,
+            'fornecedor_id', OLD.fornecedor_id,
             'id', OLD.id,
             'mes_referencia', OLD.mes_referencia,
             'status', OLD.status,
             'total_comissao', OLD.total_comissao,
             'total_vendas', OLD.total_vendas,
             'valor_liquido', OLD.valor_liquido,
-            'valor_Pago', OLD.valor_Pago
+            'valor_pago', OLD.valor_pago
         ),
         JSON_OBJECT(
             'criado_em', NEW.criado_em,
             'data_pagamento', NEW.data_pagamento,
-            'Fornecedor_id', NEW.Fornecedor_id,
+            'fornecedor_id', NEW.fornecedor_id,
             'id', NEW.id,
             'mes_referencia', NEW.mes_referencia,
             'status', NEW.status,
             'total_comissao', NEW.total_comissao,
             'total_vendas', NEW.total_vendas,
             'valor_liquido', NEW.valor_liquido,
-            'valor_Pago', NEW.valor_Pago
+            'valor_pago', NEW.valor_pago
         ),
         COALESCE(@app_user, USER())
     );
@@ -910,14 +909,14 @@ BEGIN
         JSON_OBJECT(
             'criado_em', OLD.criado_em,
             'data_pagamento', OLD.data_pagamento,
-            'Fornecedor_id', OLD.Fornecedor_id,
+            'fornecedor_id', OLD.fornecedor_id,
             'id', OLD.id,
             'mes_referencia', OLD.mes_referencia,
             'status', OLD.status,
             'total_comissao', OLD.total_comissao,
             'total_vendas', OLD.total_vendas,
             'valor_liquido', OLD.valor_liquido,
-            'valor_Pago', OLD.valor_Pago
+            'valor_pago', OLD.valor_pago
         ),
         COALESCE(@app_user, USER())
     );
@@ -1051,7 +1050,7 @@ BEGIN
             'ativo', NEW.ativo,
             'data_homologacao', NEW.data_homologacao,
             'escola_id', NEW.escola_id,
-            'Fornecedor_id', NEW.Fornecedor_id,
+            'fornecedor_id', NEW.fornecedor_id,
             'id', NEW.id
         ),
         COALESCE(@app_user, USER())
@@ -1074,7 +1073,7 @@ BEGIN
             'ativo', OLD.ativo,
             'data_homologacao', OLD.data_homologacao,
             'escola_id', OLD.escola_id,
-            'Fornecedor_id', OLD.Fornecedor_id,
+            'fornecedor_id', OLD.fornecedor_id,
             'id', OLD.id
         ),
         JSON_OBJECT(
@@ -1134,7 +1133,7 @@ BEGIN
             'criado_em', NEW.criado_em,
             'escola_id', NEW.escola_id,
             'id', NEW.id,
-            'Responsável_id', NEW.Responsável_id,
+            'responsavel_id', NEW.responsavel_id,
             'status', NEW.status,
             'total', NEW.total
         ),
@@ -1161,7 +1160,7 @@ BEGIN
             'criado_em', OLD.criado_em,
             'escola_id', OLD.escola_id,
             'id', OLD.id,
-            'Responsável_id', OLD.Responsável_id,
+            'responsavel_id', OLD.responsavel_id,
             'status', OLD.status,
             'total', OLD.total
         ),
@@ -1172,7 +1171,7 @@ BEGIN
             'criado_em', NEW.criado_em,
             'escola_id', NEW.escola_id,
             'id', NEW.id,
-            'Responsável_id', NEW.Responsável_id,
+            'responsavel_id', NEW.responsavel_id,
             'status', NEW.status,
             'total', NEW.total
         ),
@@ -1199,7 +1198,7 @@ BEGIN
             'criado_em', OLD.criado_em,
             'escola_id', OLD.escola_id,
             'id', OLD.id,
-            'Responsável_id', OLD.Responsável_id,
+            'responsavel_id', OLD.responsavel_id,
             'status', OLD.status,
             'total', OLD.total
         ),

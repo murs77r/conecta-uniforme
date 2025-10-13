@@ -16,7 +16,7 @@ $gestorId = (int)($_SESSION['user_id'] ?? 0);
 $escolaId = $_SESSION['escola_id'] ?? null;
 
 if (!$escolaId && $gestorId) {
-    $sql = "SELECT escola_id FROM Gestor WHERE id = $gestorId LIMIT 1";
+    $sql = "SELECT escola_id FROM gestor WHERE id = $gestorId LIMIT 1";
     $resultado = $con->query($sql);
     if ($resultado && $resultado->num_rows > 0) {
         $escolaId = (int)$resultado->fetch_assoc()['escola_id'];

@@ -18,10 +18,10 @@ $produto = new Produto();
 $carrinho = new Carrinho();
 $pedido = new Pedido();
 
-$Responsável_id = $_SESSION['user_id'];
+$responsavel_id = $_SESSION['user_id'];
 
 // Buscar dados do aluno vinculado
-$sql = "SELECT aluno_id FROM Responsável WHERE id = $Responsável_id";
+$sql = "SELECT aluno_id FROM responsavel WHERE id = $responsavel_id";
 $result = $con->query($sql);
 $resp_data = $result->fetch_assoc();
 $aluno_id = $resp_data['aluno_id'];
@@ -35,11 +35,11 @@ $mensagem = '';
 $erro = '';
 
 // Buscar dados
-$itens_carrinho = $carrinho->listar($Responsável_id);
-$meus_pedidos = $pedido->listarPorResponsavel($Responsável_id);
+$itens_carrinho = $carrinho->listar($responsavel_id);
+$meus_pedidos = $pedido->listarPorResponsavel($responsavel_id);
 
 // Estatísticas
-$total_carrinho = $carrinho->contarItens($Responsável_id);
+$total_carrinho = $carrinho->contarItens($responsavel_id);
 $total_pedidos = count($meus_pedidos);
 
 require __DIR__ . '/../View/dashboard-responsavel.view.php';

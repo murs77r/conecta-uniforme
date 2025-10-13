@@ -48,8 +48,8 @@ class Aluno {
     public function listarPorEscola($escola_id) {
         $escola_id = (int)$escola_id;
         
-        $sql = "SELECT a.*, 
-                (SELECT COUNT(*) FROM Responsável WHERE aluno_id = a.id) as total_responsaveis
+    $sql = "SELECT a.*, 
+        (SELECT COUNT(*) FROM responsavel WHERE aluno_id = a.id) as total_responsaveis
                 FROM aluno a
                 WHERE a.escola_id = $escola_id
                 ORDER BY a.serie, a.nome";
@@ -59,8 +59,8 @@ class Aluno {
     }
 
     public function listarTodos() {
-        $sql = "SELECT a.*, e.nome as escola_nome,
-                (SELECT COUNT(*) FROM Responsável WHERE aluno_id = a.id) as total_responsaveis
+    $sql = "SELECT a.*, e.nome as escola_nome,
+        (SELECT COUNT(*) FROM responsavel WHERE aluno_id = a.id) as total_responsaveis
                 FROM aluno a
                 INNER JOIN escola e ON a.escola_id = e.id
                 ORDER BY e.nome, a.nome";

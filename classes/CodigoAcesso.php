@@ -14,11 +14,11 @@ class CodigoAcesso {
         
         // Carrega configurações do .env
         $this->mailersendApiKey = env('MAILERSEND_API_KEY');
-        $this->mailersendFromEmail = env('MAILERSEND_FROM_EMAIL', 'noreply@seudominio.com.br');
-        $this->mailersendFromName = env('MAILERSEND_FROM_NAME', 'Conecta Uniforme');
+        $this->mailersendFromEmail = env('MAILERSEND_FROM_EMAIL');
+        $this->mailersendFromName = env('MAILERSEND_FROM_NAME');
         
         // Valida se a API key está configurada
-        if (empty($this->mailersendApiKey) || $this->mailersendApiKey === 'sua_chave_api_aqui') {
+        if (empty($this->mailersendApiKey)) {
             if (env('APP_ENV') !== 'production') {
                 error_log("AVISO: MAILERSEND_API_KEY não configurada no arquivo .env");
             }
@@ -42,7 +42,7 @@ class CodigoAcesso {
         
         // Gerar novo código
         $codigo = $this->gerarCodigo();
-        $minutos_expiracao = (int)env('CODIGO_ACESSO_EXPIRACAO', 600) / 60;
+        $minutos_expiracao = (int)600 / 60;
         $expira_em = date('Y-m-d H:i:s', strtotime("+{$minutos_expiracao} minutes"));
         
         $sql = "INSERT INTO codigo_acesso (email, codigo, tipo_usuario, expira_em, usado) 

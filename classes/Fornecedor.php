@@ -22,7 +22,7 @@ class Fornecedor {
     public function salvar() {
         global $con;
         try {
-            $stmt = $con->prepare('INSERT INTO Fornecedor (nome, email, telefone, cnpj, senha, ativo) VALUES (?,?,?,?,?,?)');
+            $stmt = $con->prepare('INSERT INTO fornecedor (nome, email, telefone, cnpj, senha, ativo) VALUES (?,?,?,?,?,?)');
             $stmt->bind_param('sssssi', $this->nome, $this->email, $this->telefone, $this->cnpj, $this->senha, $this->ativo);
             if (!$stmt->execute()) {
                 throw new Exception('Erro ao salvar Fornecedor: ' . $stmt->error);
@@ -38,14 +38,14 @@ class Fornecedor {
     public function ativar() {
         global $con;
         if (!$this->id) return false;
-        $stmt = $con->prepare('UPDATE Fornecedor SET ativo = 1 WHERE id = ?');
+    $stmt = $con->prepare('UPDATE fornecedor SET ativo = 1 WHERE id = ?');
         $stmt->bind_param('i', $this->id);
         return $stmt->execute();
     }
 
     public static function autenticar($email, $senha_plain) {
         global $con;
-        $stmt = $con->prepare('SELECT id, senha, ativo FROM Fornecedor WHERE email = ? LIMIT 1');
+    $stmt = $con->prepare('SELECT id, senha, ativo FROM fornecedor WHERE email = ? LIMIT 1');
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $res = $stmt->get_result()->fetch_assoc();
@@ -59,7 +59,7 @@ class Fornecedor {
     public function vincularEscola($escola_id, $parceiro_desde = null) {
         global $con;
         try {
-            $stmt = $con->prepare('INSERT INTO escola_Fornecedor (escola_id, Fornecedor_id, parceiro_desde) VALUES (?,?,?)');
+        $stmt = $con->prepare('INSERT INTO escola_Fornecedor (escola_id, Fornecedor_id, parceiro_desde) VALUES (?,?,?)');
             $stmt->bind_param('iis', $escola_id, $this->id, $parceiro_desde);
             if (!$stmt->execute()) {
                 throw new Exception('Erro ao vincular Fornecedor: ' . $stmt->error);
@@ -72,7 +72,7 @@ class Fornecedor {
     }
 
     public static function getPorId($id) {
-        $res = consulta_sql('SELECT * FROM Fornecedor WHERE id = ' . intval($id) . ' LIMIT 1');
+    $res = consulta_sql('SELECT * FROM fornecedor WHERE id = ' . intval($id) . ' LIMIT 1');
         if (empty($res)) return null;
         $d = $res[0];
         $f = new Fornecedor($d['nome'], $d['email'], $d['telefone'], $d['cnpj']);

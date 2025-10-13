@@ -20,7 +20,7 @@ $pedido = new Pedido();
 
 // Buscar escola do Gestor
 $Gestor_id = $_SESSION['user_id'];
-$sql = "SELECT escola_id FROM Gestor WHERE id = $Gestor_id";
+$sql = "SELECT escola_id FROM gestor WHERE id = $Gestor_id";
 $result = $con->query($sql);
 $escola_data = $result->fetch_assoc();
 $escola_id = $escola_data['escola_id'];

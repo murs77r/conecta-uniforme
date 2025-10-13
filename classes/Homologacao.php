@@ -31,8 +31,8 @@ class Homologacao {
     public function listarFornecedoresHomologados($escola_id) {
         $escola_id = (int)$escola_id;
         
-        $sql = "SELECT f.*, h.data_homologacao, h.ativo
-                FROM Fornecedor f
+    $sql = "SELECT f.*, h.data_homologacao, h.ativo
+        FROM fornecedor f
                 INNER JOIN homologacao h ON f.id = h.Fornecedor_id
                 WHERE h.escola_id = $escola_id
                 ORDER BY f.nome";
@@ -44,8 +44,8 @@ class Homologacao {
     public function listarFornecedoresDisponiveis($escola_id) {
         $escola_id = (int)$escola_id;
         
-        $sql = "SELECT f.*
-                FROM Fornecedor f
+    $sql = "SELECT f.*
+        FROM fornecedor f
                 WHERE f.ativo = 1
                 AND f.id NOT IN (
                     SELECT Fornecedor_id FROM homologacao 
