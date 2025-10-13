@@ -28,7 +28,7 @@ $destinos = [
 		</nav>
 	</div>
     <style>
-        body {margin: 0}
+        body {margin: 0!important}
     </style>
 </header>
 <!-- TODO Yuri: envolver o conteúdo em um `.container` ou `.container-fluid` conforme a página precisar,
