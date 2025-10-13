@@ -23,7 +23,7 @@ SET @escola_id = LAST_INSERT_ID();
 INSERT INTO gestor (nome, email, telefone, escola_id, ativo) 
 VALUES (
     'Maria Santos',
-    'maria.Gestor@escolaexemplo.com.br',
+    'maria.gestor@escolaexemplo.com.br',
     '(11) 98765-4321',
     @escola_id,
     1

@@ -79,7 +79,7 @@ class Pedido {
                 a.nome as aluno_nome, a.matricula as aluno_matricula,
                 e.nome as escola_nome
                 FROM pedido p
-    INNER JOIN responsavel r ON p.Responsável_id = r.id
+    INNER JOIN responsavel r ON p.responsavel_id = r.id
                 INNER JOIN aluno a ON p.aluno_id = a.id
                 INNER JOIN escola e ON p.escola_id = e.id
                 WHERE p.id = $id";
@@ -110,7 +110,7 @@ class Pedido {
         $sql = "SELECT p.*, a.nome as aluno_nome
                 FROM pedido p
                 INNER JOIN aluno a ON p.aluno_id = a.id
-                WHERE p.Responsável_id = $Responsável_id
+                WHERE p.responsavel_id = $Responsável_id
                 ORDER BY p.criado_em DESC";
         
         $result = $this->con->query($sql);
@@ -138,7 +138,7 @@ class Pedido {
         $sql = "SELECT p.*, a.nome as aluno_nome, r.nome as Responsável_nome
                 FROM pedido p
                 INNER JOIN aluno a ON p.aluno_id = a.id
-                INNER JOIN responsavel r ON p.Responsável_id = r.id
+                INNER JOIN responsavel r ON p.responsavel_id = r.id
                 WHERE p.escola_id = $escola_id
                 ORDER BY p.criado_em DESC";
         
