@@ -216,6 +216,27 @@ def validar_cnpj(cnpj):
     return True
 
 
+def validar_cep(cep: str) -> bool:
+    """
+    Valida um CEP brasileiro (apenas tamanho e dígitos)
+    """
+    if not cep:
+        return True
+    somente_digitos = ''.join(filter(str.isdigit, cep))
+    return len(somente_digitos) == 8
+
+
+def validar_telefone(telefone: str) -> bool:
+    """
+    Valida telefone brasileiro (DDD + número)
+    Aceita 10 ou 11 dígitos
+    """
+    if not telefone:
+        return True
+    dig = ''.join(filter(str.isdigit, telefone))
+    return len(dig) in (10, 11)
+
+
 # ============================================
 # FUNÇÕES DE ENVIO DE EMAIL
 # ============================================

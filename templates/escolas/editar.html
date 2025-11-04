@@ -70,6 +70,14 @@
                             <input type="text" class="form-control" id="cep" name="cep" value="{{ escola.cep or '' }}">
                         </div>
                     </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">Gestores Escolares</h5>
+                    <p class="text-muted">Gerencie os gestores responsáveis.</p>
+                    <div id="gestoresLista" class="vstack gap-3"></div>
+                    <button type="button" class="btn btn-outline-primary mt-2" id="addGestor">
+                        <i class="bi bi-person-plus"></i> Adicionar Gestor
+                    </button>
                     
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{{ url_for('escolas.listar') }}" class="btn btn-secondary">
@@ -84,4 +92,56 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const lista = document.getElementById('gestoresLista');
+  const btn = document.getElementById('addGestor');
+  let idx = 0;
+  function gestorCard(i){
+    return `
+    <div class="card border" data-idx="${i}">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Nome do Gestor *</label>
+            <input type="text" class="form-control" name="gestores[${i}][nome]" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="gestores[${i}][email]">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Telefone</label>
+            <input type="text" class="form-control" name="gestores[${i}][telefone]">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">CPF</label>
+            <input type="text" class="form-control" name="gestores[${i}][cpf]" id="cpf">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tipo de Gestor</label>
+            <input type="text" class="form-control" name="gestores[${i}][tipo_gestor]" placeholder="Diretor, Coordenador, Financeiro...">
+          </div>
+          <div class="col-md-12 text-end">
+            <button type="button" class="btn btn-outline-danger btn-sm remover">
+              <i class="bi bi-trash"></i> Remover
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+  btn.addEventListener('click', function(){
+    lista.insertAdjacentHTML('beforeend', gestorCard(idx++));
+  });
+  lista.addEventListener('click', function(e){
+    if(e.target.closest('.remover')){
+      e.target.closest('.card').remove();
+    }
+  });
+})();
+</script>
 {% endblock %}

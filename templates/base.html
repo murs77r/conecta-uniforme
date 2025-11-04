@@ -12,7 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     
     <style>
         /* Garante que o botão de fechar do modal de flash ocupe 100% da largura SEMPRE */
@@ -70,6 +70,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('fornecedores.listar') }}">
                             <i class="bi bi-truck"></i> Fornecedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('gestores.minha') }}">
+                            <i class="bi bi-people"></i> Gestores
                         </a>
                     </li>
                     {% endif %}
@@ -206,6 +211,39 @@
                 window.addEventListener('load', showFlashModal);
             }
         })();
+    </script>
+
+    <!-- Máscaras/validações globais: CPF, CNPJ, CEP, TELEFONE -->
+    <script>
+    (function(){
+      function onlyDigits(v){return (v||'').replace(/\D+/g,'');}
+      function maskCPF(v){v=onlyDigits(v).slice(0,11);return v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');}
+      function maskCNPJ(v){v=onlyDigits(v).slice(0,14);return v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');}
+      function maskCEP(v){v=onlyDigits(v).slice(0,8);return v.replace(/(\d{5})(\d{1,3})$/,'$1-$2');}
+      function maskFone(v){v=onlyDigits(v).slice(0,11);return v.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{4,5})(\d{4})$/,'$1-$2');}
+
+      function isCPFValid(v){v=onlyDigits(v);if(v.length!==11||/(\d)\1{10}/.test(v))return false;var s=0;for(let i=0;i<9;i++)s+=parseInt(v[i])*(10-i);var d1=(s*10)%11;d1=d1===10?0:d1;if(d1!=v[9])return false;s=0;for(let i=0;i<10;i++)s+=parseInt(v[i])*(11-i);var d2=(s*10)%11;d2=d2===10?0:d2;return d2==v[10];}
+      function isCNPJValid(v){v=onlyDigits(v);if(v.length!==14||/(\d)\1{13}/.test(v))return false;function calc(t){var j=t.length-7,s=0;for(let i=0;i<t.length;i++){s+=parseInt(t[i])*j--;if(j<2)j=9;}var r=s%11;return r<2?0:11-r;}var d1=calc(v.slice(0,12));if(d1!=parseInt(v[12]))return false;var d2=calc(v.slice(0,13));return d2==parseInt(v[13]);}
+
+      function attachMask(selector, masker, validator){
+        document.querySelectorAll(selector).forEach(function(el){
+          el.addEventListener('input', function(){ this.value = masker(this.value); });
+          if(validator){
+            el.addEventListener('blur', function(){
+              var ok = validator(this.value);
+              this.classList.toggle('is-invalid', !ok && this.value.trim()!=='');
+              this.classList.toggle('is-valid', ok);
+            });
+          }
+        });
+      }
+
+      // Seletores por id ou name comuns no projeto (incluindo campos aninhados)
+      attachMask('input#cpf, input[name="cpf"], input[name*="[cpf]"]', maskCPF, isCPFValid);
+      attachMask('input#cnpj, input[name="cnpj"], input[name*="[cnpj]"]', maskCNPJ, isCNPJValid);
+      attachMask('input#cep, input[name="cep"], input[name*="[cep]"]', maskCEP);
+      attachMask('input#telefone, input[name="telefone"], input[name*="[telefone]"], input[name*="telefone"]', maskFone);
+    })();
     </script>
     
     <!-- Scripts adicionais -->

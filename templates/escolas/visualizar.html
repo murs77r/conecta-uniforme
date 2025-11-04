@@ -7,9 +7,14 @@
     <div class="col-md-10 offset-md-1">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2><i class="bi bi-building"></i> Detalhes da Escola</h2>
-            <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-warning">
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('gestores.listar_por_escola', escola_id=escola.id) }}" class="btn btn-primary">
+                <i class="bi bi-people"></i> Gestores
+              </a>
+              <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-warning">
                 <i class="bi bi-pencil"></i> Editar
-            </a>
+              </a>
+            </div>
         </div>
         
         <div class="card mb-4">
@@ -51,9 +56,11 @@
                 </dl>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-body">
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-body">
                 <h5 class="card-title mb-3">Fornecedores Homologados</h5>
                 {% if usuario_logado and usuario_logado.tipo == 'administrador' %}
                 <div class="mb-3">
@@ -112,7 +119,42 @@
                 {% else %}
                 <p class="text-muted">Nenhum fornecedor homologado ainda.</p>
                 {% endif %}
+              </div>
             </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-body">
+                <h5 class="card-title mb-3">Gestores Escolares</h5>
+                {% if gestores and gestores|length > 0 %}
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Tipo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for g in gestores %}
+                      <tr>
+                        <td>{{ g.nome }}</td>
+                        <td>{{ g.email or '-' }}</td>
+                        <td>{{ g.telefone or '-' }}</td>
+                        <td>{{ g.tipo_gestor or '-' }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhum gestor cadastrado.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="mt-3">

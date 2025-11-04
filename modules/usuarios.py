@@ -13,7 +13,7 @@ Gerencia todos os usuários do sistema (administrador, escola, fornecedor, respo
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from utils import executar_query, validar_email, validar_cpf, validar_cnpj, registrar_log
+from utils import executar_query, validar_email, validar_cpf, validar_cnpj, registrar_log, validar_telefone
 from modules.autenticacao import verificar_sessao, verificar_permissao
 import json
 import re
@@ -115,6 +115,10 @@ def cadastrar():
         flash('Preencha todos os campos obrigatórios.', 'danger')
         return render_template('usuarios/cadastrar.html')
     
+    if telefone and not validar_telefone(telefone):
+        flash('Telefone inválido.', 'danger')
+        return render_template('usuarios/cadastrar.html')
+    
     # Valida o email
     if not validar_email(email):
         flash('Email inválido.', 'danger')
@@ -126,12 +130,12 @@ def cadastrar():
         flash('Tipo de usuário inválido.', 'danger')
         return render_template('usuarios/cadastrar.html')
     
-    # Verifica se o email já existe
-    query_verificar = "SELECT id FROM usuarios WHERE email = %s"
-    usuario_existente = executar_query(query_verificar, (email,), fetchone=True)
+    # Verifica se já existe usuário com mesmo email+tipo
+    query_verificar = "SELECT id FROM usuarios WHERE email = %s AND tipo = %s"
+    usuario_existente = executar_query(query_verificar, (email, tipo), fetchone=True)
     
     if usuario_existente:
-        flash('Este email já está cadastrado.', 'danger')
+        flash('Já existe um usuário com este email para o mesmo tipo selecionado.', 'danger')
         return render_template('usuarios/cadastrar.html')
     
     # Insere o novo usuário
@@ -271,18 +275,22 @@ def editar(id):
     if not nome or not email:
         flash('Preencha todos os campos obrigatórios.', 'danger')
         return render_template('usuarios/editar.html', usuario=usuario)
+
+    if telefone and not validar_telefone(telefone):
+        flash('Telefone inválido.', 'danger')
+        return render_template('usuarios/editar.html', usuario=usuario)
     
     # Valida o email
     if not validar_email(email):
         flash('Email inválido.', 'danger')
         return render_template('usuarios/editar.html', usuario=usuario)
     
-    # Verifica se o email já existe (em outro usuário)
-    query_verificar = "SELECT id FROM usuarios WHERE email = %s AND id != %s"
-    email_existente = executar_query(query_verificar, (email, id), fetchone=True)
+    # Verifica se já existe outro usuário com o mesmo email+tipo
+    query_verificar = "SELECT id FROM usuarios WHERE email = %s AND tipo = %s AND id != %s"
+    email_existente = executar_query(query_verificar, (email, tipo, id), fetchone=True)
     
     if email_existente:
-        flash('Este email já está cadastrado em outro usuário.', 'danger')
+        flash('Já existe outro usuário com este email para o mesmo tipo.', 'danger')
         return render_template('usuarios/editar.html', usuario=usuario)
 
     # Regra: não permitir inativar o último administrador ativo

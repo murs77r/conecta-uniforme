@@ -41,6 +41,7 @@ def solicitar_codigo():
     # Se for POST, processa o formulário
     # Pega o email digitado pelo usuário
     email = request.form.get('email', '').strip().lower()
+    tipo_escolhido = request.form.get('tipo')  # opcional, quando houver múltiplos
     
     # Validação: verifica se o email foi preenchido
     if not email:
@@ -52,19 +53,30 @@ def solicitar_codigo():
         flash('Email inválido. Verifique e tente novamente.', 'danger')
         return render_template('auth/solicitar_codigo.html')
     
-    # Busca o usuário no banco de dados pelo email
-    query_usuario = "SELECT id, nome, email, tipo, ativo FROM usuarios WHERE email = %s"
-    usuario = executar_query(query_usuario, (email,), fetchone=True)
+    # Busca todos usuários (tipos) para o email
+    query_usuario = "SELECT id, nome, email, tipo, ativo FROM usuarios WHERE email = %s AND ativo = TRUE ORDER BY tipo"
+    usuarios_encontrados = executar_query(query_usuario, (email,), fetchall=True)
     
-    # Verifica se o usuário existe
-    if not usuario:
+    # Verifica se o email existe
+    if not usuarios_encontrados:
         flash('Email não cadastrado no sistema.', 'danger')
         return render_template('auth/solicitar_codigo.html')
-    
-    # Verifica se o usuário está ativo
-    if not usuario['ativo']:
-        flash('Usuário inativo. Entre em contato com o administrador.', 'danger')
-        return render_template('auth/solicitar_codigo.html')
+
+    # Se houver mais de um tipo e nenhum escolhido ainda, mostra modal de seleção
+    if len(usuarios_encontrados) > 1 and not tipo_escolhido:
+        tipos_disponiveis = [u['tipo'] for u in usuarios_encontrados]
+        # Renderiza a mesma página com o modal para seleção de tipo
+        return render_template('auth/solicitar_codigo.html', email=email, tipos_disponiveis=tipos_disponiveis, abrir_modal_tipo=True)
+
+    # Determina o usuário alvo
+    if len(usuarios_encontrados) == 1:
+        usuario = usuarios_encontrados[0]
+    else:
+        # Procura pelo tipo escolhido
+        usuario = next((u for u in usuarios_encontrados if u['tipo'] == tipo_escolhido), None)
+        if not usuario:
+            flash('Tipo de usuário inválido para este email.', 'danger')
+            return render_template('auth/solicitar_codigo.html')
     
     # Gera um código de acesso aleatório (6 dígitos)
     codigo = gerar_codigo_acesso()
@@ -90,7 +102,7 @@ def solicitar_codigo():
         print("=" * 60)
         print("CÓDIGO DE LOGIN GERADO")
         print(f"Data/Hora: {agora}")
-        print(f"Usuário: {usuario['nome']} <{usuario['email']}>")
+        print(f"Usuário: {usuario['nome']} <{usuario['email']}> [{usuario['tipo']}]")
         print(f"Código: {codigo}")
         print("=" * 60)
     except Exception:
@@ -103,8 +115,8 @@ def solicitar_codigo():
     if sucesso_envio:
         # Email enviado com sucesso
         flash('Código de acesso enviado para seu email!', 'success')
-        # Redireciona para página de validação
-        return redirect(url_for('autenticacao.validar_codigo', email=email))
+        # Redireciona para página de validação (inclui o tipo)
+        return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo']))
     else:
         # Erro ao enviar email
         flash('Erro ao enviar email. Verifique suas configurações SMTP.', 'warning')
@@ -124,39 +136,41 @@ def validar_codigo():
     POST: Valida o código e cria sessão do usuário
     """
     
-    # Pega o email da URL (passado pela página anterior)
+    # Pega o email e tipo da URL (passado pela página anterior)
     email = request.args.get('email', '')
+    tipo = request.args.get('tipo', '')
     
     # Se for GET, apenas mostra o formulário
     if request.method == 'GET':
-        return render_template('auth/validar_codigo.html', email=email)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
     
     # Se for POST, processa o formulário
     # Pega os dados digitados
     email = request.form.get('email', '').strip().lower()
+    tipo = request.form.get('tipo', '').strip()
     codigo_digitado = request.form.get('codigo', '').strip()
     
     # Validação: verifica se os campos foram preenchidos
     if not email or not codigo_digitado:
         flash('Preencha todos os campos.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
     
-    # Busca o código no banco de dados
+    # Busca o código no banco de dados (amarra email+tipo)
     query_codigo = """
         SELECT ca.id, ca.usuario_id, ca.codigo, ca.data_expiracao, ca.usado,
                u.nome, u.email, u.tipo, u.ativo
         FROM codigos_acesso ca
         JOIN usuarios u ON ca.usuario_id = u.id
-        WHERE u.email = %s AND ca.codigo = %s AND ca.usado = FALSE
+        WHERE u.email = %s AND u.tipo = %s AND ca.codigo = %s AND ca.usado = FALSE
         ORDER BY ca.data_criacao DESC
         LIMIT 1
     """
-    registro_codigo = executar_query(query_codigo, (email, codigo_digitado), fetchone=True)
+    registro_codigo = executar_query(query_codigo, (email, tipo, codigo_digitado), fetchone=True)
     
     # Verifica se o código existe e está válido
     if not registro_codigo:
         flash('Código inválido ou já utilizado.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
     
     # Verifica se o código expirou
     data_expiracao = registro_codigo['data_expiracao']
@@ -167,7 +181,7 @@ def validar_codigo():
     # Verifica se o usuário está ativo
     if not registro_codigo['ativo']:
         flash('Usuário inativo. Entre em contato com o administrador.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
     
     # Código válido! Marca como usado
     query_marcar_usado = "UPDATE codigos_acesso SET usado = TRUE WHERE id = %s"

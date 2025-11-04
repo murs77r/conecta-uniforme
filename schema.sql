@@ -2,10 +2,6 @@
 -- CONECTA UNIFORME - SCHEMA DO BANCO DE DADOS
 -- ============================================
 -- Este arquivo contém todas as tabelas necessárias para o sistema
--- Execute este script no PostgreSQL para criar o banco de dados
-
--- Criar o banco de dados (execute separadamente se necessário)
--- CREATE DATABASE conecta_uniforme;
 
 -- ============================================
 -- TABELA: usuarios
@@ -15,12 +11,13 @@
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
-    email VARCHAR(200) UNIQUE NOT NULL,
+    email VARCHAR(200) NOT NULL,
     telefone VARCHAR(20),
     tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('administrador', 'escola', 'fornecedor', 'responsavel')),
     ativo BOOLEAN DEFAULT TRUE,
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (email, tipo)
 );
 
 -- ============================================
@@ -96,6 +93,21 @@ CREATE TABLE IF NOT EXISTS responsaveis (
     cidade VARCHAR(100),
     estado VARCHAR(2),
     cep VARCHAR(10),
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABELA: gestores_escolares
+-- Permite cadastrar múltiplos gestores para cada escola
+-- ============================================
+CREATE TABLE IF NOT EXISTS gestores_escolares (
+    id SERIAL PRIMARY KEY,
+    escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+    nome VARCHAR(200) NOT NULL,
+    email VARCHAR(200),
+    telefone VARCHAR(20),
+    cpf VARCHAR(14),
+    tipo_gestor VARCHAR(50), -- ex: diretor, coordenador, financeiro
     data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -217,66 +229,35 @@ CREATE INDEX idx_itens_pedido_pedido ON itens_pedido(pedido_id);
 CREATE INDEX idx_repasses_fornecedor ON repasses_financeiros(fornecedor_id);
 CREATE INDEX idx_logs_usuario ON logs_alteracoes(usuario_id);
 CREATE INDEX idx_logs_tabela ON logs_alteracoes(tabela);
+CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
 
 -- ============================================
--- INSERIR USUÁRIO ADMINISTRADOR PADRÃO
+-- DADOS INICIAIS: usuários por email e tipo (evita duplicidade por conflito)
 -- ============================================
--- Email: admin@conectauniforme.com.br
--- O código de acesso será enviado por email ao fazer login
-INSERT INTO usuarios (nome, email, telefone, tipo, ativo) 
-VALUES ('Administrador', 'admin@conectauniforme.com.br', '(00) 00000-0000', 'administrador', TRUE)
-ON CONFLICT (email) DO NOTHING;
-
--- ============================================
--- INSERIR USUÁRIOS DE EXEMPLO (ESCOLA, FORNECEDOR, RESPONSÁVEL)
--- ============================================
--- Escola
 INSERT INTO usuarios (nome, email, telefone, tipo, ativo)
-VALUES ('Escola Municipal Central', 'diretoria@emcentral.edu.br', '(11) 2345-6789', 'escola', TRUE)
-ON CONFLICT (email) DO NOTHING;
+VALUES
+    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'administrador', TRUE),
+    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'escola', TRUE),
+    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'fornecedor', TRUE),
+    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'responsavel', TRUE),
 
--- Fornecedor
-INSERT INTO usuarios (nome, email, telefone, tipo, ativo)
-VALUES ('Uniformes Alpha Ltda', 'contato@uniformesalpha.com.br', '(11) 99876-5432', 'fornecedor', TRUE)
-ON CONFLICT (email) DO NOTHING;
+    ('joaondss', 'joaondss@class-one.com.br', NULL, 'administrador', TRUE),
+    ('joaondss', 'joaondss@class-one.com.br', NULL, 'escola', TRUE),
+    ('joaondss', 'joaondss@class-one.com.br', NULL, 'fornecedor', TRUE),
+    ('joaondss', 'joaondss@class-one.com.br', NULL, 'responsavel', TRUE),
 
--- Responsável
-INSERT INTO usuarios (nome, email, telefone, tipo, ativo)
-VALUES ('Maria dos Santos', 'maria.santos+responsavel@example.com', '(11) 91234-5678', 'responsavel', TRUE)
-ON CONFLICT (email) DO NOTHING;
+    ('murilosr', 'murilosr@outlook.com.br', NULL, 'administrador', TRUE),
+    ('murilosr', 'murilosr@outlook.com.br', NULL, 'escola', TRUE),
+    ('murilosr', 'murilosr@outlook.com.br', NULL, 'fornecedor', TRUE),
+    ('murilosr', 'murilosr@outlook.com.br', NULL, 'responsavel', TRUE),
 
--- ============================================
--- PERFIS VINCULADOS (detalhes) USANDO os usuários acima
--- Esses inserts usam subselect para obter o id do usuário por email
--- São idempotentes por causa do UNIQUE (usuario_id) e chaves únicas secundárias
--- ============================================
+    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'administrador', TRUE),
+    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'escola', TRUE),
+    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'fornecedor', TRUE),
+    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'responsavel', TRUE),
 
--- Detalhes da escola
-INSERT INTO escolas (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-SELECT u.id, '12.345.678/0001-90', 'Escola Municipal Central', 'Rua das Flores, 123', 'São Paulo', 'SP', '01000-000', TRUE
-FROM usuarios u WHERE u.email = 'diretoria@emcentral.edu.br'
-ON CONFLICT (usuario_id) DO NOTHING;
-
--- Detalhes do fornecedor
-INSERT INTO fornecedores (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-SELECT u.id, '98.765.432/0001-10', 'Uniformes Alpha Ltda', 'Av. Industrial, 456', 'São Paulo', 'SP', '02000-000', TRUE
-FROM usuarios u WHERE u.email = 'contato@uniformesalpha.com.br'
-ON CONFLICT (usuario_id) DO NOTHING;
-
--- Detalhes do responsável
-INSERT INTO responsaveis (usuario_id, cpf, endereco, cidade, estado, cep)
-SELECT u.id, '123.456.789-09', 'Rua das Acácias, 789', 'São Paulo', 'SP', '03000-000'
-FROM usuarios u WHERE u.email = 'maria.santos+responsavel@example.com'
-ON CONFLICT (usuario_id) DO NOTHING;
-
--- Opcional: homologar o fornecedor para a escola (facilita navegação)
-INSERT INTO homologacao_fornecedores (escola_id, fornecedor_id, ativo, observacoes)
-SELECT e.id, f.id, TRUE, 'Fornecedor homologado para 2025.'
-FROM escolas e
-JOIN fornecedores f ON TRUE
-WHERE e.razao_social = 'Escola Municipal Central' AND f.razao_social = 'Uniformes Alpha Ltda'
-ON CONFLICT (escola_id, fornecedor_id) DO NOTHING;
-
--- ============================================
--- FIM DO SCHEMA
--- ============================================
+    ('victorccanela', 'victorccanela@gmail.com', NULL, 'administrador', TRUE),
+    ('victorccanela', 'victorccanela@gmail.com', NULL, 'escola', TRUE),
+    ('victorccanela', 'victorccanela@gmail.com', NULL, 'fornecedor', TRUE),
+    ('victorccanela', 'victorccanela@gmail.com', NULL, 'responsavel', TRUE)
+ON CONFLICT (email, tipo) DO NOTHING;

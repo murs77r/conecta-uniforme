@@ -12,7 +12,7 @@ Gerencia as escolas cadastradas no sistema
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from utils import executar_query, validar_cnpj, registrar_log
+from utils import executar_query, validar_cnpj, registrar_log, validar_cep, validar_telefone
 from modules.autenticacao import verificar_sessao, verificar_permissao
 import json
 
@@ -119,10 +119,10 @@ def cadastrar():
         flash('CNPJ inválido.', 'danger')
         return render_template('escolas/cadastrar.html')
     
-    # Verifica se email já existe
-    query_email = "SELECT id FROM usuarios WHERE email = %s"
+    # Verifica se email já existe para o tipo escola
+    query_email = "SELECT id FROM usuarios WHERE email = %s AND tipo = 'escola'"
     if executar_query(query_email, (email,), fetchone=True):
-        flash('Email já cadastrado.', 'danger')
+        flash('Email já cadastrado para perfil Escola.', 'danger')
         return render_template('escolas/cadastrar.html')
     
     # Verifica se CNPJ já existe
@@ -159,9 +159,42 @@ def cadastrar():
         flash('Erro ao cadastrar escola.', 'danger')
         return render_template('escolas/cadastrar.html')
     
+    escola_id = resultado_escola['id']
+
+    # Insere gestores escolares (múltiplos)
+    try:
+        # Descobre índices presentes: gestores[<i>][campo]
+        indices = set()
+        for k in request.form.keys():
+            if k.startswith('gestores['):
+                # formato: gestores[IDX][campo]
+                try:
+                    idx = k.split('[', 1)[1].split(']', 1)[0]
+                    indices.add(idx)
+                except Exception:
+                    pass
+        for idx in indices:
+            g_nome = request.form.get(f'gestores[{idx}][nome]', '').strip()
+            if not g_nome:
+                continue
+            g_email = request.form.get(f'gestores[{idx}][email]', '').strip().lower() or None
+            g_tel = request.form.get(f'gestores[{idx}][telefone]', '').strip() or None
+            g_cpf = request.form.get(f'gestores[{idx}][cpf]', '').strip() or None
+            g_tipo = request.form.get(f'gestores[{idx}][tipo_gestor]', '').strip() or None
+            executar_query(
+                """
+                INSERT INTO gestores_escolares (escola_id, nome, email, telefone, cpf, tipo_gestor)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (escola_id, g_nome, g_email, g_tel, g_cpf, g_tipo), commit=True
+            )
+    except Exception as e:
+        # não falhar o cadastro por erro nos gestores; apenas alerta
+        print('Erro ao inserir gestores_escolares:', e)
+    
     # Registra log
     dados_novos = json.dumps({'nome': nome, 'cnpj': cnpj, 'razao_social': razao_social})
-    registrar_log(usuario_logado['id'], 'escolas', resultado_escola['id'], 'INSERT',
+    registrar_log(usuario_logado['id'], 'escolas', escola_id, 'INSERT',
                   dados_novos=dados_novos, descricao='Cadastro de escola')
     
     flash('Escola cadastrada com sucesso!', 'success')
@@ -209,10 +242,20 @@ def visualizar(id):
     
     if not fornecedores:
         fornecedores = []
+
+    # Busca gestores escolares
+    query_gestores = """
+        SELECT id, nome, email, telefone, cpf, tipo_gestor, data_cadastro
+        FROM gestores_escolares
+        WHERE escola_id = %s
+        ORDER BY nome
+    """
+    gestores = executar_query(query_gestores, (id,), fetchall=True) or []
     
     return render_template('escolas/visualizar.html', 
                          escola=escola,
-                         fornecedores=fornecedores)
+                         fornecedores=fornecedores,
+                         gestores=gestores)
 
 
 # ============================================
@@ -358,7 +401,17 @@ def editar(id):
         return redirect(url_for('home'))
     
     if request.method == 'GET':
-        return render_template('escolas/editar.html', escola=escola)
+        # Carrega gestores existentes para exibição
+        gestores = executar_query(
+            """
+            SELECT id, nome, email, telefone, cpf, tipo_gestor
+            FROM gestores_escolares
+            WHERE escola_id = %s
+            ORDER BY nome
+            """,
+            (id,), fetchall=True
+        ) or []
+        return render_template('escolas/editar.html', escola=escola, gestores=gestores)
     
     # Pega os dados do formulário
     nome = request.form.get('nome', '').strip()
@@ -370,6 +423,13 @@ def editar(id):
     cidade = request.form.get('cidade', '').strip()
     estado = request.form.get('estado', '').strip()
     cep = request.form.get('cep', '').strip()
+
+    if telefone and not validar_telefone(telefone):
+        flash('Telefone inválido.', 'danger')
+        return render_template('escolas/editar.html', escola=escola)
+    if cep and not validar_cep(cep):
+        flash('CEP inválido.', 'danger')
+        return render_template('escolas/editar.html', escola=escola)
     
     # Apenas admin pode alterar status
     if usuario_logado['tipo'] == 'administrador':
@@ -406,6 +466,42 @@ def editar(id):
     if not resultado or resultado == 0:
         flash('Erro ao atualizar escola.', 'danger')
         return render_template('escolas/editar.html', escola=escola)
+
+    # Substitui gestores: apaga e reinsere conforme formulário
+    try:
+        executar_query("DELETE FROM gestores_escolares WHERE escola_id = %s", (id,), commit=True)
+        indices = set()
+        for k in request.form.keys():
+            if k.startswith('gestores['):
+                try:
+                    idx = k.split('[', 1)[1].split(']', 1)[0]
+                    indices.add(idx)
+                except Exception:
+                    pass
+        for idx in indices:
+            g_nome = request.form.get(f'gestores[{idx}][nome]', '').strip()
+            if not g_nome:
+                continue
+            g_email = request.form.get(f'gestores[{idx}][email]', '').strip().lower() or None
+            g_tel = request.form.get(f'gestores[{idx}][telefone]', '').strip() or None
+            g_cpf = request.form.get(f'gestores[{idx}][cpf]', '').strip() or None
+            g_tipo = request.form.get(f'gestores[{idx}][tipo_gestor]', '').strip() or None
+            # Validações básicas dos gestores
+            if g_tel and not validar_telefone(g_tel):
+                flash('Telefone de gestor inválido.', 'danger')
+                return render_template('escolas/editar.html', escola=escola)
+            if g_cpf and not validar_cpf(g_cpf):
+                flash('CPF de gestor inválido.', 'danger')
+                return render_template('escolas/editar.html', escola=escola)
+            executar_query(
+                """
+                INSERT INTO gestores_escolares (escola_id, nome, email, telefone, cpf, tipo_gestor)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (id, g_nome, g_email, g_tel, g_cpf, g_tipo), commit=True
+            )
+    except Exception as e:
+        print('Erro ao atualizar gestores_escolares:', e)
     
     # Registra log
     dados_novos = json.dumps({'nome': nome, 'cnpj': cnpj, 'razao_social': razao_social})

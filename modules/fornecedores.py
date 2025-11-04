@@ -12,7 +12,7 @@ Gerencia os fornecedores homologados cadastrados no sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from utils import executar_query, validar_cnpj, registrar_log
+from utils import executar_query, validar_cnpj, registrar_log, validar_cep, validar_telefone
 from modules.autenticacao import verificar_sessao, verificar_permissao
 import json
 
