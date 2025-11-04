@@ -10,7 +10,7 @@ Para executar:
 """
 
 from flask import Flask, render_template, redirect, url_for, session
-from config import SECRET_KEY, DEBUG, PORT
+from config import SECRET_KEY, DEBUG, PORT, CODIGO_ACESSO_TAMANHO, CODIGO_ACESSO_DURACAO_HORAS
 from modules.autenticacao import autenticacao_bp, verificar_sessao
 from modules.usuarios import usuarios_bp
 from modules.escolas import escolas_bp
@@ -152,7 +152,10 @@ def injetar_variaveis():
     
     return {
         'usuario_logado': usuario,
-        'session': session
+        'session': session,
+        # Variáveis de autenticação usadas em templates
+        'CODIGO_ACESSO_TAMANHO': CODIGO_ACESSO_TAMANHO,
+        'CODIGO_ACESSO_DURACAO_HORAS': CODIGO_ACESSO_DURACAO_HORAS,
     }
 
 

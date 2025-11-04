@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-5">
-        <div class="card shadow">
+        <div>
             <div class="card-body p-5">
                 <div class="text-center mb-4">
                     <i class="bi bi-shop text-primary" style="font-size: 4rem;"></i>
@@ -28,8 +28,8 @@
                 <hr class="my-4">
                 
                 <div class="text-center text-muted small">
-                    <p class="mb-0">Você receberá um código de 6 dígitos no seu email.</p>
-                    <p class="mb-0">O código é válido por 24 horas.</p>
+                    <p class="mb-0">Você receberá um código de {{ CODIGO_ACESSO_TAMANHO }} dígitos no seu email.</p>
+                    <p class="mb-0">O código é válido por {{ CODIGO_ACESSO_DURACAO_HORAS }} horas.</p>
                 </div>
             </div>
         </div>

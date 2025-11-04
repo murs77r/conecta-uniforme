@@ -12,7 +12,7 @@ Controla o processo de autenticação e autorização de usuários, garantindo s
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from datetime import datetime, timedelta
 from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email
-from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS
+from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG
 
 # ============================================
 # CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
@@ -109,18 +109,17 @@ def solicitar_codigo():
         # Evita quebrar o fluxo caso o print falhe por algum motivo de encoding
         pass
 
-    # Envia o código por email
+    # Envia o código por email (com timeout configurado)
     sucesso_envio = enviar_codigo_acesso(email, codigo, usuario['nome'])
     
+    # Independente do sucesso do envio, vamos direcionar para a tela de validação
     if sucesso_envio:
-        # Email enviado com sucesso
         flash('Código de acesso enviado para seu email!', 'success')
-        # Redireciona para página de validação (inclui o tipo)
         return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo']))
     else:
-        # Erro ao enviar email
-        flash('Erro ao enviar email. Verifique suas configurações SMTP.', 'warning')
-        return render_template('auth/solicitar_codigo.html')
+        # Em modo dev, permitir seguir e informar via modal na próxima tela
+        flash('Não foi possível enviar o email agora. Você pode inserir o código recebido. Em ambiente de desenvolvimento, o código foi registrado no log.', 'warning')
+        return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo'], aviso_email='1' if DEBUG else '0'))
 
 
 # ============================================
@@ -139,10 +138,11 @@ def validar_codigo():
     # Pega o email e tipo da URL (passado pela página anterior)
     email = request.args.get('email', '')
     tipo = request.args.get('tipo', '')
+    aviso_email = request.args.get('aviso_email', '0')
     
     # Se for GET, apenas mostra o formulário
     if request.method == 'GET':
-        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email=aviso_email, debug=DEBUG)
     
     # Se for POST, processa o formulário
     # Pega os dados digitados
@@ -153,7 +153,7 @@ def validar_codigo():
     # Validação: verifica se os campos foram preenchidos
     if not email or not codigo_digitado:
         flash('Preencha todos os campos.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
     # Busca o código no banco de dados (amarra email+tipo)
     query_codigo = """
@@ -170,7 +170,7 @@ def validar_codigo():
     # Verifica se o código existe e está válido
     if not registro_codigo:
         flash('Código inválido ou já utilizado.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
     # Verifica se o código expirou
     data_expiracao = registro_codigo['data_expiracao']
@@ -181,7 +181,7 @@ def validar_codigo():
     # Verifica se o usuário está ativo
     if not registro_codigo['ativo']:
         flash('Usuário inativo. Entre em contato com o administrador.', 'danger')
-        return render_template('auth/validar_codigo.html', email=email, tipo=tipo)
+        return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
     # Código válido! Marca como usado
     query_marcar_usado = "UPDATE codigos_acesso SET usado = TRUE WHERE id = %s"
@@ -208,7 +208,7 @@ def validar_codigo():
     session['token_sessao'] = token_sessao
     
     # Login realizado com sucesso!
-    flash(f'Bem-vindo(a), {registro_codigo["nome"]}!', 'success')
+    flash(f"Bem-vindo(a), {registro_codigo['nome']}!", 'success')
     
     # Redireciona para a página inicial
     return redirect(url_for('home'))

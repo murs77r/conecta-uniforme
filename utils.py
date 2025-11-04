@@ -264,15 +264,19 @@ def enviar_email(destinatario, assunto, corpo_html):
         parte_html = MIMEText(corpo_html, 'html', 'utf-8')
         mensagem.attach(parte_html)
         
-        # Conecta ao servidor SMTP
-        servidor = smtplib.SMTP(SMTP_CONFIG['server'], SMTP_CONFIG['port'])
+        # Conecta ao servidor SMTP com timeout configurável para não travar
+        timeout = float(SMTP_CONFIG.get('timeout', 10))
+        servidor = smtplib.SMTP(SMTP_CONFIG['server'], SMTP_CONFIG['port'], timeout=timeout)
         
         # Inicia conexão TLS se configurado
         if SMTP_CONFIG['use_tls']:
             servidor.starttls()
         
-        # Faz login no servidor
-        servidor.login(SMTP_CONFIG['username'], SMTP_CONFIG['password'])
+        # Faz login no servidor (se usuário/senha fornecidos)
+        username = SMTP_CONFIG.get('username')
+        password = SMTP_CONFIG.get('password')
+        if username and password:
+            servidor.login(username, password)
         
         # Envia o email
         servidor.send_message(mensagem)

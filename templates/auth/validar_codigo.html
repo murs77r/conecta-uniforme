@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-5">
-        <div class="card shadow">
+        <div>
             <div class="card-body p-5">
                 <div class="text-center mb-4">
                     <i class="bi bi-shield-lock text-success" style="font-size: 4rem;"></i>
@@ -44,6 +44,37 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de aviso de envio de email -->
+<div class="modal fade" id="modalAvisoEmail" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Aviso sobre envio de email</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning" role="alert">
+          <div class="d-flex">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <div>
+              Não conseguimos enviar o email com o código agora.
+              {% if debug %}
+              Como este é um ambiente de desenvolvimento, o código foi registrado no LOG do servidor para testes.
+              {% else %}
+              Tente novamente em alguns minutos ou contate o suporte.
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <p class="mb-0 small text-muted">Se você já recebeu um código anteriormente e ele ainda está válido, pode usá-lo aqui.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendi</button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -52,5 +83,14 @@
     document.getElementById('codigo').addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '');
     });
+
+    // Abre modal de aviso de email quando flag vier da rota
+    (function(){
+      var avisoEmail = "{{ '1' if aviso_email == '1' else '0' }}" === "1";
+      if (avisoEmail) {
+        var modal = new bootstrap.Modal(document.getElementById('modalAvisoEmail'));
+        modal.show();
+      }
+    })();
 </script>
 {% endblock %}

@@ -34,7 +34,8 @@ SMTP_CONFIG = {
     'username': os.getenv('SMTP_USERNAME', ''),
     'password': os.getenv('SMTP_PASSWORD', ''),
     'from_email': os.getenv('SMTP_FROM_EMAIL', 'no-reply@example.com'),
-    'from_name': os.getenv('SMTP_FROM_NAME', 'Conecta Uniforme')
+    'from_name': os.getenv('SMTP_FROM_NAME', 'Conecta Uniforme'),
+    'timeout': int(os.getenv('SMTP_TIMEOUT', '10'))  # Timeout para conexões SMTP
 }
 
 # ============================================

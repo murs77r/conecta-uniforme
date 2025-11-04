@@ -158,10 +158,6 @@
         <div class="modal fade" id="flashModal" tabindex="-1" aria-labelledby="flashModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="flashModalLabel">Aviso</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
                     <div class="modal-body">
                         <div class="vstack gap-2">
                             {% for category, message in messages %}
@@ -171,7 +167,7 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <div class="modal-footer d-grid" style="justify-content: normal!important;">
+                    <div class="modal-footer" style="border-top: 0px ! Important; justify-content: normal !important; padding-top: 0px !important;">
                         <button type="button" class="btn btn-primary flash-close" data-bs-dismiss="modal">Fechar</button>
                     </div>
                 </div>
