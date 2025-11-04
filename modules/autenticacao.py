@@ -116,6 +116,9 @@ def solicitar_codigo():
     if sucesso_envio:
         flash('Código de acesso enviado para seu email!', 'success')
         return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo']))
+    else:
+        # Em modo dev, permitir seguir e informar via modal na próxima tela
+        return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo'], aviso_email='1' if DEBUG else '0'))
 
 
 # ============================================
