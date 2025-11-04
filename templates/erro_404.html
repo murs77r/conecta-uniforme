@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Página não encontrada - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 text-danger"><i class="bi bi-exclamation-triangle-fill"></i> 404</h1>
+    <p class="lead mb-4">A página que você tentou acessar não foi encontrada.</p>
+    <div class="mb-4">
+        <a href="{{ url_for('home') }}" class="btn btn-primary me-2">
+            <i class="bi bi-house"></i> Ir para a Home
+        </a>
+        <a href="{{ url_for('autenticacao.solicitar_codigo') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-box-arrow-in-right"></i> Fazer login
+        </a>
+    </div>
+    <p class="text-muted small">Se o problema persistir, contate o suporte.</p>
+    {% if request and request.path %}
+    <p class="text-muted small">URL solicitada: <code>{{ request.path }}</code></p>
+    {% endif %}
+    {% if g and g.get('request_id') %}
+    <p class="text-muted small">ID da requisição: <code>{{ g.request_id }}</code></p>
+    {% endif %}
+    
+    <hr>
+    <p class="text-muted small">Dica: alguns navegadores pedem <code>/favicon.ico</code> automaticamente. Isso é normal.</p>
+    <p class="text-muted small">Você pode continuar navegando pelo sistema usando o menu acima.</p>
+</div>
+{% endblock %}

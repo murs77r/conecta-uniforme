@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizar Usuário - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-person"></i> Detalhes do Usuário</h2>
+            <a href="{{ url_for('usuarios.editar', id=usuario.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Nome:</dt>
+                    <dd class="col-sm-9">{{ usuario.nome }}</dd>
+                    
+                    <dt class="col-sm-3">Email:</dt>
+                    <dd class="col-sm-9">{{ usuario.email }}</dd>
+                    
+                    <dt class="col-sm-3">Telefone:</dt>
+                    <dd class="col-sm-9">{{ usuario.telefone or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Tipo:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-secondary">{{ usuario.tipo | title }}</span></dd>
+                    
+                    <dt class="col-sm-3">Status:</dt>
+                    <dd class="col-sm-9">
+                        {% if usuario.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-3">Cadastrado em:</dt>
+                    <dd class="col-sm-9">{{ usuario.data_cadastro.strftime('%d/%m/%Y %H:%M') if usuario.data_cadastro else '-' }}</dd>
+                </dl>
+                
+                <hr>
+                
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+                <a href="{{ url_for('usuarios.logs', id=usuario.id) }}" class="btn btn-outline-secondary float-end">
+                    <i class="bi bi-clock-history"></i> Ver Logs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

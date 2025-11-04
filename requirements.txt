@@ -1,0 +1,22 @@
+# ============================================
+# CONECTA UNIFORME - DEPENDÊNCIAS DO PROJETO
+# ============================================
+# Este arquivo lista todas as bibliotecas Python necessárias
+# 
+# Para instalar as dependências, execute:
+#   pip install -r requirements.txt
+
+# Flask - Framework web
+Flask
+
+# PostgreSQL - Driver para banco de dados
+psycopg2-binary
+
+# Werkzeug - Utilitários do Flask
+Werkzeug
+
+# Gunicorn - Servidor WSGI de produção
+gunicorn
+
+# python-dotenv - Carregar variáveis do arquivo .env
+python-dotenv

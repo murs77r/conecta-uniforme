@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Vitrine - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-shop"></i> Vitrine de Uniformes</h2>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Categoria</label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="Camisa">Camisa</option>
+                    <option value="Calça">Calça</option>
+                    <option value="Bermuda">Bermuda</option>
+                    <option value="Saia">Saia</option>
+                    <option value="Agasalho">Agasalho</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Escola</label>
+                <select name="escola" class="form-select">
+                    <option value="">Todas</option>
+                    {% for escola in escolas %}
+                    <option value="{{ escola.id }}">{{ escola.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome do produto" value="{{ filtro_busca }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Produtos -->
+<div class="row">
+    {% for produto in produtos %}
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ produto.nome }}</h5>
+                <p class="card-text small text-muted">{{ produto.descricao[:50] }}...</p>
+                <p class="mb-2"><span class="badge bg-secondary">{{ produto.categoria }}</span></p>
+                <p class="mb-2"><strong>Tamanho:</strong> {{ produto.tamanho }}</p>
+                <p class="mb-2"><strong>Cor:</strong> {{ produto.cor }}</p>
+                <h4 class="text-primary">R$ {{ "%.2f"|format(produto.preco) }}</h4>
+                <p class="small text-muted">Estoque: {{ produto.estoque }}</p>
+                
+                {% if usuario_logado and usuario_logado.tipo == 'responsavel' %}
+                <form method="POST" action="{{ url_for('pedidos.adicionar_carrinho', produto_id=produto.id) }}">
+                    <div class="input-group mb-2">
+                        <input type="number" name="quantidade" class="form-control" value="1" min="1" max="{{ produto.estoque }}">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-cart-plus"></i>
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            Nenhum produto encontrado.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

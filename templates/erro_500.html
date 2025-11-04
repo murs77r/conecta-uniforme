@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Erro no servidor - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 text-danger"><i class="bi bi-bug-fill"></i> 500</h1>
+    <p class="lead mb-4">Ops! Ocorreu um erro interno no servidor.</p>
+    <div class="mb-4">
+        <a href="{{ url_for('home') }}" class="btn btn-primary me-2">
+            <i class="bi bi-house"></i> Ir para a Home
+        </a>
+        <a href="{{ url_for('autenticacao.solicitar_codigo') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-box-arrow-in-right"></i> Fazer login
+        </a>
+    </div>
+    <p class="text-muted small">Se você acabou de fazer uma ação, tente novamente em alguns instantes.</p>
+    {% if g and g.get('request_id') %}
+    <p class="text-muted small">ID da requisição: <code>{{ g.request_id }}</code></p>
+    {% endif %}
+    
+    {% if DEBUG %}
+    <div class="alert alert-warning mt-4 text-start" role="alert">
+        <strong>Ambiente de desenvolvimento:</strong> detalhes do erro devem aparecer no console do servidor.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

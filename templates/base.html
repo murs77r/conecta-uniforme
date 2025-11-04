@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Conecta Uniforme{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <style>
+        /* Garante que o botão de fechar do modal de flash ocupe 100% da largura SEMPRE */
+        .flash-close { width: 100% !important; }
+    </style>
+</head>
+<body>
+    
+    <!-- Barra de navegação -->
+    {% if usuario_logado %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="bi bi-shop"></i> Conecta Uniforme
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    
+                    <!-- Menu para Administrador -->
+                    {% if usuario_logado.tipo == 'administrador' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('usuarios.listar') }}">
+                            <i class="bi bi-people"></i> Usuários
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('usuarios.logs_sistema') }}">
+                            <i class="bi bi-clock-history"></i> Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('escolas.listar') }}">
+                            <i class="bi bi-building"></i> Escolas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('fornecedores.listar') }}">
+                            <i class="bi bi-truck"></i> Fornecedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('repasses.listar') }}">
+                            <i class="bi bi-currency-dollar"></i> Repasses
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Menu para Escola -->
+                    {% if usuario_logado.tipo == 'escola' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('fornecedores.listar') }}">
+                            <i class="bi bi-truck"></i> Fornecedores
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Menu para Fornecedor -->
+                    {% if usuario_logado.tipo == 'fornecedor' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('produtos.vitrine') }}">
+                            <i class="bi bi-box"></i> Meus Produtos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('produtos.cadastrar') }}">
+                            <i class="bi bi-plus-circle"></i> Novo Produto
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('repasses.listar') }}">
+                            <i class="bi bi-currency-dollar"></i> Repasses
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Menu para Responsável -->
+                    {% if usuario_logado.tipo == 'responsavel' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('produtos.vitrine') }}">
+                            <i class="bi bi-shop"></i> Vitrine
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pedidos.ver_carrinho') }}">
+                            <i class="bi bi-cart"></i> Carrinho
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pedidos.listar') }}">
+                            <i class="bi bi-list-check"></i> Meus Pedidos
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Menu comum para todos -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('pedidos.listar') }}">
+                            <i class="bi bi-receipt"></i> Pedidos
+                        </a>
+                    </li>
+                    
+                </ul>
+                
+                <!-- Informações do usuário -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ usuario_logado.nome }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <span class="dropdown-item-text small">
+                                    <strong>Tipo:</strong> {{ usuario_logado.tipo | title }}
+                                </span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('autenticacao.logout') }}">
+                                    <i class="bi bi-box-arrow-right"></i> Sair
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Mensagens Flash como Modal -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="modal fade" id="flashModal" tabindex="-1" aria-labelledby="flashModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="flashModalLabel">Aviso</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="vstack gap-2">
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} m-0" role="alert">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="modal-footer d-grid" style="justify-content: normal!important;">
+                        <button type="button" class="btn btn-primary flash-close" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Conteúdo principal -->
+    <main class="container mt-4 mb-5">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Rodapé -->
+    <footer class="bg-light text-center text-muted py-3 mt-5 fixed-bottom">
+        <div class="container">
+            <p class="mb-0">© 2025 Conecta Uniforme</p>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Abre automaticamente o modal de flash quando existir
+        (function() {
+            function showFlashModal() {
+                var el = document.getElementById('flashModal');
+                if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var modal = new bootstrap.Modal(el);
+                    modal.show();
+                }
+            }
+            // Garante execução após o carregamento dos scripts
+            if (document.readyState === 'complete') {
+                showFlashModal();
+            } else {
+                window.addEventListener('load', showFlashModal);
+            }
+        })();
+    </script>
+    
+    <!-- Scripts adicionais -->
+    {% block scripts %}{% endblock %}
+    
+</body>
+</html>

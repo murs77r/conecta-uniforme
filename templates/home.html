@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Bem-vindo, {{ usuario_logado.nome }}!</h1>
+            <p class="lead">
+                Você está logado como <strong>{{ usuario_logado.tipo | title }}</strong>
+            </p>
+            <hr class="my-4">
+            <p>Selecione uma opção no menu acima para começar.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    
+    <!-- Dashboard para Administrador -->
+    {% if usuario_logado.tipo == 'administrador' %}
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-people text-primary" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Usuários</h5>
+                <p class="card-text">Gerenciar usuários do sistema</p>
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-building text-success" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Escolas</h5>
+                <p class="card-text">Gerenciar escolas cadastradas</p>
+                <a href="{{ url_for('escolas.listar') }}" class="btn btn-success">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-truck text-warning" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Fornecedores</h5>
+                <p class="card-text">Gerenciar fornecedores</p>
+                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-warning">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-currency-dollar text-info" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Repasses</h5>
+                <p class="card-text">Gerenciar repasses financeiros</p>
+                <a href="{{ url_for('repasses.listar') }}" class="btn btn-info">Acessar</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Dashboard para Fornecedor -->
+    {% if usuario_logado.tipo == 'fornecedor' %}
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-box text-primary" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Meus Produtos</h5>
+                <p class="card-text">Visualizar produtos cadastrados</p>
+                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-plus-circle text-success" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Novo Produto</h5>
+                <p class="card-text">Cadastrar novo produto</p>
+                <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-success">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-currency-dollar text-info" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Repasses</h5>
+                <p class="card-text">Ver meus repasses</p>
+                <a href="{{ url_for('repasses.listar') }}" class="btn btn-info">Acessar</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Dashboard para Responsável -->
+    {% if usuario_logado.tipo == 'responsavel' %}
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-shop text-primary" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Vitrine</h5>
+                <p class="card-text">Comprar uniformes escolares</p>
+                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-cart text-success" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Carrinho</h5>
+                <p class="card-text">Ver meu carrinho de compras</p>
+                <a href="{{ url_for('pedidos.ver_carrinho') }}" class="btn btn-success">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-list-check text-info" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Meus Pedidos</h5>
+                <p class="card-text">Ver histórico de pedidos</p>
+                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-info">Acessar</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Dashboard para Escola -->
+    {% if usuario_logado.tipo == 'escola' %}
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-truck text-primary" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Fornecedores</h5>
+                <p class="card-text">Gerenciar fornecedores homologados</p>
+                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-primary">Acessar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-receipt text-success" style="font-size: 3rem;"></i>
+                <h5 class="card-title mt-3">Pedidos</h5>
+                <p class="card-text">Visualizar pedidos realizados</p>
+                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-success">Acessar</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

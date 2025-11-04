@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="bi bi-shop text-primary" style="font-size: 4rem;"></i>
+                    <h2 class="mt-3">Conecta Uniforme</h2>
+                    <p class="text-muted">Entre com seu email para receber o código de acesso</p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control form-control-lg" id="email" name="email" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-envelope"></i> Enviar Código
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center text-muted small">
+                    <p class="mb-0">Você receberá um código de 6 dígitos no seu email.</p>
+                    <p class="mb-0">O código é válido por 24 horas.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

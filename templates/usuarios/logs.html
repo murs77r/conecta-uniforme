@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Logs de Alterações - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-clock-history"></i> Histórico de Alterações
+        </h2>
+        
+        {% if usuario %}
+        <div class="alert alert-info">
+            <strong>Usuário:</strong> {{ usuario.nome }} ({{ usuario.email }})
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Ação</th>
+                                <th>Realizado por</th>
+                                <th>Descrição</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            {% set collapse_id = 'log' ~ log.id %}
+                            <tr>
+                                <td>{{ log.data_alteracao.strftime('%d/%m/%Y %H:%M:%S') if log.data_alteracao else '' }}</td>
+                                <td>
+                                    {% if log.acao == 'INSERT' %}
+                                    <span class="badge bg-success">Criação</span>
+                                    {% elif log.acao == 'UPDATE' %}
+                                    <span class="badge bg-warning">Atualização</span>
+                                    {% elif log.acao == 'DELETE' %}
+                                    <span class="badge bg-danger">Exclusão</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.usuario_nome or 'Sistema' }}</td>
+                                <td>
+                                    <div class="small text-muted">Tabela: <strong>{{ log.tabela }}</strong></div>
+                                    {{ log.descricao or '-' }}
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#{{ collapse_id }}">
+                                        <i class="bi bi-chevron-down"></i> Detalhes
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="{{ collapse_id }}">
+                                <td colspan="5">
+                                    {% if log.acao == 'UPDATE' %}
+                                    <div class="mb-2"><strong>Alterações:</strong></div>
+                                    {% if log.mudancas and log.mudancas|length > 0 %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Campo</th>
+                                                    <th>Antes</th>
+                                                    <th>Depois</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for m in log.mudancas %}
+                                                <tr>
+                                                    <td><code>{{ m.campo }}</code></td>
+                                                    <td>{{ m.antes if m.antes is not none else '-' }}</td>
+                                                    <td>{{ m.depois if m.depois is not none else '-' }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                        <div class="text-muted">Sem diferenças detectadas.</div>
+                                    {% endif %}
+                                    {% elif log.acao == 'INSERT' %}
+                                    <div class="mb-2"><strong>Dados criados:</strong></div>
+                                    {% if log.novos %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Campo</th>
+                                                    <th>Valor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for k, v in log.novos.items() %}
+                                                {% set is_id = (k == 'id') or (k|length > 3 and k[-3:] == '_id') %}
+                                                {% if not is_id %}
+                                                <tr>
+                                                    <td><code>{{ k }}</code></td>
+                                                    <td>{{ v if v is not none else '-' }}</td>
+                                                </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                        <div class="text-muted">Sem dados novos.</div>
+                                    {% endif %}
+                                    {% elif log.acao == 'DELETE' %}
+                                    <div class="mb-2"><strong>Dados removidos:</strong></div>
+                                    {% if log.antigos %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Campo</th>
+                                                    <th>Valor anterior</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for k, v in log.antigos.items() %}
+                                                {% set is_id = (k == 'id') or (k|length > 3 and k[-3:] == '_id') %}
+                                                {% if not is_id %}
+                                                <tr>
+                                                    <td><code>{{ k }}</code></td>
+                                                    <td>{{ v if v is not none else '-' }}</td>
+                                                </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                        <div class="text-muted">Sem dados anteriores.</div>
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">Nenhum log encontrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr>
+
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Validar Código - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="bi bi-shield-lock text-success" style="font-size: 4rem;"></i>
+                    <h2 class="mt-3">Digite o Código</h2>
+                    <p class="text-muted">Enviamos um código de 6 dígitos para<br><strong>{{ email }}</strong></p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('autenticacao.validar_codigo') }}">
+                    <input type="hidden" name="email" value="{{ email }}">
+                    
+                    <div class="mb-3">
+                        <label for="codigo" class="form-label">Código de Acesso</label>
+                        <input type="text" class="form-control form-control-lg text-center" 
+                               id="codigo" name="codigo" 
+                               placeholder="000000" 
+                               maxlength="6" 
+                               pattern="[0-9]{6}"
+                               required 
+                               autofocus>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-check-circle"></i> Validar e Entrar
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <a href="{{ url_for('autenticacao.solicitar_codigo') }}" class="btn btn-link">
+                        <i class="bi bi-arrow-left"></i> Solicitar novo código
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Foca no campo de código e formata a entrada
+    document.getElementById('codigo').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+</script>
+{% endblock %}

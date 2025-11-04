@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizar Escola - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-building"></i> Detalhes da Escola</h2>
+            <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Informações Gerais</h5>
+                <dl class="row">
+                    <dt class="col-sm-3">Nome:</dt>
+                    <dd class="col-sm-9">{{ escola.nome }}</dd>
+                    
+                    <dt class="col-sm-3">Razão Social:</dt>
+                    <dd class="col-sm-9">{{ escola.razao_social }}</dd>
+                    
+                    <dt class="col-sm-3">CNPJ:</dt>
+                    <dd class="col-sm-9">{{ escola.cnpj }}</dd>
+                    
+                    <dt class="col-sm-3">Email:</dt>
+                    <dd class="col-sm-9">{{ escola.email }}</dd>
+                    
+                    <dt class="col-sm-3">Telefone:</dt>
+                    <dd class="col-sm-9">{{ escola.telefone or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Endereço:</dt>
+                    <dd class="col-sm-9">{{ escola.endereco or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Cidade/UF:</dt>
+                    <dd class="col-sm-9">{{ escola.cidade }}/{{ escola.estado }}</dd>
+                    
+                    <dt class="col-sm-3">CEP:</dt>
+                    <dd class="col-sm-9">{{ escola.cep or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Status:</dt>
+                    <dd class="col-sm-9">
+                        {% if escola.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Fornecedores Homologados</h5>
+                {% if usuario_logado and usuario_logado.tipo == 'administrador' %}
+                <div class="mb-3">
+                    <a href="{{ url_for('escolas.homologar_fornecedor', escola_id=escola.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-circle"></i> Adicionar fornecedor homologado
+                    </a>
+                </div>
+                {% endif %}
+                {% if fornecedores %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Razão Social</th>
+                                <th>Data Homologação</th>
+                                <th>Status</th>
+                                {% if usuario_logado and usuario_logado.tipo == 'administrador' %}
+                                <th class="text-end">Ações</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for forn in fornecedores %}
+                            <tr>
+                                <td>{{ forn.nome }}</td>
+                                <td>{{ forn.razao_social }}</td>
+                                <td>{{ forn.data_homologacao.strftime('%d/%m/%Y') if forn.data_homologacao else '-' }}</td>
+                                <td>
+                                    {% if forn.ativo %}
+                                    <span class="badge bg-success">Ativo</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                {% if usuario_logado and usuario_logado.tipo == 'administrador' %}
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('escolas.alterar_status_homologacao', escola_id=escola.id, fornecedor_id=forn.id) }}">
+                                        {% if forn.ativo %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Inativar">
+                                            <i class="bi bi-slash-circle"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Ativar">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhum fornecedor homologado ainda.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{{ url_for('escolas.listar') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
