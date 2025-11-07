@@ -32,7 +32,7 @@
             <button type="submit" class="btn btn-success btn-lg">
               <i class="bi bi-check-circle"></i> Validar e Entrar
             </button>
-            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin">
+            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin" style="display:none;">
               <i class="bi bi-fingerprint"></i> Entrar com Passkey
             </button>
           </div>
@@ -102,6 +102,16 @@
     (function(){
       const btn = document.getElementById('btnPasskeyLogin');
       if(!btn) return;
+      // Mostrar/ocultar conforme email possuir passkey
+      (async function(){
+        try{
+          const email = '{{ email }}'.trim().toLowerCase();
+          if(!email){ btn.style.display='none'; return; }
+          const r = await fetch(`/auth/webauthn/tem?email=${encodeURIComponent(email)}`);
+          const j = await r.json();
+          btn.style.display = j.tem ? '' : 'none';
+        }catch(_){ btn.style.display='none'; }
+      })();
       function b64urlToArrayBuffer(b64url){
         const pad = '='.repeat((4 - b64url.length % 4) % 4);
         const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
@@ -117,7 +127,7 @@
       }
   btn.addEventListener('click', async function(){
     const email = '{{ email }}'.trim().toLowerCase();
-    const tipo = ({{ (tipo or '')|tojson }}).trim();
+  const tipo = "{{ tipo or '' }}".trim();
     if(!email){ alert('Informe o email na etapa anterior.'); return; }
         try{
           const params = new URLSearchParams({email}); if(tipo) params.append('tipo', tipo);

@@ -24,11 +24,9 @@
             <button type="submit" class="btn btn-primary btn-lg" id="btnEnviar">
               <i class="bi bi-envelope"></i> Enviar Código
             </button>
-            {% if passkeys_ativado %}
-            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin">
+            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin" style="display:none;">
               <i class="bi bi-fingerprint"></i> Entrar com Passkey
             </button>
-            {% endif %}
           </div>
                 </form>
                 
@@ -88,7 +86,7 @@
 <script>
 (function(){
   // Abre o modal automaticamente quando solicitado pelo backend
-  const abrir = {{ 'true' if abrir_modal_tipo else 'false' }};
+  const abrir = "{{ '1' if abrir_modal_tipo else '0' }}" === "1";
   if (abrir) {
     const modal = new bootstrap.Modal(document.getElementById('modalTipo'));
     modal.show();
@@ -106,6 +104,26 @@
   // Login via Passkey
   const btnPasskey = document.getElementById('btnPasskeyLogin');
   if(btnPasskey){
+    // Mostrar/ocultar botão conforme email possuir passkey
+    async function atualizarVisibilidadePasskey(){
+      const emailEl = document.getElementById('email');
+      const emailVal = (emailEl.value || '').trim().toLowerCase();
+      if(!emailVal){ btnPasskey.style.display = 'none'; return; }
+      try{
+        const r = await fetch(`/auth/webauthn/tem?email=${encodeURIComponent(emailVal)}`);
+        const j = await r.json();
+        btnPasskey.style.display = j.tem ? '' : 'none';
+      }catch(_){ btnPasskey.style.display = 'none'; }
+    }
+    const emailEl = document.getElementById('email');
+    emailEl.addEventListener('blur', atualizarVisibilidadePasskey);
+    emailEl.addEventListener('input', function(){
+      // Esconde enquanto digita para evitar confusão
+      btnPasskey.style.display = 'none';
+    });
+    // Se já veio com email preenchido, checar
+    if((emailEl.value||'').trim()){ atualizarVisibilidadePasskey(); }
+
     btnPasskey.addEventListener('click', async function(){
       const emailEl = document.getElementById('email');
       const emailVal = (emailEl.value || '').trim().toLowerCase();

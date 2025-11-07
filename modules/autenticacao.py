@@ -14,8 +14,44 @@ from datetime import datetime, timedelta
 from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email
 from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN, WEBAUTHN_DEBUG
 import os, base64, json
-from webauthn import (generate_registration_options, options_to_json, verify_registration_response, generate_authentication_options, verify_authentication_response)
-from webauthn.helpers.structs import (PublicKeyCredentialRpEntity, UserVerificationRequirement, PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential,)
+WEBAUTHN_AVAILABLE = True
+try:
+    from webauthn import (
+        generate_registration_options,
+        options_to_json,
+        verify_registration_response,
+        generate_authentication_options,
+        verify_authentication_response,
+    )
+    from webauthn.helpers.structs import (
+        PublicKeyCredentialDescriptor,
+        RegistrationCredential,
+        AuthenticationCredential,
+    )
+except ImportError:
+    WEBAUTHN_AVAILABLE = False
+    # Permite que o restante da aplicação carregue mesmo sem a lib instalada
+    if DEBUG:
+        print("[AVISO] Biblioteca 'webauthn' não encontrada. Endpoints de passkey indisponíveis.")
+    # Define dummies chamáveis para evitar NameError/None-call, endpoints checarão disponibilidade
+    def _not_available(*args, **kwargs):
+        raise RuntimeError("WebAuthn indisponível")
+    generate_registration_options = _not_available  # type: ignore
+    generate_authentication_options = _not_available  # type: ignore
+    options_to_json = lambda *a, **k: '{}'  # type: ignore
+    verify_registration_response = _not_available  # type: ignore
+    verify_authentication_response = _not_available  # type: ignore
+    class PublicKeyCredentialDescriptor:  # type: ignore
+        def __init__(self, *a, **k):
+            pass
+    class RegistrationCredential:  # type: ignore
+        @staticmethod
+        def parse_raw(data):
+            return None
+    class AuthenticationCredential:  # type: ignore
+        @staticmethod
+        def parse_raw(data):
+            return None
 
 # ============================================
 # CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
@@ -53,7 +89,7 @@ def solicitar_codigo():
     
     # Se for GET, apenas mostra o formulário
     if request.method == 'GET':
-        return render_template('auth/solicitar_codigo.html', passkeys_ativado=True)
+        return render_template('auth/solicitar_codigo.html', passkeys_ativado=False)
     
     # Se for POST, processa o formulário
     # Pega o email digitado pelo usuário
@@ -281,29 +317,36 @@ def pagina_passkeys():
 @autenticacao_bp.route('/webauthn/registro/opcoes')
 def webauthn_registro_opcoes():
     """Gera as opções de criação de credencial para o usuário logado."""
+    if not WEBAUTHN_AVAILABLE:
+        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
 
     # ID de usuário deve ser bytes estáveis (usar id numérico convertido)
-    user_id_bytes = str(usuario['id']).encode('utf-8')
+    # Usar email como identificador (user_handle) para ser independente de tipo
+    email_usuario = (usuario.get('email') or '').strip().lower() if isinstance(usuario, dict) else ''
+    if not email_usuario:
+        return jsonify({'erro':'email_invalido'}), 400
+    user_id_bytes = email_usuario.encode('utf-8')
 
     # Recupera credenciais existentes para excluir de excludeCredentials
-    q = "SELECT credential_id FROM webauthn_credentials WHERE usuario_id = %s AND ativo = TRUE"
-    creds = executar_query(q, (usuario['id'],), fetchall=True) or []
+    q = "SELECT credential_id FROM webauthn_credentials WHERE email = %s AND ativo = TRUE"
+    creds = executar_query(q, (usuario['email'],), fetchall=True)
     if not isinstance(creds, list):
         creds = []
     exclude = [PublicKeyCredentialDescriptor(id=_decode_b64url(c['credential_id'])) for c in creds if isinstance(c, dict) and c.get('credential_id')]
 
     options = generate_registration_options(
-        rp=PublicKeyCredentialRpEntity(id=WEBAUTHN_RP_ID, name=WEBAUTHN_RP_NAME),
+        rp_id=WEBAUTHN_RP_ID,
+        rp_name=WEBAUTHN_RP_NAME,
         user_id=user_id_bytes,
         user_name=usuario['email'],
         user_display_name=usuario['nome'],
         exclude_credentials=exclude,
         authenticator_selection=None,
         attestation="none",
-        user_verification=UserVerificationRequirement.PREFERRED,
+        user_verification="preferred",
     )
     _challenges_registro[usuario['id']] = options.challenge
     return jsonify(json.loads(options_to_json(options)))
@@ -312,6 +355,8 @@ def webauthn_registro_opcoes():
 @autenticacao_bp.route('/webauthn/registro', methods=['POST'])
 def webauthn_registro():
     """Recebe resposta de criação de credencial e valida."""
+    if not WEBAUTHN_AVAILABLE:
+        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
@@ -336,12 +381,12 @@ def webauthn_registro():
     pubkey_b64 = _b64url(verificado.credential_public_key)
     # Salva no banco
     q_ins = """
-        INSERT INTO webauthn_credentials (usuario_id, credential_id, public_key, sign_count, transports, backup_eligible, backup_state, aaguid)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        INSERT INTO webauthn_credentials (usuario_id, email, credential_id, public_key, sign_count, transports, backup_eligible, backup_state, aaguid)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         ON CONFLICT (credential_id) DO NOTHING
     """
     executar_query(q_ins, (
-        usuario['id'], cred_id_b64, pubkey_b64, verificado.sign_count,
+        usuario['id'], usuario['email'], cred_id_b64, pubkey_b64, verificado.sign_count,
         json.dumps(dados.get('transports') or []),
         getattr(verificado, 'backup_eligible', False),
         getattr(verificado, 'backup_state', False),
@@ -356,23 +401,23 @@ def webauthn_registro():
 # ============================================
 @autenticacao_bp.route('/webauthn/login/opcoes')
 def webauthn_login_opcoes():
+    if not WEBAUTHN_AVAILABLE:
+        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     email = request.args.get('email','').strip().lower()
     tipo = request.args.get('tipo','').strip()
     allow = None
     usuario = None
-    if email:
+    if email and isinstance(email, str):
         # Busca usuário (se múltiplos tipos, pode filtrar por tipo)
         q = "SELECT id, nome, email, tipo FROM usuarios WHERE email=%s " + ("AND tipo=%s" if tipo else "") + " LIMIT 1"
         params = (email, tipo) if tipo else (email,)
         usuario = executar_query(q, params, fetchone=True)
-        if not usuario:
+        if not isinstance(usuario, dict) or not usuario:
             return jsonify({'erro':'usuario_nao_encontrado'}), 404
         # Pega credenciais registradas
-        q2 = "SELECT credential_id FROM webauthn_credentials WHERE usuario_id=%s AND ativo=TRUE"
-        usuario_id = usuario.get('id') if isinstance(usuario, dict) else None
-        creds = executar_query(q2, (usuario_id,), fetchall=True) if usuario_id is not None else []
-        if not creds:
-            creds = []
+        q2 = "SELECT credential_id FROM webauthn_credentials WHERE email=%s AND ativo=TRUE"
+        email_lookup = usuario.get('email') if isinstance(usuario, dict) else None
+        creds = executar_query(q2, (email_lookup,), fetchall=True) if email_lookup else []
         if not isinstance(creds, list):
             creds = []
         if creds:
@@ -380,7 +425,7 @@ def webauthn_login_opcoes():
     # allow=None permite credenciais descobríveis (resident)
     options = generate_authentication_options(
         allow_credentials=allow,
-        user_verification=UserVerificationRequirement.PREFERRED,
+        user_verification="preferred",
         rp_id=WEBAUTHN_RP_ID,
     )
     # Guarda challenge na sessão
@@ -393,6 +438,8 @@ def webauthn_login_opcoes():
 
 @autenticacao_bp.route('/webauthn/login', methods=['POST'])
 def webauthn_login():
+    if not WEBAUTHN_AVAILABLE:
+        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     dados = request.get_json(force=True)
     challenge_esperado = session.pop('webauthn_challenge', None)
     if not challenge_esperado:
@@ -402,7 +449,7 @@ def webauthn_login():
     if not cred_id_b64:
         return jsonify({'erro':'credencial_sem_id'}), 400
     # Encontra dono da credencial
-    q = "SELECT wc.usuario_id as uid, wc.public_key, wc.sign_count, u.email, u.tipo FROM webauthn_credentials wc JOIN usuarios u ON u.id = wc.usuario_id WHERE wc.credential_id=%s AND wc.ativo=TRUE"
+    q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
     reg = executar_query(q, (cred_id_b64,), fetchone=True)
     if not isinstance(reg, dict) or not reg:
         return jsonify({'erro':'credencial_desconhecida'}), 404
@@ -423,9 +470,16 @@ def webauthn_login():
     # Atualiza sign_count
     executar_query("UPDATE webauthn_credentials SET sign_count=%s, ultimo_uso=NOW() WHERE credential_id=%s", (verificado.new_sign_count, cred_id_b64), commit=True)
     # Cria sessão normal
-    uid = reg.get('uid')
     email = reg.get('email')
-    tipo = reg.get('tipo')
+    u_lista = executar_query("SELECT id, nome, tipo FROM usuarios WHERE email=%s AND ativo=TRUE ORDER BY tipo", (email,), fetchall=True)
+    if not isinstance(u_lista, list) or len(u_lista) == 0:
+        return jsonify({'erro':'usuario_nao_encontrado'}), 404
+    if len(u_lista) > 1:
+        tipos_disp = [row.get('tipo') for row in u_lista if isinstance(row, dict)]
+        return jsonify({'erro':'selecionar_tipo', 'tipos': tipos_disp}), 200
+    u = u_lista[0]
+    uid = u.get('id')
+    tipo = u.get('tipo')
     # Gera token sessão
     token_sessao = gerar_token_sessao()
     data_expiracao_sessao = datetime.now() + timedelta(days=SESSAO_DURACAO_DIAS)
@@ -441,6 +495,18 @@ def webauthn_login():
     session['usuario_tipo'] = tipo
     session['token_sessao'] = token_sessao
     return jsonify({'status':'ok'})
+
+
+# ============================================
+# WEBAuthn - UTIL: TEM PASSKEY PARA EMAIL?
+# ============================================
+@autenticacao_bp.route('/webauthn/tem')
+def webauthn_tem():
+    email = request.args.get('email','').strip().lower()
+    if not email:
+        return jsonify({'tem': False})
+    reg = executar_query("SELECT 1 FROM webauthn_credentials WHERE email=%s AND ativo=TRUE LIMIT 1", (email,), fetchone=True)
+    return jsonify({'tem': bool(reg)})
 
 
 # ============================================

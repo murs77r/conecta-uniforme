@@ -239,6 +239,7 @@ CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
 CREATE TABLE IF NOT EXISTS webauthn_credentials (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    email VARCHAR(200),                         -- Email vinculado à credencial
     credential_id VARCHAR(200) UNIQUE NOT NULL, -- Base64URL do ID da credencial
     public_key VARCHAR(500) NOT NULL,           -- Base64URL da chave pública (COSE public key)
     sign_count INTEGER DEFAULT 0,               -- Contador para proteção de replay
@@ -252,6 +253,7 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials (
 );
 
 CREATE INDEX IF NOT EXISTS idx_webauthn_usuario ON webauthn_credentials(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_webauthn_email ON webauthn_credentials(email);
 
 -- ============================================
 -- DADOS INICIAIS: usuários por email e tipo (evita duplicidade por conflito)
