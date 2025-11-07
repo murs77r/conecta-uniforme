@@ -20,3 +20,6 @@ gunicorn
 
 # python-dotenv - Carregar variáveis do arquivo .env
 python-dotenv
+
+# WebAuthn / Passkeys support
+webauthn

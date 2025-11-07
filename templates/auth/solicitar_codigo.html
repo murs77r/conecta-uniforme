@@ -13,16 +13,23 @@
                     <p class="text-muted">Entre com seu email para receber o código de acesso</p>
                 </div>
                 
-                <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" id="formLogin">
+        <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" id="formLogin">
                     <input type="hidden" name="tipo" id="tipo" value="">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control form-control-lg" id="email" name="email" value="{{ email or '' }}" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary btn-lg w-100" id="btnEnviar">
-                        <i class="bi bi-envelope"></i> Enviar Código
-                    </button>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg" id="btnEnviar">
+              <i class="bi bi-envelope"></i> Enviar Código
+            </button>
+            {% if passkeys_ativado %}
+            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin">
+              <i class="bi bi-fingerprint"></i> Entrar com Passkey
+            </button>
+            {% endif %}
+          </div>
                 </form>
                 
                 <hr class="my-4">
@@ -64,7 +71,11 @@
 <script>
 (function(){
   // Abre o modal automaticamente quando solicitado pelo backend
-  const abrir = {{ 'true' if abrir_modal_tipo else 'false' if abrir_modal_tipo is not none else 'false' }};
+  {% if abrir_modal_tipo %}
+  const abrir = true;
+  {% else %}
+  const abrir = false;
+  {% endif %}
   if (abrir) {
     const modal = new bootstrap.Modal(document.getElementById('modalTipo'));
     modal.show();
@@ -78,6 +89,81 @@
       document.getElementById('formLogin').submit();
     });
   });
+
+  // Login via Passkey
+  const btnPasskey = document.getElementById('btnPasskeyLogin');
+  if(btnPasskey){
+    btnPasskey.addEventListener('click', async function(){
+      const emailEl = document.getElementById('email');
+      const emailVal = (emailEl.value || '').trim().toLowerCase();
+      if(!emailVal){
+        alert('Digite o email antes de usar Passkey.');
+        emailEl.focus();
+        return;
+      }
+      // Obtém opções
+      const tipoVal = document.getElementById('tipo').value;
+      const params = new URLSearchParams({email: emailVal});
+      if(tipoVal) params.append('tipo', tipoVal);
+      let resp = await fetch(`/auth/webauthn/login/opcoes?${params.toString()}`);
+      let options = await resp.json();
+      if(options.erro){
+        alert('Não foi possível obter opções de Passkey: ' + options.erro);
+        return;
+      }
+      // Converter Base64URL -> ArrayBuffer
+      function b64urlToArrayBuffer(b64url){
+        const pad = '='.repeat((4 - b64url.length % 4) % 4);
+        const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
+        const raw = atob(b64);
+        const buffer = new ArrayBuffer(raw.length);
+        const view = new Uint8Array(buffer);
+        for(let i=0;i<raw.length;i++){view[i]=raw.charCodeAt(i);} return buffer;
+      }
+      if(options.allowCredentials){
+        options.allowCredentials = options.allowCredentials.map(c => ({
+          type: c.type,
+          id: b64urlToArrayBuffer(c.id)
+        }));
+      }
+      options.challenge = b64urlToArrayBuffer(options.challenge);
+      try{
+        const assertion = await navigator.credentials.get({publicKey: options});
+        function arrayBufferToB64url(buf){
+          const bytes = new Uint8Array(buf);
+          let bin = '';
+          bytes.forEach(b=>bin += String.fromCharCode(b));
+          let b64 = btoa(bin).replace(/+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+          return b64;
+        }
+        const data = {
+          id: assertion.id,
+          rawId: arrayBufferToB64url(assertion.rawId),
+          type: assertion.type,
+          response: {
+            authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData),
+            clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON),
+            signature: arrayBufferToB64url(assertion.response.signature),
+            userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null
+          }
+        };
+        const finish = await fetch('/auth/webauthn/login', {
+          method: 'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(data)
+        });
+        const rjson = await finish.json();
+        if(rjson.status === 'ok'){
+          window.location.href = '/home';
+        }else{
+          alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido'));
+        }
+      }catch(e){
+        console.error(e);
+        alert('Falha ao realizar autenticação Passkey.');
+      }
+    });
+  }
 })();
 </script>
 {% endblock %}

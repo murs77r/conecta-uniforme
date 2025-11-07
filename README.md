@@ -19,6 +19,7 @@ O **Conecta Uniforme** é uma plataforma de e-commerce (marketplace) que conecta
 - Sistema de login por código de acesso enviado via email
 - Código válido por 24 horas
 - Sessões seguras
+- Login com Passkey (WebAuthn) – use Windows Hello, Face/Touch ID ou chave de segurança
 
 ### RF03 - Gerenciar Produtos e Vitrine
 - Cadastro de produtos (uniformes)
@@ -49,6 +50,39 @@ O **Conecta Uniforme** é uma plataforma de e-commerce (marketplace) que conecta
 - **PostgreSQL** - Banco de dados
 - **Bootstrap 5** - Interface responsiva
 - **SMTP** - Envio de emails
+- **WebAuthn/Passkeys** – Autenticação sem senha
+
+## 🔐 Passkeys (WebAuthn)
+
+Agora você pode entrar usando Passkeys (chaves de segurança) em navegadores compatíveis:
+
+- Cadastro de Passkey: após fazer login normalmente, acesse a página “Cadastrar/gerenciar Passkey” (link na Home) ou vá para /auth/passkeys e clique em “Cadastrar Passkey”.
+- Login com Passkey: na tela de login, digite seu email e clique em “Entrar com Passkey”.
+
+### Configuração necessária
+
+No arquivo `.env`, configure os parâmetros (especialmente em produção):
+
+```
+WEBAUTHN_RP_ID=seu-dominio.com
+WEBAUTHN_ORIGIN=https://seu-dominio.com
+WEBAUTHN_RP_NAME=Conecta Uniforme
+```
+
+Para desenvolvimento local, os padrões já funcionam com `localhost`:
+
+```
+WEBAUTHN_RP_ID=localhost
+WEBAUTHN_ORIGIN=http://localhost:5000
+```
+
+Certifique-se de instalar as dependências:
+
+```
+pip install -r requirements.txt
+```
+
+E aplicar as alterações de banco (nova tabela `webauthn_credentials`) com o `schema.sql`.
 
 ## 📄 Licença
 

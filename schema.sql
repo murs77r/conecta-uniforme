@@ -232,6 +232,28 @@ CREATE INDEX idx_logs_tabela ON logs_alteracoes(tabela);
 CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
 
 -- ============================================
+-- TABELA: webauthn_credentials
+-- Armazena credenciais Passkey/WebAuthn vinculadas a usuários
+-- Cada usuário pode ter múltiplas credenciais (ex: notebook, celular)
+-- ============================================
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    credential_id VARCHAR(200) UNIQUE NOT NULL, -- Base64URL do ID da credencial
+    public_key VARCHAR(500) NOT NULL,           -- Base64URL da chave pública (COSE public key)
+    sign_count INTEGER DEFAULT 0,               -- Contador para proteção de replay
+    transports VARCHAR(200),                    -- JSON com transports (ex: ["internal"])
+    backup_eligible BOOLEAN DEFAULT FALSE,      -- Se o autenticador é elegível a backup
+    backup_state BOOLEAN DEFAULT FALSE,         -- Se o backup está efetivamente em uso
+    aaguid VARCHAR(50),                         -- Identificador do autenticador
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ultimo_uso TIMESTAMP,
+    ativo BOOLEAN DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_webauthn_usuario ON webauthn_credentials(usuario_id);
+
+-- ============================================
 -- DADOS INICIAIS: usuários por email e tipo (evita duplicidade por conflito)
 -- ============================================
 INSERT INTO usuarios (nome, email, telefone, tipo, ativo)

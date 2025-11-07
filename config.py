@@ -53,6 +53,18 @@ CODIGO_ACESSO_TAMANHO = int(os.getenv('CODIGO_ACESSO_TAMANHO', '6'))
 SESSAO_DURACAO_DIAS = int(os.getenv('SESSAO_DURACAO_DIAS', '7'))
 
 # ============================================
+# CONFIGURAÇÕES DE WEBAuthn / Passkeys
+# ============================================
+# RP_ID deve ser o domínio (sem protocolo) da aplicação em produção.
+# Em desenvolvimento pode usar 'localhost'. Para teste em dispositivos móveis
+# com passkeys, prefira configurar um domínio local (ex: dev.conecta.local) no hosts.
+WEBAUTHN_RP_ID = os.getenv('WEBAUTHN_RP_ID', 'localhost')
+WEBAUTHN_RP_NAME = os.getenv('WEBAUTHN_RP_NAME', 'Conecta Uniforme')
+WEBAUTHN_ORIGIN = os.getenv('WEBAUTHN_ORIGIN', f'http://localhost:{PORT}')
+WEBAUTHN_ALLOW_ATTESTATION = os.getenv('WEBAUTHN_ALLOW_ATTESTATION', 'false').lower() in ('1','true','yes','on')
+WEBAUTHN_DEBUG = os.getenv('WEBAUTHN_DEBUG', 'true').lower() in ('1','true','yes','on')  # ativa prints de verificação
+
+# ============================================
 # CONFIGURAÇÕES DE PAGINAÇÃO
 # ============================================
 ITENS_POR_PAGINA = int(os.getenv('ITENS_POR_PAGINA', '20'))

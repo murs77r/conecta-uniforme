@@ -378,7 +378,13 @@ def registrar_log(usuario_id, tabela, registro_id, acao, dados_antigos=None, dad
     parametros = (usuario_id, tabela, registro_id, acao, dados_antigos, dados_novos, ip_usuario, descricao)
     
     resultado = executar_query(query, parametros, commit=True)
-    return resultado is not None and resultado > 0
+    if resultado is None:
+        return False
+    if isinstance(resultado, int):
+        return resultado > 0
+    if isinstance(resultado, list):
+        return len(resultado) > 0
+    return bool(resultado)
 
 
 # ============================================

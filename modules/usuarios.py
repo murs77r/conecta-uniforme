@@ -12,8 +12,8 @@ Este módulo é responsável por:
 Gerencia todos os usuários do sistema (administrador, escola, fornecedor, responsável)
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from utils import executar_query, validar_email, validar_cpf, validar_cnpj, registrar_log, validar_telefone
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from utils import executar_query, validar_email, registrar_log, validar_telefone
 from modules.autenticacao import verificar_sessao, verificar_permissao
 import json
 import re
@@ -148,7 +148,7 @@ def cadastrar():
     # Executa a query e pega o ID gerado
     resultado = executar_query(query_inserir, (nome, email, telefone, tipo), fetchone=True)
     
-    if not resultado:
+    if not resultado or not isinstance(resultado, dict):
         flash('Erro ao cadastrar usuário.', 'danger')
         return render_template('usuarios/cadastrar.html')
     
@@ -206,15 +206,15 @@ def visualizar(id):
     # Busca informações complementares dependendo do tipo
     info_complementar = None
     
-    if usuario['tipo'] == 'escola':
+    if isinstance(usuario, dict) and usuario['tipo'] == 'escola':
         query_escola = "SELECT * FROM escolas WHERE usuario_id = %s"
         info_complementar = executar_query(query_escola, (id,), fetchone=True)
     
-    elif usuario['tipo'] == 'fornecedor':
+    elif isinstance(usuario, dict) and usuario['tipo'] == 'fornecedor':
         query_fornecedor = "SELECT * FROM fornecedores WHERE usuario_id = %s"
         info_complementar = executar_query(query_fornecedor, (id,), fetchone=True)
     
-    elif usuario['tipo'] == 'responsavel':
+    elif isinstance(usuario, dict) and usuario['tipo'] == 'responsavel':
         query_responsavel = "SELECT * FROM responsaveis WHERE usuario_id = %s"
         info_complementar = executar_query(query_responsavel, (id,), fetchone=True)
     
@@ -265,11 +265,11 @@ def editar(id):
     
     # Apenas administrador pode alterar o tipo e status
     if usuario_logado['tipo'] == 'administrador':
-        tipo = request.form.get('tipo', usuario['tipo'])
+        tipo = request.form.get('tipo', usuario['tipo'] if isinstance(usuario, dict) else '')
         ativo = request.form.get('ativo') == 'on'
     else:
-        tipo = usuario['tipo']
-        ativo = usuario['ativo']
+        tipo = usuario['tipo'] if isinstance(usuario, dict) else ''
+        ativo = usuario['ativo'] if isinstance(usuario, dict) else False
     
     # Validações básicas
     if not nome or not email:
@@ -294,15 +294,15 @@ def editar(id):
         return render_template('usuarios/editar.html', usuario=usuario)
 
     # Regra: não permitir inativar o último administrador ativo
-    if usuario['tipo'] == 'administrador' and usuario['ativo'] and not ativo:
+    if isinstance(usuario, dict) and usuario['tipo'] == 'administrador' and usuario['ativo'] and not ativo:
         q = "SELECT COUNT(*) AS total FROM usuarios WHERE tipo = 'administrador' AND id != %s AND ativo = TRUE"
         r = executar_query(q, (id,), fetchone=True)
-        if not r or int(r['total']) == 0:
+        if isinstance(r, dict) and int(r['total']) == 0:
             flash('Não é possível inativar: seria o último administrador ativo.', 'warning')
             return render_template('usuarios/editar.html', usuario=usuario)
     
     # Salva os dados antigos para o log (RF01.5) convertendo tipos não-serializáveis
-    dados_antigos = json.dumps(dict(usuario), default=str)
+    dados_antigos = json.dumps(dict(usuario) if isinstance(usuario, dict) else {}, default=str)
     
     # Atualiza o usuário
     query_atualizar = """
@@ -373,56 +373,56 @@ def excluir(id):
     bloqueios = []
 
     # Verifica tipo do usuário e dependências
-    tipo = usuario.get('tipo')
+    tipo = usuario.get('tipo') if isinstance(usuario, dict) else None
     if tipo == 'administrador':
         # Não permitir excluir o último administrador ativo
         q = "SELECT COUNT(*) AS total FROM usuarios WHERE tipo = 'administrador' AND id != %s AND ativo = TRUE"
         r = executar_query(q, (id,), fetchone=True)
-        if not r or int(r['total']) == 0:
+        if isinstance(r, dict) and int(r['total']) == 0:
             bloqueios.append('Não é possível excluir: seria o último administrador ativo.')
     elif tipo == 'escola':
         q_escola = "SELECT id FROM escolas WHERE usuario_id = %s"
         escola = executar_query(q_escola, (id,), fetchone=True)
-        if escola:
+        if isinstance(escola, dict):
             escola_id = escola['id']
             # Homologações
             q1 = "SELECT COUNT(*) AS total FROM homologacao_fornecedores WHERE escola_id = %s"
             r1 = executar_query(q1, (escola_id,), fetchone=True)
-            if r1 and int(r1['total']) > 0:
+            if isinstance(r1, dict) and int(r1['total']) > 0:
                 bloqueios.append('Possui fornecedores homologados vinculados.')
             # Produtos da escola
             q2 = "SELECT COUNT(*) AS total FROM produtos WHERE escola_id = %s"
             r2 = executar_query(q2, (escola_id,), fetchone=True)
-            if r2 and int(r2['total']) > 0:
+            if isinstance(r2, dict) and int(r2['total']) > 0:
                 bloqueios.append('Possui produtos vinculados à escola.')
             # Pedidos da escola
             q3 = "SELECT COUNT(*) AS total FROM pedidos WHERE escola_id = %s"
             r3 = executar_query(q3, (escola_id,), fetchone=True)
-            if r3 and int(r3['total']) > 0:
+            if isinstance(r3, dict) and int(r3['total']) > 0:
                 bloqueios.append('Possui pedidos vinculados à escola.')
     elif tipo == 'fornecedor':
         q_forn = "SELECT id FROM fornecedores WHERE usuario_id = %s"
         forn = executar_query(q_forn, (id,), fetchone=True)
-        if forn:
+        if isinstance(forn, dict):
             forn_id = forn['id']
             # Produtos do fornecedor
             q1 = "SELECT COUNT(*) AS total FROM produtos WHERE fornecedor_id = %s"
             r1 = executar_query(q1, (forn_id,), fetchone=True)
-            if r1 and int(r1['total']) > 0:
+            if isinstance(r1, dict) and int(r1['total']) > 0:
                 bloqueios.append('Possui produtos vinculados ao fornecedor.')
             # Repasses do fornecedor
             q2 = "SELECT COUNT(*) AS total FROM repasses_financeiros WHERE fornecedor_id = %s"
             r2 = executar_query(q2, (forn_id,), fetchone=True)
-            if r2 and int(r2['total']) > 0:
+            if isinstance(r2, dict) and int(r2['total']) > 0:
                 bloqueios.append('Possui repasses financeiros vinculados.')
     elif tipo == 'responsavel':
         q_resp = "SELECT id FROM responsaveis WHERE usuario_id = %s"
         resp = executar_query(q_resp, (id,), fetchone=True)
-        if resp:
+        if isinstance(resp, dict):
             resp_id = resp['id']
             q1 = "SELECT COUNT(*) AS total FROM pedidos WHERE responsavel_id = %s"
             r1 = executar_query(q1, (resp_id,), fetchone=True)
-            if r1 and int(r1['total']) > 0:
+            if isinstance(r1, dict) and int(r1['total']) > 0:
                 bloqueios.append('Possui pedidos vinculados ao responsável.')
 
     if bloqueios:
@@ -430,7 +430,7 @@ def excluir(id):
         return redirect(url_for('usuarios.listar'))
 
     # Salva os dados para o log (RF01.5) convertendo tipos não-serializáveis
-    dados_antigos = json.dumps(dict(usuario), default=str)
+    dados_antigos = json.dumps(dict(usuario) if isinstance(usuario, dict) else {}, default=str)
 
     # Exclui o usuário
     query_excluir = "DELETE FROM usuarios WHERE id = %s"
