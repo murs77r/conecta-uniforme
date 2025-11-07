@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Conecta Uniforme - Inicializando{% endblock %}
+{% block content %}
+<div class="d-flex flex-column align-items-center justify-content-center" style="min-height:60vh;">
+  <div class="text-center mb-4">
+    <div class="spinner-border text-primary" style="width:5rem; height:5rem;" role="status">
+      <span class="visually-hidden">Carregando...</span>
+    </div>
+  </div>
+  <h3 class="text-primary">Inicializando o sistema...</h3>
+  <p class="text-muted mb-1" id="status-msg">Verificando conexão com o banco de dados</p>
+  <p class="small text-secondary">Isso pode levar alguns segundos.</p>
+  <div class="progress w-50 mt-3" role="progressbar" aria-label="Tentativas" aria-valuemin="0" aria-valuemax="10">
+    <div id="tentativasBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
+  </div>
+  <p class="small mt-2" id="tentativasTxt">Tentativa 0 de 10</p>
+  <div class="alert alert-danger d-none mt-3" id="erro-box"></div>
+  <button class="btn btn-outline-primary d-none" id="tentar-novamente">Tentar Novamente</button>
+</div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  const MAX_TENTATIVAS = 10;
+  const INTERVALO_MS = 3000; // 3 segundos
+  let tentativas = 0;
+  let timer = null;
+  const barra = document.getElementById('tentativasBar');
+  const txt = document.getElementById('tentativasTxt');
+  const statusMsg = document.getElementById('status-msg');
+  const erroBox = document.getElementById('erro-box');
+  const btnRetry = document.getElementById('tentar-novamente');
+
+  function atualizarUI(){
+    const pct = (tentativas / MAX_TENTATIVAS) * 100;
+    barra.style.width = pct + '%';
+    txt.textContent = `Tentativa ${tentativas} de ${MAX_TENTATIVAS}`;
+  }
+
+  function verificar(){
+    tentativas++;
+    atualizarUI();
+    fetch('/health/db', {cache:'no-store'})
+      .then(r => r.json().then(j => ({ok:r.ok, body:j})))
+      .then(res => {
+        if(res.ok && res.body && res.body.ok){
+          statusMsg.textContent = 'Banco ativo! Redirecionando...';
+          setTimeout(()=>{ window.location.href = '/'; }, 400);
+        } else if(tentativas < MAX_TENTATIVAS) {
+          statusMsg.textContent = 'Ainda indisponível... tentando novamente';
+          timer = setTimeout(verificar, INTERVALO_MS);
+        } else {
+          statusMsg.textContent = 'Não foi possível estabelecer conexão.';
+          erroBox.textContent = 'O banco de dados não respondeu após várias tentativas. Verifique se o serviço está em execução e recarregue a página.';
+          erroBox.classList.remove('d-none');
+          btnRetry.classList.remove('d-none');
+          barra.classList.remove('progress-bar-animated');
+        }
+      })
+      .catch(()=>{
+        if(tentativas < MAX_TENTATIVAS){
+          statusMsg.textContent = 'Erro na verificação... tentando novamente';
+          timer = setTimeout(verificar, INTERVALO_MS);
+        } else {
+          statusMsg.textContent = 'Falha ao verificar conexão.';
+          erroBox.textContent = 'Não foi possível contatar o servidor. Verifique sua conexão ou tente novamente mais tarde.';
+          erroBox.classList.remove('d-none');
+          btnRetry.classList.remove('d-none');
+          barra.classList.remove('progress-bar-animated');
+        }
+      });
+  }
+
+  btnRetry.addEventListener('click', function(){
+    tentativas = 0;
+    erroBox.classList.add('d-none');
+    btnRetry.classList.add('d-none');
+    barra.classList.add('progress-bar-animated');
+    statusMsg.textContent = 'Reiniciando verificação...';
+    atualizarUI();
+    clearTimeout(timer);
+    setTimeout(verificar, 500);
+  });
+
+  // Inicia
+  atualizarUI();
+  verificar();
+})();
+</script>
+{% endblock %}

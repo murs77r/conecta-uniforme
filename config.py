@@ -21,7 +21,8 @@ DB_CONFIG = {
     'port': int(os.getenv('DB_PORT', '5432')),
     'database': os.getenv('DB_NAME', 'conecta_uniforme'),
     'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', '')
+    'password': os.getenv('DB_PASSWORD', ''),
+    'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '3'))
 }
 
 # ============================================

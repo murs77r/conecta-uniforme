@@ -38,6 +38,23 @@
                     <p class="mb-0">Você receberá um código de {{ CODIGO_ACESSO_TAMANHO }} dígitos no seu email.</p>
                     <p class="mb-0">O código é válido por {{ CODIGO_ACESSO_DURACAO_HORAS }} horas.</p>
                 </div>
+                {% if tipos_disponiveis %}
+                <div class="mt-4">
+                  <div class="alert alert-info">
+                    <strong>Este email possui múltiplos perfis.</strong><br>
+                    Selecione abaixo antes de solicitar o código:
+                    <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" class="mt-2" id="formTiposInline">
+                      <input type="hidden" name="email" value="{{ email }}">
+                      <div class="vstack gap-2">
+                        {% for t in tipos_disponiveis %}
+                        <button name="tipo" value="{{ t }}" class="btn btn-outline-primary">{{ t|title }}</button>
+                        {% endfor %}
+                      </div>
+                    </form>
+                    <div class="small text-muted mt-2">Caso não funcione o modal, utilize estes botões.</div>
+                  </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -71,11 +88,7 @@
 <script>
 (function(){
   // Abre o modal automaticamente quando solicitado pelo backend
-  {% if abrir_modal_tipo %}
-  const abrir = true;
-  {% else %}
-  const abrir = false;
-  {% endif %}
+  const abrir = {{ 'true' if abrir_modal_tipo else 'false' }};
   if (abrir) {
     const modal = new bootstrap.Modal(document.getElementById('modalTipo'));
     modal.show();

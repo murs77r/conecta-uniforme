@@ -39,7 +39,8 @@ def conectar_banco():
             port=DB_CONFIG['port'],
             database=DB_CONFIG['database'],
             user=DB_CONFIG['user'],
-            password=DB_CONFIG['password']
+            password=DB_CONFIG['password'],
+            connect_timeout=DB_CONFIG.get('connect_timeout', 3)
         )
         return conexao
     except Exception as e:

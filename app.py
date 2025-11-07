@@ -9,7 +9,7 @@ Para executar:
     python app.py
 """
 
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, jsonify
 from config import SECRET_KEY, DEBUG, PORT, CODIGO_ACESSO_TAMANHO, CODIGO_ACESSO_DURACAO_HORAS
 from modules.autenticacao import autenticacao_bp, verificar_sessao
 from modules.usuarios import usuarios_bp
@@ -19,6 +19,7 @@ from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
 from modules.repasses import repasses_bp
 from modules.gestores import gestores_bp
+from utils import conectar_banco
 
 # ============================================
 # CRIAÇÃO DA APLICAÇÃO FLASK
@@ -72,15 +73,14 @@ def index():
     Página inicial do sistema
     Redireciona conforme o estado de autenticação
     """
-    
-    # Verifica se o usuário está autenticado
+    # 1) Verifica se o banco está ativo; se não, exibe página de carregamento
+    if not banco_esta_ativo():
+        return render_template('carregando.html')
+
+    # 2) Banco ativo: segue fluxo normal de autenticação
     usuario = verificar_sessao()
-    
-    # Se não estiver autenticado, vai para o login
     if not usuario:
         return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    # Se estiver autenticado, vai para a home
     return redirect(url_for('home'))
 
 
@@ -100,6 +100,43 @@ def home():
     
     # Renderiza a home passando os dados do usuário
     return render_template('home.html', usuario=usuario)
+
+
+# ============================================
+# HEALTHCHECK DO BANCO DE DADOS
+# ============================================
+
+def banco_esta_ativo() -> bool:
+    """Tenta abrir uma conexão simples e executar SELECT 1."""
+    try:
+        conexao = conectar_banco()
+        if not conexao:
+            return False
+        cur = None
+        try:
+            cur = conexao.cursor()
+            cur.execute('SELECT 1')
+            return True
+        finally:
+            if cur is not None:
+                try:
+                    cur.close()
+                except Exception:
+                    pass
+            try:
+                conexao.close()
+            except Exception:
+                pass
+    except Exception:
+        return False
+
+
+@app.route('/health/db')
+def health_db():
+    """Endpoint para o front verificar se o banco já está pronto."""
+    if banco_esta_ativo():
+        return jsonify({'ok': True})
+    return jsonify({'ok': False}), 503
 
 
 # ============================================

@@ -14,20 +14,8 @@ from datetime import datetime, timedelta
 from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email
 from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN, WEBAUTHN_DEBUG
 import os, base64, json
-from webauthn import (
-    generate_registration_options,
-    options_to_json,
-    verify_registration_response,
-    generate_authentication_options,
-    verify_authentication_response,
-)
-from webauthn.helpers.structs import (
-    PublicKeyCredentialRpEntity,
-    UserVerificationRequirement,
-    PublicKeyCredentialDescriptor,
-    RegistrationCredential,
-    AuthenticationCredential,
-)
+from webauthn import (generate_registration_options, options_to_json, verify_registration_response, generate_authentication_options, verify_authentication_response)
+from webauthn.helpers.structs import (PublicKeyCredentialRpEntity, UserVerificationRequirement, PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential,)
 
 # ============================================
 # CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
