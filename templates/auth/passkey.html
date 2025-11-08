@@ -75,8 +75,13 @@
         },
         transports: cred.response.getTransports ? cred.response.getTransports() : []
       };
-      const finish = await fetch('/auth/webauthn/registro', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
-      const rjson = await finish.json();
+      const finish = await fetch('/auth/webauthn/registro', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify(data)
+      });
+      if (!finish.ok) throw new Error(`Falha na requisição: ${finish.status} ${finish.statusText}`);
+      const rjson = await finish.json(); // Agora é seguro chamar .json()
       if(rjson.status === 'ok'){
         showMsg('success', 'Passkey cadastrada com sucesso! Você já pode usá-la no próximo login.');
       }else{
