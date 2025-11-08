@@ -44,38 +44,19 @@ def _decode_b64url(data) -> bytes:
 def _load_webauthn_model(model_cls, data):
     """Compat loader for WebAuthn structs across Pydantic v1/v2.
 
-    Nota: Quando "data" já é um dict contendo campos do tipo bytes (ex.: client_data_json,
-    attestation_object, raw_id), evitamos serializar para JSON para não quebrar com
-    "Object of type bytes is not JSON serializable". Em vez disso, validamos direto
-    a partir do objeto python.
+    Estratégia: raw_id deve permanecer bytes (não JSON-safe), enquanto campos internos
+    em 'response' podem ser convertidos apenas se necessário. Pydantic v2 aceita bytes nativamente
+    em model_validate(), então preferimos esse caminho ao invés de JSON serialization.
     """
-    def _to_json_safe(obj):
-        """Recursivamente converte bytes em base64url para permitir JSON + criação correta dos submodels.
-        Mantém outros tipos intactos."""
-        if isinstance(obj, bytes):
-            return _b64url(obj)
-        if isinstance(obj, dict):
-            return {k: _to_json_safe(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [_to_json_safe(v) for v in obj]
-        return obj
-
-    # Se for dict, garantimos estrutura JSON-safe e preferimos os caminhos baseados em JSON
-    # que tendem a montar corretamente submodels aninhados.
+    # Se for dict, usa validação direta preservando bytes onde a biblioteca espera
     if isinstance(data, dict):
-        safe = _to_json_safe(data)
-        payload = json.dumps(safe)
-        if hasattr(model_cls, 'model_validate_json'):
-            return model_cls.model_validate_json(payload)  # Pydantic v2
-        if hasattr(model_cls, 'parse_raw'):
-            return model_cls.parse_raw(payload)  # Pydantic v1
+        # Tenta validação direta que preserve bytes (Pydantic v2 model_validate aceita bytes)
         if hasattr(model_cls, 'model_validate'):
-            return model_cls.model_validate(safe)
+            return model_cls.model_validate(data)  # Pydantic v2 (aceita bytes em campos)
         if hasattr(model_cls, 'parse_obj'):
-            return model_cls.parse_obj(safe)
-        if isinstance(safe, dict):
-            return model_cls(**safe)
-        return model_cls(safe)
+            return model_cls.parse_obj(data)  # Pydantic v1
+        # Fallback direto
+        return model_cls(**data)
 
     # Caso seja string JSON, use os caminhos nativos
     if isinstance(data, str):
