@@ -658,7 +658,7 @@ def webauthn_login():
         print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
     
     # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
-    tipo_escolhido = dados.get('tipo')
+    tipo_escolhido = dados.pop('tipo', None)
     
     # Identifica credencial enviada (ANTES das conversões - precisa ser string base64url)
     cred_id_b64 = dados.get('id') or dados.get('rawId')
