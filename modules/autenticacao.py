@@ -42,8 +42,28 @@ def _decode_b64url(data) -> bytes:
 
 
 def _load_webauthn_model(model_cls, data):
-    """Compat loader for WebAuthn structs across Pydantic v1/v2."""
-    payload = data if isinstance(data, str) else json.dumps(data)
+    """Compat loader for WebAuthn structs across Pydantic v1/v2.
+
+    Nota: Quando "data" já é um dict contendo campos do tipo bytes (ex.: client_data_json,
+    attestation_object, raw_id), evitamos serializar para JSON para não quebrar com
+    "Object of type bytes is not JSON serializable". Em vez disso, validamos direto
+    a partir do objeto python.
+    """
+    # Se já for um dict (possivelmente com bytes), valide diretamente sem serializar
+    if isinstance(data, dict):
+        if hasattr(model_cls, 'model_validate'):
+            return model_cls.model_validate(data)  # Pydantic v2
+        if hasattr(model_cls, 'parse_obj'):
+            return model_cls.parse_obj(data)  # Pydantic v1
+        return model_cls(**data)
+
+    # Caso seja string JSON, use os caminhos nativos
+    if isinstance(data, str):
+        payload = data
+    else:
+        # Para outros tipos serializáveis (sem bytes)
+        payload = json.dumps(data)
+
     if hasattr(model_cls, 'model_validate_json'):
         return model_cls.model_validate_json(payload)
     if hasattr(model_cls, 'parse_raw'):
