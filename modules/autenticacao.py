@@ -15,7 +15,7 @@ from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, envia
 from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN, WEBAUTHN_DEBUG
 import os, base64, json
 from webauthn import generate_registration_options, options_to_json, verify_registration_response, generate_authentication_options, verify_authentication_response
-from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential, AuthenticatorSelectionCriteria, UserVerificationRequirement, AttestationConveyancePreference
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential, AuthenticatorSelectionCriteria, UserVerificationRequirement, AttestationConveyancePreference, AuthenticatorAttestationResponse, AuthenticatorAssertionResponse
 
 # ============================================
 # CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
@@ -490,28 +490,43 @@ def webauthn_registro():
         dados['id'] = _b64url(dados['id'])
 
     # Processa response e converte campos base64url para bytes
+    # Depois cria um objeto AuthenticatorAttestationResponse
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         
         # Converte clientDataJSON
         if 'clientDataJSON' in resp:
             if isinstance(resp['clientDataJSON'], str):
-                resp['client_data_json'] = _decode_b64url(resp['clientDataJSON'])
+                client_data_json_bytes = _decode_b64url(resp['clientDataJSON'])
             else:
-                resp['client_data_json'] = resp['clientDataJSON']
-            resp.pop('clientDataJSON', None)
-        elif 'client_data_json' in resp and isinstance(resp['client_data_json'], str):
-            resp['client_data_json'] = _decode_b64url(resp['client_data_json'])
+                client_data_json_bytes = resp['clientDataJSON']
+        elif 'client_data_json' in resp:
+            if isinstance(resp['client_data_json'], str):
+                client_data_json_bytes = _decode_b64url(resp['client_data_json'])
+            else:
+                client_data_json_bytes = resp['client_data_json']
+        else:
+            client_data_json_bytes = b''
         
         # Converte attestationObject
         if 'attestationObject' in resp:
             if isinstance(resp['attestationObject'], str):
-                resp['attestation_object'] = _decode_b64url(resp['attestationObject'])
+                attestation_object_bytes = _decode_b64url(resp['attestationObject'])
             else:
-                resp['attestation_object'] = resp['attestationObject']
-            resp.pop('attestationObject', None)
-        elif 'attestation_object' in resp and isinstance(resp['attestation_object'], str):
-            resp['attestation_object'] = _decode_b64url(resp['attestation_object'])
+                attestation_object_bytes = resp['attestationObject']
+        elif 'attestation_object' in resp:
+            if isinstance(resp['attestation_object'], str):
+                attestation_object_bytes = _decode_b64url(resp['attestation_object'])
+            else:
+                attestation_object_bytes = resp['attestation_object']
+        else:
+            attestation_object_bytes = b''
+        
+        # Cria o objeto AuthenticatorAttestationResponse
+        dados['response'] = AuthenticatorAttestationResponse(
+            client_data_json=client_data_json_bytes,
+            attestation_object=attestation_object_bytes
+        )
     
     if WEBAUTHN_DEBUG:
         print('Após conversões (registro):')
@@ -520,9 +535,10 @@ def webauthn_registro():
         print(f'  - id: {type(id_val)} = {id_val[:30] + "..." if isinstance(id_val, str) and len(id_val) > 30 else id_val if isinstance(id_val, str) else "N/A"}')
         print(f'  - raw_id: {type(raw_id_val)} (bytes: {len(raw_id_val) if isinstance(raw_id_val, bytes) else "N/A"} bytes)')
         if 'response' in dados:
-            resp_debug = dados['response']
-            print(f'  - response.client_data_json: {type(resp_debug.get("client_data_json"))}')
-            print(f'  - response.attestation_object: {type(resp_debug.get("attestation_object"))}')
+            resp_obj = dados['response']
+            print(f'  - response: {type(resp_obj)}')
+            print(f'  - response.client_data_json: {type(resp_obj.client_data_json)}')
+            print(f'  - response.attestation_object: {type(resp_obj.attestation_object)}')
     
     try:
         if WEBAUTHN_DEBUG:
@@ -531,8 +547,7 @@ def webauthn_registro():
             print(f'    - id: {type(dados.get("id"))}')
             print(f'    - raw_id: {type(dados.get("raw_id"))}')
             if 'response' in dados:
-                print(f'    - response.client_data_json: {type(dados["response"].get("client_data_json"))}')
-                print(f'    - response.attestation_object: {type(dados["response"].get("attestation_object"))}')
+                print(f'    - response: {type(dados["response"])}')
         
         credencial = _load_webauthn_model(RegistrationCredential, dados)
         
@@ -676,49 +691,78 @@ def webauthn_login():
         dados['id'] = _b64url(dados['id'])
     
     # Processa response e converte campos base64url para bytes
+    # Depois cria um objeto AuthenticatorAssertionResponse
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         
         # Converte clientDataJSON
         if 'clientDataJSON' in resp:
             if isinstance(resp['clientDataJSON'], str):
-                resp['client_data_json'] = _decode_b64url(resp['clientDataJSON'])
+                client_data_json_bytes = _decode_b64url(resp['clientDataJSON'])
             else:
-                resp['client_data_json'] = resp['clientDataJSON']
-            resp.pop('clientDataJSON', None)
-        elif 'client_data_json' in resp and isinstance(resp['client_data_json'], str):
-            resp['client_data_json'] = _decode_b64url(resp['client_data_json'])
+                client_data_json_bytes = resp['clientDataJSON']
+        elif 'client_data_json' in resp:
+            if isinstance(resp['client_data_json'], str):
+                client_data_json_bytes = _decode_b64url(resp['client_data_json'])
+            else:
+                client_data_json_bytes = resp['client_data_json']
+        else:
+            client_data_json_bytes = b''
         
         # Converte authenticatorData
         if 'authenticatorData' in resp:
             if isinstance(resp['authenticatorData'], str):
-                resp['authenticator_data'] = _decode_b64url(resp['authenticatorData'])
+                authenticator_data_bytes = _decode_b64url(resp['authenticatorData'])
             else:
-                resp['authenticator_data'] = resp['authenticatorData']
-            resp.pop('authenticatorData', None)
-        elif 'authenticator_data' in resp and isinstance(resp['authenticator_data'], str):
-            resp['authenticator_data'] = _decode_b64url(resp['authenticator_data'])
+                authenticator_data_bytes = resp['authenticatorData']
+        elif 'authenticator_data' in resp:
+            if isinstance(resp['authenticator_data'], str):
+                authenticator_data_bytes = _decode_b64url(resp['authenticator_data'])
+            else:
+                authenticator_data_bytes = resp['authenticator_data']
+        else:
+            authenticator_data_bytes = b''
         
         # Converte signature
-        if 'signature' in resp and isinstance(resp['signature'], str):
-            resp['signature'] = _decode_b64url(resp['signature'])
+        if 'signature' in resp:
+            if isinstance(resp['signature'], str):
+                signature_bytes = _decode_b64url(resp['signature'])
+            else:
+                signature_bytes = resp['signature']
+        else:
+            signature_bytes = b''
         
-        # Converte userHandle se existir
+        # Converte userHandle se existir (opcional)
+        user_handle_bytes = None
         if 'userHandle' in resp:
             if resp['userHandle'] and isinstance(resp['userHandle'], str):
-                resp['user_handle'] = _decode_b64url(resp['userHandle'])
-            resp.pop('userHandle', None)
-        elif 'user_handle' in resp and resp['user_handle'] and isinstance(resp['user_handle'], str):
-            resp['user_handle'] = _decode_b64url(resp['user_handle'])
+                user_handle_bytes = _decode_b64url(resp['userHandle'])
+            elif resp['userHandle']:
+                user_handle_bytes = resp['userHandle']
+        elif 'user_handle' in resp:
+            if resp['user_handle'] and isinstance(resp['user_handle'], str):
+                user_handle_bytes = _decode_b64url(resp['user_handle'])
+            elif resp['user_handle']:
+                user_handle_bytes = resp['user_handle']
+        
+        # Cria o objeto AuthenticatorAssertionResponse
+        dados['response'] = AuthenticatorAssertionResponse(
+            client_data_json=client_data_json_bytes,
+            authenticator_data=authenticator_data_bytes,
+            signature=signature_bytes,
+            user_handle=user_handle_bytes
+        )
     
     if WEBAUTHN_DEBUG:
         print('Após conversões (login):')
         print(f'  - id: {type(dados.get("id"))}')
         print(f'  - raw_id: {type(dados.get("raw_id"))}')
         if 'response' in dados:
-            print(f'  - response.client_data_json: {type(dados["response"].get("client_data_json"))}')
-            print(f'  - response.authenticator_data: {type(dados["response"].get("authenticator_data"))}')
-            print(f'  - response.signature: {type(dados["response"].get("signature"))}')
+            resp_obj = dados['response']
+            print(f'  - response: {type(resp_obj)}')
+            print(f'  - response.client_data_json: {type(resp_obj.client_data_json)}')
+            print(f'  - response.authenticator_data: {type(resp_obj.authenticator_data)}')
+            print(f'  - response.signature: {type(resp_obj.signature)}')
     
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
