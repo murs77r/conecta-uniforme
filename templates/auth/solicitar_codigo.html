@@ -189,25 +189,84 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
       const bytes = new Uint8Array(buf); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
       return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     }
-    btnPasskey.addEventListener('click', async function(){
+    
+    async function realizarLoginPasskey(tipoEscolhido){
       const emailVal = (emailInput.value || '').trim().toLowerCase();
       if(!emailVal){ alert('Digite o email antes de usar Passkey.'); emailInput.focus(); return; }
-      const tipoVal = tipoHidden.value;
-      const params = new URLSearchParams({email: emailVal}); if(tipoVal) params.append('tipo', tipoVal);
+      
+      const params = new URLSearchParams({email: emailVal}); 
+      if(tipoEscolhido) params.append('tipo', tipoEscolhido);
+      
       let resp = await fetch(`/auth/webauthn/login/opcoes?${params.toString()}`);
       let options = await resp.json();
       if(options.erro){ alert('Não foi possível obter opções de Passkey: ' + options.erro); return; }
       if(options.allowCredentials){ options.allowCredentials = options.allowCredentials.map(c=>({type:c.type,id:b64urlToArrayBuffer(c.id)})); }
       options.challenge = b64urlToArrayBuffer(options.challenge);
+      
       try{
         const assertion = await navigator.credentials.get({publicKey: options});
-        const data = { id: assertion.id, rawId: arrayBufferToB64url(assertion.rawId), type: assertion.type, response: { authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData), clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON), signature: arrayBufferToB64url(assertion.response.signature), userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null } };
-        const finish = await fetch('/auth/webauthn/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const data = { 
+          id: assertion.id, 
+          rawId: arrayBufferToB64url(assertion.rawId), 
+          type: assertion.type, 
+          response: { 
+            authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData), 
+            clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON), 
+            signature: arrayBufferToB64url(assertion.response.signature), 
+            userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null 
+          }
+        };
+        
+        // Adiciona o tipo escolhido ao payload
+        if(tipoEscolhido){
+          data.tipo = tipoEscolhido;
+        }
+        
+        const finish = await fetch('/auth/webauthn/login', { 
+          method:'POST', 
+          headers:{'Content-Type':'application/json'}, 
+          body: JSON.stringify(data) 
+        });
         const rjson = await finish.json();
-        if(rjson.status === 'ok'){ window.location.href = '/home'; }
-        else { alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido')); }
-      }catch(e){ console.error(e); alert('Falha ao realizar autenticação Passkey.'); }
-    });
+        
+        if(rjson.status === 'ok'){ 
+          window.location.href = '/home'; 
+        }
+        else if(rjson.erro === 'selecionar_tipo' && Array.isArray(rjson.tipos)){
+          // Múltiplos perfis: abre modal para escolher
+          const lista = modalEl.querySelector('.vstack');
+          if(lista){
+            lista.innerHTML = '';
+            rjson.tipos.forEach(t => {
+              const label = (window.ROTULOS_TIPOS && window.ROTULOS_TIPOS[t]) || (t.charAt(0).toUpperCase()+t.slice(1));
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'btn btn-outline-primary w-100 escolha-tipo-passkey';
+              b.setAttribute('data-tipo', t);
+              b.textContent = label;
+              b.addEventListener('click', async function(){
+                // Fecha modal e refaz login com tipo específico
+                if(modalInstance){ modalInstance.hide(); }
+                // Espera modal fechar
+                await new Promise(r=>setTimeout(r,300));
+                // Chama login novamente com tipo
+                realizarLoginPasskey(t);
+              });
+              lista.appendChild(b);
+            });
+            abrirModalTipos();
+          }
+        }
+        else { 
+          alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido')); 
+        }
+      }catch(e){ 
+        console.error(e); 
+        alert('Falha ao realizar autenticação Passkey.'); 
+      }
+    }
+    
+    btnPasskey.addEventListener('click', () => realizarLoginPasskey(null));
   }
 })();
 </script>

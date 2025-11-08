@@ -12,7 +12,7 @@
         <div class="alert alert-info small">
           <div class="d-flex"><i class="bi bi-info-circle me-2"></i>
             <div>
-              A passkey fica vinculada a este usuário ({{ usuario.email }}, perfil {{ usuario.tipo|title }}). Você pode cadastrar mais de um dispositivo.
+              A passkey fica vinculada ao seu e-mail ({{ usuario.email }}). Após cadastrar, você poderá escolher o perfil de acesso (Administrador, Escola, Fornecedor, Responsável) no momento do login. Você pode cadastrar mais de um dispositivo.
             </div>
           </div>
         </div>
@@ -72,18 +72,19 @@
         response: {
           attestationObject: arrayBufferToB64url(cred.response.attestationObject),
           clientDataJSON: arrayBufferToB64url(cred.response.clientDataJSON)
-        }
+        },
+        transports: cred.response.getTransports ? cred.response.getTransports() : []
       };
       const finish = await fetch('/auth/webauthn/registro', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
       const rjson = await finish.json();
       if(rjson.status === 'ok'){
         showMsg('success', 'Passkey cadastrada com sucesso! Você já pode usá-la no próximo login.');
       }else{
-        showMsg('danger', 'Falha ao cadastrar passkey: ' + (rjson.erro || 'desconhecido'));
+        showMsg('danger', 'Falha ao cadastrar passkey: ' + (rjson.erro || 'desconhecido') + (rjson.detalhes ? ' - ' + rjson.detalhes : ''));
       }
     }catch(e){
-      console.error(e);
-      showMsg('danger', 'Erro ao cadastrar passkey. Verifique suporte do navegador e tente novamente.');
+      console.error('Erro detalhado:', e);
+      showMsg('danger', 'Erro ao cadastrar passkey: ' + e.message + '. Verifique suporte do navegador e tente novamente.');
     }
   });
 })();

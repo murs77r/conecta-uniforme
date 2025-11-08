@@ -341,8 +341,8 @@ def webauthn_registro_opcoes():
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
 
-    # ID de usuário deve ser bytes estáveis (usar id numérico convertido)
-    # Usar email como identificador (user_handle) para ser independente de tipo
+    # ID de usuário deve ser bytes estáveis (usar email como identificador)
+    # Passkey fica vinculada ao EMAIL, não ao perfil específico
     email_usuario = (usuario.get('email') or '').strip().lower() if isinstance(usuario, dict) else ''
     if not email_usuario:
         return jsonify({'erro':'email_invalido'}), 400
@@ -350,7 +350,7 @@ def webauthn_registro_opcoes():
 
     # Recupera credenciais existentes para excluir de excludeCredentials
     q = "SELECT credential_id FROM webauthn_credentials WHERE email = %s AND ativo = TRUE"
-    creds = executar_query(q, (usuario['email'],), fetchall=True)
+    creds = executar_query(q, (email_usuario,), fetchall=True)
     if not isinstance(creds, list):
         creds = []
     exclude = [PublicKeyCredentialDescriptor(id=_decode_b64url(c['credential_id'])) for c in creds if isinstance(c, dict) and c.get('credential_id')]
@@ -359,7 +359,7 @@ def webauthn_registro_opcoes():
         rp_id=WEBAUTHN_RP_ID,
         rp_name=WEBAUTHN_RP_NAME,
         user_id=user_id_bytes,
-        user_name=usuario['email'],
+        user_name=email_usuario,
         user_display_name=usuario['nome'],
         exclude_credentials=exclude,
         authenticator_selection=AuthenticatorSelectionCriteria(
@@ -367,7 +367,8 @@ def webauthn_registro_opcoes():
         ),
         attestation=AttestationConveyancePreference.NONE,
     )
-    _challenges_registro[usuario['id']] = options.challenge
+    # Armazena challenge usando email ao invés de usuario_id
+    _challenges_registro[email_usuario] = options.challenge
     return jsonify(json.loads(options_to_json(options)))
 
 
@@ -377,10 +378,21 @@ def webauthn_registro():
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
+    
+    email_usuario = (usuario.get('email') or '').strip().lower()
+    if not email_usuario:
+        return jsonify({'erro': 'email_invalido'}), 400
+    
     dados = request.get_json(force=True)
-    challenge_esperado = _challenges_registro.get(usuario['id'])
+    challenge_esperado = _challenges_registro.get(email_usuario)
     if not challenge_esperado:
         return jsonify({'erro': 'challenge_expirado'}), 400
+    
+    if WEBAUTHN_DEBUG:
+        print('=== DEBUG REGISTRO PASSKEY ===')
+        print(f'Email: {email_usuario}')
+        print(f'Dados recebidos: {dados}')
+    
     try:
         verificado = verify_registration_response(
             credential=RegistrationCredential.parse_raw(json.dumps(dados)),
@@ -389,27 +401,36 @@ def webauthn_registro():
             expected_origin=WEBAUTHN_ORIGIN,
             require_user_verification=True,
         )
+        if WEBAUTHN_DEBUG:
+            print('Verificação bem-sucedida!')
     except Exception as e:
         if WEBAUTHN_DEBUG:
-            print('Erro verificação registro WebAuthn:', e)
-        return jsonify({'erro': 'verificacao_falhou'}), 400
+            print(f'Erro verificação registro WebAuthn: {type(e).__name__}: {e}')
+            import traceback
+            traceback.print_exc()
+        return jsonify({'erro': 'verificacao_falhou', 'detalhes': str(e)}), 400
 
     cred_id_b64 = _b64url(verificado.credential_id)
     pubkey_b64 = _b64url(verificado.credential_public_key)
-    # Salva no banco
+    # Salva no banco - vinculado ao EMAIL, não ao usuario_id específico
+    # usuario_id pode ser qualquer um dos perfis do email (usamos o atual apenas como referência)
     q_ins = """
         INSERT INTO webauthn_credentials (usuario_id, email, credential_id, public_key, sign_count, transports, backup_eligible, backup_state, aaguid)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         ON CONFLICT (credential_id) DO NOTHING
     """
-    executar_query(q_ins, (
-        usuario['id'], usuario['email'], cred_id_b64, pubkey_b64, verificado.sign_count,
+    resultado = executar_query(q_ins, (
+        usuario['id'], email_usuario, cred_id_b64, pubkey_b64, verificado.sign_count,
         json.dumps(dados.get('transports') or []),
         getattr(verificado, 'backup_eligible', False),
         getattr(verificado, 'backup_state', False),
         _b64url(verificado.aaguid) if getattr(verificado, 'aaguid', None) else None
     ), commit=True)
-    _challenges_registro.pop(usuario['id'], None)
+    
+    if WEBAUTHN_DEBUG:
+        print(f'Credencial salva com sucesso! ID: {cred_id_b64}')
+    
+    _challenges_registro.pop(email_usuario, None)
     return jsonify({'status': 'ok'})
 
 
@@ -461,6 +482,10 @@ def webauthn_login():
     cred_id_b64 = dados.get('id') or dados.get('rawId')
     if not cred_id_b64:
         return jsonify({'erro':'credencial_sem_id'}), 400
+    
+    # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
+    tipo_escolhido = dados.get('tipo')
+    
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
     reg = executar_query(q, (cred_id_b64,), fetchone=True)
@@ -487,26 +512,49 @@ def webauthn_login():
     u_lista = executar_query("SELECT id, nome, tipo FROM usuarios WHERE email=%s AND ativo=TRUE ORDER BY tipo", (email,), fetchall=True)
     if not isinstance(u_lista, list) or len(u_lista) == 0:
         return jsonify({'erro':'usuario_nao_encontrado'}), 404
-    if len(u_lista) > 1:
+    
+    # Se múltiplos tipos E nenhum tipo foi escolhido, pede para escolher
+    if len(u_lista) > 1 and not tipo_escolhido:
         tipos_disp = [row.get('tipo') for row in u_lista if isinstance(row, dict)]
         return jsonify({'erro':'selecionar_tipo', 'tipos': tipos_disp}), 200
-    u = u_lista[0]
+    
+    # Se tipo foi escolhido, busca o usuário correspondente
+    if tipo_escolhido:
+        u = next((row for row in u_lista if row.get('tipo') == tipo_escolhido), None)
+        if not u:
+            return jsonify({'erro':'tipo_invalido'}), 400
+    else:
+        u = u_lista[0]
+    
     uid = u.get('id')
     tipo = u.get('tipo')
+    nome = u.get('nome')
+    
     # Gera token sessão
     token_sessao = gerar_token_sessao()
     data_expiracao_sessao = datetime.now() + timedelta(days=SESSAO_DURACAO_DIAS)
     executar_query("INSERT INTO sessoes (usuario_id, token, data_expiracao) VALUES (%s,%s,%s)", (uid, token_sessao, data_expiracao_sessao), commit=True)
     # Preenche sessão flask
     session['usuario_id'] = uid
-    session['usuario_nome'] = session.get('usuario_nome')  # preserva se existir
-    # Busca nome
-    uinfo = executar_query("SELECT nome FROM usuarios WHERE id=%s", (uid,), fetchone=True)
-    if isinstance(uinfo, dict) and 'nome' in uinfo:
-        session['usuario_nome'] = uinfo.get('nome')
+    session['usuario_nome'] = nome
     session['usuario_email'] = email
     session['usuario_tipo'] = tipo
     session['token_sessao'] = token_sessao
+    
+    # Log do login via passkey
+    try:
+        registrar_log(
+            usuario_id=uid,
+            tabela='sessoes',
+            registro_id=uid,
+            acao='INSERT',
+            dados_antigos=None,
+            dados_novos=None,
+            descricao=f'Login realizado via Passkey para tipo={tipo}'
+        )
+    except Exception:
+        pass
+    
     return jsonify({'status':'ok'})
 
 
