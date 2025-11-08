@@ -416,7 +416,7 @@ def webauthn_registro():
     
     try:
         verificado = verify_registration_response(
-            credential=RegistrationCredential.parse_raw(json.dumps(dados)),
+            credential=RegistrationCredential.model_validate_json(json.dumps(dados)),
             expected_challenge=challenge_esperado,
             expected_rp_id=WEBAUTHN_RP_ID,
             expected_origin=WEBAUTHN_ORIGIN,
@@ -514,7 +514,7 @@ def webauthn_login():
         return jsonify({'erro':'credencial_desconhecida'}), 404
     try:
         verificado = verify_authentication_response(
-            credential=AuthenticationCredential.parse_raw(json.dumps(dados)),
+            credential=AuthenticationCredential.model_validate_json(json.dumps(dados)),
             expected_challenge=challenge_esperado,
             expected_rp_id=WEBAUTHN_RP_ID,
             expected_origin=WEBAUTHN_ORIGIN,
