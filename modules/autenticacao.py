@@ -49,13 +49,33 @@ def _load_webauthn_model(model_cls, data):
     "Object of type bytes is not JSON serializable". Em vez disso, validamos direto
     a partir do objeto python.
     """
-    # Se já for um dict (possivelmente com bytes), valide diretamente sem serializar
+    def _to_json_safe(obj):
+        """Recursivamente converte bytes em base64url para permitir JSON + criação correta dos submodels.
+        Mantém outros tipos intactos."""
+        if isinstance(obj, bytes):
+            return _b64url(obj)
+        if isinstance(obj, dict):
+            return {k: _to_json_safe(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_to_json_safe(v) for v in obj]
+        return obj
+
+    # Se for dict, garantimos estrutura JSON-safe e preferimos os caminhos baseados em JSON
+    # que tendem a montar corretamente submodels aninhados.
     if isinstance(data, dict):
+        safe = _to_json_safe(data)
+        payload = json.dumps(safe)
+        if hasattr(model_cls, 'model_validate_json'):
+            return model_cls.model_validate_json(payload)  # Pydantic v2
+        if hasattr(model_cls, 'parse_raw'):
+            return model_cls.parse_raw(payload)  # Pydantic v1
         if hasattr(model_cls, 'model_validate'):
-            return model_cls.model_validate(data)  # Pydantic v2
+            return model_cls.model_validate(safe)
         if hasattr(model_cls, 'parse_obj'):
-            return model_cls.parse_obj(data)  # Pydantic v1
-        return model_cls(**data)
+            return model_cls.parse_obj(safe)
+        if isinstance(safe, dict):
+            return model_cls(**safe)
+        return model_cls(safe)
 
     # Caso seja string JSON, use os caminhos nativos
     if isinstance(data, str):
@@ -537,6 +557,12 @@ def webauthn_registro():
         
         if WEBAUTHN_DEBUG:
             print(f'Modelo carregado com sucesso')
+            try:
+                print(f'  Tipo credencial: {type(credencial)}')
+                resp_attr = getattr(credencial, "response", None)
+                print(f'  Tipo credencial.response: {type(resp_attr)}')
+            except Exception:
+                pass
             print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
             print(f'Challenge esperado (len): {len(challenge_esperado) if hasattr(challenge_esperado, "__len__") else "N/A"}')
         
