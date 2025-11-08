@@ -23,13 +23,6 @@ from webauthn.helpers.structs import PublicKeyCredentialDescriptor, Registration
 # Este blueprint funciona de forma independente
 autenticacao_bp = Blueprint('autenticacao', __name__, url_prefix='/auth')
 
-# ============================================
-# ARMAZENAMENTO TEMPORÁRIO DE CHALLENGES (MEMÓRIA)
-# Para produção, substituir por redis ou tabela dedicada.
-# ============================================
-_challenges_registro = {}
-_challenges_login = {}
-
 def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b'=').decode('utf-8')
 
@@ -291,34 +284,20 @@ def validar_codigo():
     if registro_codigo.get('id'):
         executar_query(query_marcar_usado, (registro_codigo['id'],), commit=True)
     
-    # Gera um token único para a sessão
-    token_sessao = gerar_token_sessao()
-    
-    # Calcula a data de expiração da sessão
-    data_expiracao_sessao = datetime.now() + timedelta(days=SESSAO_DURACAO_DIAS)
-    
-    # Salva a sessão no banco de dados
-    query_sessao = """
-        INSERT INTO sessoes (usuario_id, token, data_expiracao)
-        VALUES (%s, %s, %s)
-    """
-    if registro_codigo.get('usuario_id'):
-        executar_query(query_sessao, (registro_codigo['usuario_id'], token_sessao, data_expiracao_sessao), commit=True)
-    
     # Salva os dados do usuário na sessão do Flask
     session['usuario_id'] = registro_codigo.get('usuario_id')
     session['usuario_nome'] = registro_codigo.get('nome')
     session['usuario_email'] = registro_codigo.get('email')
     session['usuario_tipo'] = registro_codigo.get('tipo')
-    session['token_sessao'] = token_sessao
+    session['logged_in'] = True
     
     # Log leve de sucesso de login (sem dados sensíveis)
     try:
         registrar_log(
             usuario_id=registro_codigo.get('usuario_id'),
-            tabela='sessoes',
+            tabela='usuarios',
             registro_id=registro_codigo.get('usuario_id'),
-            acao='INSERT',
+            acao='UPDATE',
             dados_antigos=None,
             dados_novos=None,
             descricao=f'Login realizado via código para tipo={registro_codigo.get("tipo")}'
@@ -341,14 +320,6 @@ def logout():
     """
     Encerra a sessão do usuário (logout)
     """
-    
-    # Pega o token da sessão
-    token_sessao = session.get('token_sessao')
-    
-    # Se existe token, marca a sessão como inativa no banco
-    if token_sessao:
-        query_desativar = "UPDATE sessoes SET ativo = FALSE WHERE token = %s"
-        executar_query(query_desativar, (token_sessao,), commit=True)
     
     # Limpa todos os dados da sessão
     session.clear()
@@ -416,15 +387,18 @@ def webauthn_registro_opcoes():
             ),
             attestation=AttestationConveyancePreference.NONE,
         )
-        # Armazena challenge usando email ao invés de usuario_id
-        # Challenge deve ser bytes
-        _challenges_registro[email_usuario] = options.challenge
+        # Armazena challenge no banco de dados com expiração
+        challenge_b64 = _b64url(options.challenge)
+        expiracao = datetime.now() + timedelta(minutes=5) # Challenge válido por 5 minutos
+        executar_query(
+            "INSERT INTO webauthn_challenges (challenge, email, data_expiracao) VALUES (%s, %s, %s)",
+            (challenge_b64, email_usuario, expiracao),
+            commit=True
+        )
         
         if WEBAUTHN_DEBUG:
             print(f'Opções de registro geradas com sucesso!')
-            print(f'Challenge armazenado para: {email_usuario}')
-            print(f'Challenge tipo: {type(options.challenge)}')
-            print(f'Challenge length: {len(options.challenge) if hasattr(options.challenge, "__len__") else "N/A"}')
+            print(f'Challenge armazenado no banco para: {email_usuario}')
         
         return jsonify(json.loads(options_to_json(options)))
     except Exception as e:
@@ -447,9 +421,18 @@ def webauthn_registro():
         return jsonify({'erro': 'email_invalido'}), 400
     
     dados = request.get_json(force=True)
-    challenge_esperado = _challenges_registro.get(email_usuario)
-    if not challenge_esperado:
-        return jsonify({'erro': 'challenge_expirado'}), 400
+
+    # Busca e valida o challenge no banco de dados
+    q_challenge = "SELECT challenge FROM webauthn_challenges WHERE email = %s AND data_expiracao > NOW() ORDER BY data_expiracao DESC LIMIT 1"
+    challenge_rec = executar_query(q_challenge, (email_usuario,), fetchone=True)
+    
+    if not challenge_rec or not challenge_rec.get('challenge'):
+        return jsonify({'erro': 'challenge_expirado_ou_invalido'}), 400
+    
+    challenge_esperado = _decode_b64url(challenge_rec.get('challenge'))
+
+    # Limpa o challenge do banco para que não seja reutilizado
+    executar_query("DELETE FROM webauthn_challenges WHERE challenge = %s", (challenge_rec.get('challenge'),), commit=True)
     
     if WEBAUTHN_DEBUG:
         print('=== DEBUG REGISTRO PASSKEY ===')
@@ -598,7 +581,6 @@ def webauthn_registro():
     if WEBAUTHN_DEBUG:
         print(f'Credencial salva com sucesso! ID: {cred_id_b64}')
     
-    _challenges_registro.pop(email_usuario, None)
     return jsonify({'status': 'ok'})
 
 
@@ -816,24 +798,20 @@ def webauthn_login():
     tipo = u.get('tipo')
     nome = u.get('nome')
     
-    # Gera token sessão
-    token_sessao = gerar_token_sessao()
-    data_expiracao_sessao = datetime.now() + timedelta(days=SESSAO_DURACAO_DIAS)
-    executar_query("INSERT INTO sessoes (usuario_id, token, data_expiracao) VALUES (%s,%s,%s)", (uid, token_sessao, data_expiracao_sessao), commit=True)
     # Preenche sessão flask
     session['usuario_id'] = uid
     session['usuario_nome'] = nome
     session['usuario_email'] = email
     session['usuario_tipo'] = tipo
-    session['token_sessao'] = token_sessao
+    session['logged_in'] = True
     
     # Log do login via passkey
     try:
         registrar_log(
             usuario_id=uid,
-            tabela='sessoes',
+            tabela='usuarios',
             registro_id=uid,
-            acao='INSERT',
+            acao='UPDATE',
             dados_antigos=None,
             dados_novos=None,
             descricao=f'Login realizado via Passkey para tipo={tipo}'
@@ -901,55 +879,26 @@ def webauthn_diagnostico():
 
 def verificar_sessao():
     """
-    Verifica se o usuário está autenticado
+    Verifica se o usuário está autenticado de forma stateless, lendo da sessão.
     
     Retorna:
         dict ou None: Dados do usuário se autenticado, None caso contrário
     """
     
-    # Verifica se existe usuario_id na sessão
-    if 'usuario_id' not in session:
+    # Verifica se a sessão contém as chaves essenciais
+    if not all(key in session for key in ['usuario_id', 'usuario_nome', 'usuario_email', 'usuario_tipo', 'logged_in']):
         return None
     
-    # Verifica se existe token na sessão
-    token_sessao = session.get('token_sessao')
-    if not token_sessao:
+    # Verifica se o marcador de login é verdadeiro
+    if not session.get('logged_in'):
         return None
     
-    # Busca a sessão no banco de dados
-    query_sessao = """
-        SELECT s.id, s.usuario_id, s.data_expiracao, s.ativo,
-               u.nome, u.email, u.tipo, u.ativo as usuario_ativo
-        FROM sessoes s
-        JOIN usuarios u ON s.usuario_id = u.id
-        WHERE s.token = %s AND s.ativo = TRUE
-    """
-    sessao_db = executar_query(query_sessao, (token_sessao,), fetchone=True)
-    if not isinstance(sessao_db, dict):
-        sessao_db = {}
-    
-    # Verifica se a sessão existe
-    if not sessao_db:
-        session.clear()
-        return None
-    
-    # Verifica se a sessão expirou
-    data_exp = sessao_db.get('data_expiracao')
-    if not data_exp or datetime.now() > data_exp:
-        session.clear()
-        return None
-    
-    # Verifica se o usuário está ativo
-    if not sessao_db.get('usuario_ativo'):
-        session.clear()
-        return None
-    
-    # Sessão válida! Retorna os dados do usuário
+    # Sessão válida! Retorna os dados do usuário a partir da sessão
     return {
-        'id': sessao_db.get('usuario_id'),
-        'nome': sessao_db.get('nome'),
-        'email': sessao_db.get('email'),
-        'tipo': sessao_db.get('tipo')
+        'id': session.get('usuario_id'),
+        'nome': session.get('usuario_nome'),
+        'email': session.get('usuario_email'),
+        'tipo': session.get('usuario_tipo')
     }
 
 

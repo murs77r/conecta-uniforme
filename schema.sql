@@ -35,19 +35,6 @@ CREATE TABLE IF NOT EXISTS codigos_acesso (
 );
 
 -- ============================================
--- TABELA: sessoes
--- Armazena as sessões ativas dos usuários
--- ============================================
-CREATE TABLE IF NOT EXISTS sessoes (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT,
-    token VARCHAR(100) UNIQUE NOT NULL,
-    data_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_expiracao TIMESTAMP NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE
-);
-
--- ============================================
 -- TABELA: escolas
 -- Armazena informações das escolas cadastradas
 -- ============================================
@@ -219,8 +206,6 @@ CREATE TABLE IF NOT EXISTS logs_alteracoes (
 CREATE INDEX idx_usuarios_email ON usuarios(email);
 CREATE INDEX idx_usuarios_tipo ON usuarios(tipo);
 CREATE INDEX idx_codigos_acesso_usuario ON codigos_acesso(usuario_id);
-CREATE INDEX idx_sessoes_usuario ON sessoes(usuario_id);
-CREATE INDEX idx_sessoes_token ON sessoes(token);
 CREATE INDEX idx_produtos_fornecedor ON produtos(fornecedor_id);
 CREATE INDEX idx_produtos_escola ON produtos(escola_id);
 CREATE INDEX idx_pedidos_responsavel ON pedidos(responsavel_id);
@@ -256,32 +241,47 @@ CREATE INDEX IF NOT EXISTS idx_webauthn_usuario ON webauthn_credentials(usuario_
 CREATE INDEX IF NOT EXISTS idx_webauthn_email ON webauthn_credentials(email);
 
 -- ============================================
+-- TABELA: webauthn_challenges
+-- Armazena challenges temporários para o fluxo de registro WebAuthn
+-- Substitui o armazenamento em memória para suportar múltiplos workers
+-- ============================================
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+    id SERIAL PRIMARY KEY,
+    challenge VARCHAR(200) UNIQUE NOT NULL, -- Base64URL do challenge
+    email VARCHAR(200) NOT NULL,
+    data_expiracao TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_email ON webauthn_challenges(email);
+CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_expiracao ON webauthn_challenges(data_expiracao);
+
+-- ============================================
 -- DADOS INICIAIS: usuários por email e tipo (evita duplicidade por conflito)
 -- ============================================
 INSERT INTO usuarios (nome, email, telefone, tipo, ativo)
 VALUES
-    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'administrador', TRUE),
-    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'escola', TRUE),
-    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'fornecedor', TRUE),
-    ('jpfreitass2005', 'jpfreitass2005@gmail.com', NULL, 'responsavel', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'administrador', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'escola', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'fornecedor', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'responsavel', TRUE),
 
-    ('joaondss', 'joaondss@class-one.com.br', NULL, 'administrador', TRUE),
-    ('joaondss', 'joaondss@class-one.com.br', NULL, 'escola', TRUE),
-    ('joaondss', 'joaondss@class-one.com.br', NULL, 'fornecedor', TRUE),
-    ('joaondss', 'joaondss@class-one.com.br', NULL, 'responsavel', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'administrador', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'escola', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'fornecedor', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'responsavel', TRUE),
 
-    ('murilosr', 'murilosr@outlook.com.br', NULL, 'administrador', TRUE),
-    ('murilosr', 'murilosr@outlook.com.br', NULL, 'escola', TRUE),
-    ('murilosr', 'murilosr@outlook.com.br', NULL, 'fornecedor', TRUE),
-    ('murilosr', 'murilosr@outlook.com.br', NULL, 'responsavel', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'administrador', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'escola', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'fornecedor', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'responsavel', TRUE),
 
-    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'administrador', TRUE),
-    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'escola', TRUE),
-    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'fornecedor', TRUE),
-    ('yurihenriquersilva343', 'yurihenriquersilva343@gmail.com', NULL, 'responsavel', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'administrador', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'escola', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'fornecedor', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'responsavel', TRUE),
 
-    ('victorccanela', 'victorccanela@gmail.com', NULL, 'administrador', TRUE),
-    ('victorccanela', 'victorccanela@gmail.com', NULL, 'escola', TRUE),
-    ('victorccanela', 'victorccanela@gmail.com', NULL, 'fornecedor', TRUE),
-    ('victorccanela', 'victorccanela@gmail.com', NULL, 'responsavel', TRUE)
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'administrador', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'escola', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'fornecedor', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'responsavel', TRUE)
 ON CONFLICT (email, tipo) DO NOTHING;
