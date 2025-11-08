@@ -13,7 +13,7 @@
                     <p class="text-muted">Entre com seu email para receber o código de acesso</p>
                 </div>
                 
-        <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" id="formLogin">
+    <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" id="formLogin" autocomplete="off">
                     <input type="hidden" name="tipo" id="tipo" value="">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
@@ -36,23 +36,7 @@
                     <p class="mb-0">Você receberá um código de {{ CODIGO_ACESSO_TAMANHO }} dígitos no seu email.</p>
                     <p class="mb-0">O código é válido por {{ CODIGO_ACESSO_DURACAO_HORAS }} horas.</p>
                 </div>
-                {% if tipos_disponiveis %}
-                <div class="mt-4">
-                  <div class="alert alert-info">
-                    <strong>Este email possui múltiplos perfis.</strong><br>
-                    Selecione abaixo antes de solicitar o código:
-                    <form method="POST" action="{{ url_for('autenticacao.solicitar_codigo') }}" class="mt-2" id="formTiposInline">
-                      <input type="hidden" name="email" value="{{ email }}">
-                      <div class="vstack gap-2">
-                        {% for t in tipos_disponiveis %}
-                        <button name="tipo" value="{{ t }}" class="btn btn-outline-primary">{{ t|title }}</button>
-                        {% endfor %}
-                      </div>
-                    </form>
-                    <div class="small text-muted mt-2">Caso não funcione o modal, utilize estes botões.</div>
-                  </div>
-                </div>
-                {% endif %}
+                {# Seção de fallback removida: a seleção de perfil é feita exclusivamente pelo modal obrigatório #}
             </div>
         </div>
     </div>
@@ -75,7 +59,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-secondary cancelar-modal-tipo" data-bs-dismiss="modal">Cancelar</button>
       </div>
     </div>
   </div>
@@ -84,30 +68,104 @@
 
 {% block scripts %}
 <script>
+// Expor rótulos amigáveis dos tipos no escopo do script para uso dinâmico
+window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
+// Fluxo reforçado: modal OBRIGATÓRIO quando múltiplos perfis; não deixa enviar até escolher
 (function(){
-  // Abre o modal automaticamente quando solicitado pelo backend
+  const form = document.getElementById('formLogin');
+  const emailInput = document.getElementById('email');
+  const tipoHidden = document.getElementById('tipo');
   const abrir = "{{ '1' if abrir_modal_tipo else '0' }}" === "1";
-  if (abrir) {
-    const modal = new bootstrap.Modal(document.getElementById('modalTipo'));
-    modal.show();
+  let modalInstance = null;
+  const modalEl = document.getElementById('modalTipo');
+
+  function abrirModalTipos(){
+    if(!modalEl) return;
+    if(!modalInstance){ modalInstance = new bootstrap.Modal(modalEl, {backdrop:'static', keyboard:false}); }
+    modalInstance.show();
   }
-  // Clique de escolha de tipo
-  document.querySelectorAll('.escolha-tipo').forEach(function(btn){
+
+  if (abrir) {
+    abrirModalTipos();
+  }
+
+  // Bloqueia submit se múltiplos perfis e nenhum tipo selecionado
+  form.addEventListener('submit', async function(e){
+    // Sempre valida no client antes do primeiro POST: se houver múltiplos tipos, mostra modal e impede envio
+    const emailVal = (emailInput.value||'').trim().toLowerCase();
+    if(!emailVal){ return; }
+    try{
+      const resp = await fetch(`/auth/tipos-por-email?email=${encodeURIComponent(emailVal)}`);
+      const j = await resp.json();
+      if(Array.isArray(j.tipos) && j.tipos.length > 1 && !tipoHidden.value){
+        e.preventDefault();
+        // Preenche lista do modal dinamicamente se vier vazia no HTML
+        const lista = modalEl.querySelector('.vstack');
+        if(lista && (!lista.children || lista.children.length === 0)){
+          lista.innerHTML = '';
+          j.tipos.forEach(item => {
+            const t = item.slug || item; // compat fallback
+            const label = (item.label) || (window.ROTULOS_TIPOS && window.ROTULOS_TIPOS[t]) || (t.charAt(0).toUpperCase()+t.slice(1));
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'btn btn-outline-primary w-100 escolha-tipo';
+            b.setAttribute('data-tipo', t);
+            b.textContent = label;
+            b.addEventListener('click', function(){
+              tipoHidden.value = t;
+              if(modalInstance){ modalInstance.hide(); }
+              form.submit();
+            });
+            lista.appendChild(b);
+          });
+        }
+        abrirModalTipos();
+        return; // não submeter
+      }
+      // Se apenas um tipo, preenche e segue
+      if(Array.isArray(j.tipos) && j.tipos.length === 1 && !tipoHidden.value){
+        const unico = j.tipos[0];
+        tipoHidden.value = (unico.slug || unico);
+      }
+      // Se nenhum tipo, deixa o backend validar e exibir mensagem
+    }catch(_){
+      // Silencia e deixa backend cuidar; ainda assim o fallback de botões existe no HTML
+    }
+    // Se variável abrir veio do backend e ainda não escolheu tipo, reforça abertura do modal
+    if (abrir && !tipoHidden.value){
+      e.preventDefault();
+      abrirModalTipos();
+    }
+  });
+
+  // Escolha de tipo dentro do modal
+  document.querySelectorAll('.escolha-tipo').forEach(btn => {
     btn.addEventListener('click', function(){
       const tipo = this.getAttribute('data-tipo');
-      document.getElementById('tipo').value = tipo;
-      // Submete o formulário novamente com o tipo escolhido
-      document.getElementById('formLogin').submit();
+      tipoHidden.value = tipo;
+      // Fecha modal e submete
+      if(modalInstance){ modalInstance.hide(); }
+      form.submit();
     });
   });
 
-  // Login via Passkey
+  // Se usuário clicar em cancelar, limpa o campo tipo para impedir envio sem escolha
+  document.querySelectorAll('.cancelar-modal-tipo').forEach(btn => {
+    btn.addEventListener('click', function(){
+      tipoHidden.value='';
+      // foca no email para reforçar fluxo
+      setTimeout(()=> emailInput.focus(), 250);
+    });
+  });
+
+  // Observa mudanças de email: ao alterar email limpamos tipo escolhido
+  emailInput.addEventListener('input', ()=> { tipoHidden.value=''; });
+
+  // Login via Passkey (código original encapsulado e levemente refatorado)
   const btnPasskey = document.getElementById('btnPasskeyLogin');
   if(btnPasskey){
-    // Mostrar/ocultar botão conforme email possuir passkey
     async function atualizarVisibilidadePasskey(){
-      const emailEl = document.getElementById('email');
-      const emailVal = (emailEl.value || '').trim().toLowerCase();
+      const emailVal = (emailInput.value || '').trim().toLowerCase();
       if(!emailVal){ btnPasskey.style.display = 'none'; return; }
       try{
         const r = await fetch(`/auth/webauthn/tem?email=${encodeURIComponent(emailVal)}`);
@@ -115,84 +173,40 @@
         btnPasskey.style.display = j.tem ? '' : 'none';
       }catch(_){ btnPasskey.style.display = 'none'; }
     }
-    const emailEl = document.getElementById('email');
-    emailEl.addEventListener('blur', atualizarVisibilidadePasskey);
-    emailEl.addEventListener('input', function(){
-      // Esconde enquanto digita para evitar confusão
-      btnPasskey.style.display = 'none';
-    });
-    // Se já veio com email preenchido, checar
-    if((emailEl.value||'').trim()){ atualizarVisibilidadePasskey(); }
+    emailInput.addEventListener('blur', atualizarVisibilidadePasskey);
+    emailInput.addEventListener('input', ()=> btnPasskey.style.display='none');
+    if((emailInput.value||'').trim()){ atualizarVisibilidadePasskey(); }
 
+    function b64urlToArrayBuffer(b64url){
+      const pad = '='.repeat((4 - b64url.length % 4) % 4);
+      const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
+      const raw = atob(b64);
+      const buffer = new ArrayBuffer(raw.length);
+      const view = new Uint8Array(buffer);
+      for(let i=0;i<raw.length;i++){view[i]=raw.charCodeAt(i);} return buffer;
+    }
+    function arrayBufferToB64url(buf){
+      const bytes = new Uint8Array(buf); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
+      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }
     btnPasskey.addEventListener('click', async function(){
-      const emailEl = document.getElementById('email');
-      const emailVal = (emailEl.value || '').trim().toLowerCase();
-      if(!emailVal){
-        alert('Digite o email antes de usar Passkey.');
-        emailEl.focus();
-        return;
-      }
-      // Obtém opções
-      const tipoVal = document.getElementById('tipo').value;
-      const params = new URLSearchParams({email: emailVal});
-      if(tipoVal) params.append('tipo', tipoVal);
+      const emailVal = (emailInput.value || '').trim().toLowerCase();
+      if(!emailVal){ alert('Digite o email antes de usar Passkey.'); emailInput.focus(); return; }
+      const tipoVal = tipoHidden.value;
+      const params = new URLSearchParams({email: emailVal}); if(tipoVal) params.append('tipo', tipoVal);
       let resp = await fetch(`/auth/webauthn/login/opcoes?${params.toString()}`);
       let options = await resp.json();
-      if(options.erro){
-        alert('Não foi possível obter opções de Passkey: ' + options.erro);
-        return;
-      }
-      // Converter Base64URL -> ArrayBuffer
-      function b64urlToArrayBuffer(b64url){
-        const pad = '='.repeat((4 - b64url.length % 4) % 4);
-        const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
-        const raw = atob(b64);
-        const buffer = new ArrayBuffer(raw.length);
-        const view = new Uint8Array(buffer);
-        for(let i=0;i<raw.length;i++){view[i]=raw.charCodeAt(i);} return buffer;
-      }
-      if(options.allowCredentials){
-        options.allowCredentials = options.allowCredentials.map(c => ({
-          type: c.type,
-          id: b64urlToArrayBuffer(c.id)
-        }));
-      }
+      if(options.erro){ alert('Não foi possível obter opções de Passkey: ' + options.erro); return; }
+      if(options.allowCredentials){ options.allowCredentials = options.allowCredentials.map(c=>({type:c.type,id:b64urlToArrayBuffer(c.id)})); }
       options.challenge = b64urlToArrayBuffer(options.challenge);
       try{
         const assertion = await navigator.credentials.get({publicKey: options});
-        function arrayBufferToB64url(buf){
-          const bytes = new Uint8Array(buf);
-          let bin = '';
-          bytes.forEach(b=>bin += String.fromCharCode(b));
-          let b64 = btoa(bin).replace(/+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-          return b64;
-        }
-        const data = {
-          id: assertion.id,
-          rawId: arrayBufferToB64url(assertion.rawId),
-          type: assertion.type,
-          response: {
-            authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData),
-            clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON),
-            signature: arrayBufferToB64url(assertion.response.signature),
-            userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null
-          }
-        };
-        const finish = await fetch('/auth/webauthn/login', {
-          method: 'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(data)
-        });
+        const data = { id: assertion.id, rawId: arrayBufferToB64url(assertion.rawId), type: assertion.type, response: { authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData), clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON), signature: arrayBufferToB64url(assertion.response.signature), userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null } };
+        const finish = await fetch('/auth/webauthn/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
         const rjson = await finish.json();
-        if(rjson.status === 'ok'){
-          window.location.href = '/home';
-        }else{
-          alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido'));
-        }
-      }catch(e){
-        console.error(e);
-        alert('Falha ao realizar autenticação Passkey.');
-      }
+        if(rjson.status === 'ok'){ window.location.href = '/home'; }
+        else { alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido')); }
+      }catch(e){ console.error(e); alert('Falha ao realizar autenticação Passkey.'); }
     });
   }
 })();

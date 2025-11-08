@@ -187,12 +187,22 @@ def injetar_variaveis():
     # Verifica se o usuário está autenticado
     usuario = verificar_sessao()
     
+    # Rótulos amigáveis para exibição de tipos de usuário
+    ROTULOS_TIPOS = {
+        'administrador': 'Administrador',
+        'escola': 'Escola',
+        'fornecedor': 'Fornecedor',
+        'responsavel': 'Responsável',
+    }
+
     return {
         'usuario_logado': usuario,
         'session': session,
         # Variáveis de autenticação usadas em templates
         'CODIGO_ACESSO_TAMANHO': CODIGO_ACESSO_TAMANHO,
         'CODIGO_ACESSO_DURACAO_HORAS': CODIGO_ACESSO_DURACAO_HORAS,
+        # Mapeamento global para labels amigáveis
+        'ROTULOS_TIPOS': ROTULOS_TIPOS,
     }
 
 

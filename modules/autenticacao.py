@@ -11,47 +11,11 @@ Controla o processo de autenticação e autorização de usuários, garantindo s
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime, timedelta
-from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email
+from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email, registrar_log
 from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN, WEBAUTHN_DEBUG
 import os, base64, json
-WEBAUTHN_AVAILABLE = True
-try:
-    from webauthn import (
-        generate_registration_options,
-        options_to_json,
-        verify_registration_response,
-        generate_authentication_options,
-        verify_authentication_response,
-    )
-    from webauthn.helpers.structs import (
-        PublicKeyCredentialDescriptor,
-        RegistrationCredential,
-        AuthenticationCredential,
-    )
-except ImportError:
-    WEBAUTHN_AVAILABLE = False
-    # Permite que o restante da aplicação carregue mesmo sem a lib instalada
-    if DEBUG:
-        print("[AVISO] Biblioteca 'webauthn' não encontrada. Endpoints de passkey indisponíveis.")
-    # Define dummies chamáveis para evitar NameError/None-call, endpoints checarão disponibilidade
-    def _not_available(*args, **kwargs):
-        raise RuntimeError("WebAuthn indisponível")
-    generate_registration_options = _not_available  # type: ignore
-    generate_authentication_options = _not_available  # type: ignore
-    options_to_json = lambda *a, **k: '{}'  # type: ignore
-    verify_registration_response = _not_available  # type: ignore
-    verify_authentication_response = _not_available  # type: ignore
-    class PublicKeyCredentialDescriptor:  # type: ignore
-        def __init__(self, *a, **k):
-            pass
-    class RegistrationCredential:  # type: ignore
-        @staticmethod
-        def parse_raw(data):
-            return None
-    class AuthenticationCredential:  # type: ignore
-        @staticmethod
-        def parse_raw(data):
-            return None
+from webauthn import generate_registration_options, options_to_json, verify_registration_response, generate_authentication_options, verify_authentication_response
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential, AuthenticatorSelectionCriteria, UserVerificationRequirement, AttestationConveyancePreference
 
 # ============================================
 # CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
@@ -72,6 +36,35 @@ def _b64url(data: bytes) -> str:
 def _decode_b64url(data: str) -> bytes:
     padding = '=' * (-len(data) % 4)
     return base64.urlsafe_b64decode(data + padding)
+
+
+# ============================================
+# AUX: TIPOS POR EMAIL (AJUDA FRONT A MOSTRAR MODAL)
+# ============================================
+
+@autenticacao_bp.route('/tipos-por-email')
+def tipos_por_email():
+    """Retorna os tipos de usuário ativos associados a um email (JSON).
+
+    Resposta: { "email": str, "tipos": [str, ...] }
+    """
+    email = request.args.get('email', '').strip().lower()
+    if not email:
+        return jsonify({"email": email, "tipos": []})
+    q = "SELECT DISTINCT tipo FROM usuarios WHERE email = %s AND ativo = TRUE ORDER BY tipo"
+    rows = executar_query(q, (email,), fetchall=True)
+    tipos = [r['tipo'] for r in rows] if isinstance(rows, list) else []
+    # Labels amigáveis para cada tipo (acentos e capitalização)
+    rotulos = {
+        'administrador': 'Administrador',
+        'escola': 'Escola',
+        'fornecedor': 'Fornecedor',
+        'responsavel': 'Responsável',
+    }
+    tipos_formatados = [
+        {"slug": t, "label": rotulos.get(t, t.title())} for t in tipos
+    ]
+    return jsonify({"email": email, "tipos": tipos_formatados})
 
 
 # ============================================
@@ -120,6 +113,7 @@ def solicitar_codigo():
     # Se houver mais de um tipo e nenhum escolhido ainda, mostra modal de seleção
     if len(usuarios_encontrados) > 1 and not tipo_escolhido:
         tipos_disponiveis = [u['tipo'] for u in usuarios_encontrados]
+        # Garante abertura do modal imediatamente e força a escolha do tipo antes de prosseguir
         return render_template('auth/solicitar_codigo.html', email=email, tipos_disponiveis=tipos_disponiveis, abrir_modal_tipo=True)
 
     # Determina o usuário alvo
@@ -130,6 +124,19 @@ def solicitar_codigo():
         if not usuario:
             flash('Tipo de usuário inválido para este email.', 'danger')
             return render_template('auth/solicitar_codigo.html')
+        # Log leve da seleção de perfil
+        try:
+            registrar_log(
+                usuario_id=usuario['id'],
+                tabela='usuarios',
+                registro_id=usuario['id'],
+                acao='UPDATE',  # usando UPDATE para padronizar visualização de diffs
+                dados_antigos=None,
+                dados_novos=None,
+                descricao=f'Seleção de perfil para login (tipo={usuario.get("tipo")})'
+            )
+        except Exception:
+            pass
     
     # Gera um código de acesso aleatório (6 dígitos)
     codigo = gerar_codigo_acesso()
@@ -266,6 +273,19 @@ def validar_codigo():
     session['usuario_tipo'] = registro_codigo.get('tipo')
     session['token_sessao'] = token_sessao
     
+    # Log leve de sucesso de login (sem dados sensíveis)
+    try:
+        registrar_log(
+            usuario_id=registro_codigo.get('usuario_id'),
+            tabela='sessoes',
+            registro_id=registro_codigo.get('usuario_id'),
+            acao='INSERT',
+            dados_antigos=None,
+            dados_novos=None,
+            descricao=f'Login realizado via código para tipo={registro_codigo.get("tipo")}'
+        )
+    except Exception:
+        pass
     # Login realizado com sucesso!
     flash(f"Bem-vindo(a), {registro_codigo['nome']}!", 'success')
     
@@ -317,8 +337,6 @@ def pagina_passkeys():
 @autenticacao_bp.route('/webauthn/registro/opcoes')
 def webauthn_registro_opcoes():
     """Gera as opções de criação de credencial para o usuário logado."""
-    if not WEBAUTHN_AVAILABLE:
-        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
@@ -344,9 +362,10 @@ def webauthn_registro_opcoes():
         user_name=usuario['email'],
         user_display_name=usuario['nome'],
         exclude_credentials=exclude,
-        authenticator_selection=None,
-        attestation="none",
-        user_verification="preferred",
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            user_verification=UserVerificationRequirement.PREFERRED
+        ),
+        attestation=AttestationConveyancePreference.NONE,
     )
     _challenges_registro[usuario['id']] = options.challenge
     return jsonify(json.loads(options_to_json(options)))
@@ -355,8 +374,6 @@ def webauthn_registro_opcoes():
 @autenticacao_bp.route('/webauthn/registro', methods=['POST'])
 def webauthn_registro():
     """Recebe resposta de criação de credencial e valida."""
-    if not WEBAUTHN_AVAILABLE:
-        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
@@ -401,8 +418,6 @@ def webauthn_registro():
 # ============================================
 @autenticacao_bp.route('/webauthn/login/opcoes')
 def webauthn_login_opcoes():
-    if not WEBAUTHN_AVAILABLE:
-        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     email = request.args.get('email','').strip().lower()
     tipo = request.args.get('tipo','').strip()
     allow = None
@@ -425,8 +440,8 @@ def webauthn_login_opcoes():
     # allow=None permite credenciais descobríveis (resident)
     options = generate_authentication_options(
         allow_credentials=allow,
-        user_verification="preferred",
         rp_id=WEBAUTHN_RP_ID,
+        user_verification=UserVerificationRequirement.PREFERRED,
     )
     # Guarda challenge na sessão
     session['webauthn_challenge'] = options.challenge
@@ -438,8 +453,6 @@ def webauthn_login_opcoes():
 
 @autenticacao_bp.route('/webauthn/login', methods=['POST'])
 def webauthn_login():
-    if not WEBAUTHN_AVAILABLE:
-        return jsonify({'erro': 'webauthn_indisponivel'}), 501
     dados = request.get_json(force=True)
     challenge_esperado = session.pop('webauthn_challenge', None)
     if not challenge_esperado:
