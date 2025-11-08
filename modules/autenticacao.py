@@ -38,6 +38,21 @@ def _decode_b64url(data: str) -> bytes:
     return base64.urlsafe_b64decode(data + padding)
 
 
+def _load_webauthn_model(model_cls, data):
+    """Compat loader for WebAuthn structs across Pydantic v1/v2."""
+    payload = data if isinstance(data, str) else json.dumps(data)
+    if hasattr(model_cls, 'model_validate_json'):
+        return model_cls.model_validate_json(payload)
+    if hasattr(model_cls, 'parse_raw'):
+        return model_cls.parse_raw(payload)
+    body = json.loads(payload)
+    if hasattr(model_cls, 'model_validate'):
+        return model_cls.model_validate(body)
+    if hasattr(model_cls, 'parse_obj'):
+        return model_cls.parse_obj(body)
+    return model_cls(**body)
+
+
 # ============================================
 # AUX: TIPOS POR EMAIL (AJUDA FRONT A MOSTRAR MODAL)
 # ============================================
@@ -416,7 +431,7 @@ def webauthn_registro():
     
     try:
         verificado = verify_registration_response(
-            credential=RegistrationCredential.model_validate_json(json.dumps(dados)),
+            credential=_load_webauthn_model(RegistrationCredential, dados),
             expected_challenge=challenge_esperado,
             expected_rp_id=WEBAUTHN_RP_ID,
             expected_origin=WEBAUTHN_ORIGIN,
@@ -514,7 +529,7 @@ def webauthn_login():
         return jsonify({'erro':'credencial_desconhecida'}), 404
     try:
         verificado = verify_authentication_response(
-            credential=AuthenticationCredential.model_validate_json(json.dumps(dados)),
+            credential=_load_webauthn_model(AuthenticationCredential, dados),
             expected_challenge=challenge_esperado,
             expected_rp_id=WEBAUTHN_RP_ID,
             expected_origin=WEBAUTHN_ORIGIN,
