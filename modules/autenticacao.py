@@ -592,7 +592,7 @@ def webauthn_registro():
         json.dumps(transports or []),
         getattr(verificado, 'backup_eligible', False),
         getattr(verificado, 'backup_state', False),
-        _b64url(verificado.aaguid) if getattr(verificado, 'aaguid', None) else None
+        _b64url(bytes.fromhex(verificado.aaguid)) if getattr(verificado, 'aaguid', None) else None
     ), commit=True)
     
     if WEBAUTHN_DEBUG:
