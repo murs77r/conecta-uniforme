@@ -435,29 +435,83 @@ def webauthn_registro():
         print(f'Email: {email_usuario}')
         print(f'Dados recebidos (tipo): {type(dados)}')
         print(f'Dados recebidos (keys): {dados.keys() if isinstance(dados, dict) else "N/A"}')
-    
-    # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
-    if 'rawId' in dados and 'raw_id' not in dados:
-        dados['raw_id'] = dados.pop('rawId')
+        if 'id' in dados:
+            print(f'ID tipo: {type(dados["id"])}, valor: {dados["id"][:20]}...')
+        if 'rawId' in dados:
+            print(f'rawId tipo: {type(dados["rawId"])}, valor: {dados["rawId"][:20]}...')
     
     # Guarda e remove 'transports' se existir, pois não faz parte do RegistrationCredential
     transports = dados.pop('transports', [])
 
-    # Processa response e garante que os campos base64 sejam tratados corretamente
+    # Converte campos base64url (strings) para bytes onde necessário
+    # O navegador envia tudo como strings base64url
+    # A biblioteca WebAuthn espera: id=string, raw_id=bytes, response.*=bytes
+    
+    # Guarda o ID original como string (necessário para o modelo)
+    id_original = dados.get('id') or dados.get('rawId')
+    
+    # Processa rawId -> raw_id (deve ser bytes)
+    if 'rawId' in dados:
+        raw_id_str = dados.pop('rawId')
+        if isinstance(raw_id_str, str):
+            dados['raw_id'] = _decode_b64url(raw_id_str)
+        else:
+            dados['raw_id'] = raw_id_str
+    elif 'raw_id' in dados and isinstance(dados['raw_id'], str):
+        dados['raw_id'] = _decode_b64url(dados['raw_id'])
+    
+    # Garante que 'id' seja string base64url
+    if 'id' not in dados and id_original:
+        dados['id'] = id_original
+    
+    # Se 'id' foi convertido para bytes por engano, reverte
+    if 'id' in dados and isinstance(dados['id'], bytes):
+        dados['id'] = _b64url(dados['id'])
+
+    # Processa response e converte campos base64url para bytes
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
-        if 'clientDataJSON' in resp and 'client_data_json' not in resp:
-            resp['client_data_json'] = resp['clientDataJSON']
-        if 'attestationObject' in resp and 'attestation_object' not in resp:
-            resp['attestation_object'] = resp['attestationObject']
         
-        # Remove campos que já foram convertidos
-        resp.pop('clientDataJSON', None)
-        resp.pop('attestationObject', None)
+        # Converte clientDataJSON
+        if 'clientDataJSON' in resp:
+            if isinstance(resp['clientDataJSON'], str):
+                resp['client_data_json'] = _decode_b64url(resp['clientDataJSON'])
+            else:
+                resp['client_data_json'] = resp['clientDataJSON']
+            resp.pop('clientDataJSON', None)
+        elif 'client_data_json' in resp and isinstance(resp['client_data_json'], str):
+            resp['client_data_json'] = _decode_b64url(resp['client_data_json'])
+        
+        # Converte attestationObject
+        if 'attestationObject' in resp:
+            if isinstance(resp['attestationObject'], str):
+                resp['attestation_object'] = _decode_b64url(resp['attestationObject'])
+            else:
+                resp['attestation_object'] = resp['attestationObject']
+            resp.pop('attestationObject', None)
+        elif 'attestation_object' in resp and isinstance(resp['attestation_object'], str):
+            resp['attestation_object'] = _decode_b64url(resp['attestation_object'])
+    
+    if WEBAUTHN_DEBUG:
+        print('Após conversões (registro):')
+        id_val = dados.get("id")
+        raw_id_val = dados.get("raw_id")
+        print(f'  - id: {type(id_val)} = {id_val[:30] + "..." if isinstance(id_val, str) and len(id_val) > 30 else id_val if isinstance(id_val, str) else "N/A"}')
+        print(f'  - raw_id: {type(raw_id_val)} (bytes: {len(raw_id_val) if isinstance(raw_id_val, bytes) else "N/A"} bytes)')
+        if 'response' in dados:
+            resp_debug = dados['response']
+            print(f'  - response.client_data_json: {type(resp_debug.get("client_data_json"))}')
+            print(f'  - response.attestation_object: {type(resp_debug.get("attestation_object"))}')
     
     try:
         if WEBAUTHN_DEBUG:
-            print(f'Tentando carregar modelo com dados: {dados}')
+            print(f'Tentando carregar modelo RegistrationCredential...')
+            print(f'  Estrutura de dados preparada (tipos):')
+            print(f'    - id: {type(dados.get("id"))}')
+            print(f'    - raw_id: {type(dados.get("raw_id"))}')
+            if 'response' in dados:
+                print(f'    - response.client_data_json: {type(dados["response"].get("client_data_json"))}')
+                print(f'    - response.attestation_object: {type(dados["response"].get("attestation_object"))}')
         
         credencial = _load_webauthn_model(RegistrationCredential, dados)
         
@@ -561,27 +615,83 @@ def webauthn_login():
         print('=== DEBUG LOGIN PASSKEY ===')
         print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
     
-    # Identifica credencial enviada
+    # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
+    tipo_escolhido = dados.get('tipo')
+    
+    # Identifica credencial enviada (ANTES das conversões - precisa ser string base64url)
     cred_id_b64 = dados.get('id') or dados.get('rawId')
     if not cred_id_b64:
         return jsonify({'erro':'credencial_sem_id'}), 400
     
-    # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
-    tipo_escolhido = dados.get('tipo')
+    # Converte campos base64url (strings) para bytes onde necessário
+    # O navegador envia tudo como strings base64url
+    # A biblioteca WebAuthn espera: id=string, raw_id=bytes, response.*=bytes
     
-    # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
-    if 'rawId' in dados and 'raw_id' not in dados:
-        dados['raw_id'] = dados.pop('rawId')
+    # Guarda o ID original como string (necessário para o modelo)
+    id_original = dados.get('id') or dados.get('rawId')
+    
+    # Processa rawId -> raw_id (deve ser bytes)
+    if 'rawId' in dados:
+        raw_id_str = dados.pop('rawId')
+        if isinstance(raw_id_str, str):
+            dados['raw_id'] = _decode_b64url(raw_id_str)
+        else:
+            dados['raw_id'] = raw_id_str
+    elif 'raw_id' in dados and isinstance(dados['raw_id'], str):
+        dados['raw_id'] = _decode_b64url(dados['raw_id'])
+    
+    # Garante que 'id' seja string base64url
+    if 'id' not in dados and id_original:
+        dados['id'] = id_original
+    
+    # Se 'id' foi convertido para bytes por engano, reverte
+    if 'id' in dados and isinstance(dados['id'], bytes):
+        dados['id'] = _b64url(dados['id'])
+    
+    # Processa response e converte campos base64url para bytes
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
-        if 'clientDataJSON' in resp and 'client_data_json' not in resp:
-            resp['client_data_json'] = resp['clientDataJSON']
-        if 'authenticatorData' in resp and 'authenticator_data' not in resp:
-            resp['authenticator_data'] = resp['authenticatorData']
         
-        # Remove campos que já foram convertidos
-        resp.pop('clientDataJSON', None)
-        resp.pop('authenticatorData', None)
+        # Converte clientDataJSON
+        if 'clientDataJSON' in resp:
+            if isinstance(resp['clientDataJSON'], str):
+                resp['client_data_json'] = _decode_b64url(resp['clientDataJSON'])
+            else:
+                resp['client_data_json'] = resp['clientDataJSON']
+            resp.pop('clientDataJSON', None)
+        elif 'client_data_json' in resp and isinstance(resp['client_data_json'], str):
+            resp['client_data_json'] = _decode_b64url(resp['client_data_json'])
+        
+        # Converte authenticatorData
+        if 'authenticatorData' in resp:
+            if isinstance(resp['authenticatorData'], str):
+                resp['authenticator_data'] = _decode_b64url(resp['authenticatorData'])
+            else:
+                resp['authenticator_data'] = resp['authenticatorData']
+            resp.pop('authenticatorData', None)
+        elif 'authenticator_data' in resp and isinstance(resp['authenticator_data'], str):
+            resp['authenticator_data'] = _decode_b64url(resp['authenticator_data'])
+        
+        # Converte signature
+        if 'signature' in resp and isinstance(resp['signature'], str):
+            resp['signature'] = _decode_b64url(resp['signature'])
+        
+        # Converte userHandle se existir
+        if 'userHandle' in resp:
+            if resp['userHandle'] and isinstance(resp['userHandle'], str):
+                resp['user_handle'] = _decode_b64url(resp['userHandle'])
+            resp.pop('userHandle', None)
+        elif 'user_handle' in resp and resp['user_handle'] and isinstance(resp['user_handle'], str):
+            resp['user_handle'] = _decode_b64url(resp['user_handle'])
+    
+    if WEBAUTHN_DEBUG:
+        print('Após conversões (login):')
+        print(f'  - id: {type(dados.get("id"))}')
+        print(f'  - raw_id: {type(dados.get("raw_id"))}')
+        if 'response' in dados:
+            print(f'  - response.client_data_json: {type(dados["response"].get("client_data_json"))}')
+            print(f'  - response.authenticator_data: {type(dados["response"].get("authenticator_data"))}')
+            print(f'  - response.signature: {type(dados["response"].get("signature"))}')
     
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
