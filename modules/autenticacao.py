@@ -431,7 +431,7 @@ def webauthn_registro():
     
     # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
     if 'rawId' in dados and 'raw_id' not in dados:
-        dados['raw_id'] = dados['rawId']
+        dados['raw_id'] = dados.pop('rawId')
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         if 'clientDataJSON' in resp and 'client_data_json' not in resp:
@@ -534,7 +534,7 @@ def webauthn_login():
     
     # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
     if 'rawId' in dados and 'raw_id' not in dados:
-        dados['raw_id'] = dados['rawId']
+        dados['raw_id'] = dados.pop('rawId')
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         if 'clientDataJSON' in resp and 'client_data_json' not in resp:
