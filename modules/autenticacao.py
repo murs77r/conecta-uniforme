@@ -432,6 +432,10 @@ def webauthn_registro():
     # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
     if 'rawId' in dados and 'raw_id' not in dados:
         dados['raw_id'] = dados.pop('rawId')
+    
+    # Guarda e remove 'transports' se existir, pois não faz parte do RegistrationCredential
+    transports = dados.pop('transports', [])
+
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         if 'clientDataJSON' in resp and 'client_data_json' not in resp:
@@ -467,7 +471,7 @@ def webauthn_registro():
     """
     resultado = executar_query(q_ins, (
         usuario['id'], email_usuario, cred_id_b64, pubkey_b64, verificado.sign_count,
-        json.dumps(dados.get('transports') or []),
+        json.dumps(transports or []),
         getattr(verificado, 'backup_eligible', False),
         getattr(verificado, 'backup_state', False),
         _b64url(verificado.aaguid) if getattr(verificado, 'aaguid', None) else None
