@@ -429,6 +429,16 @@ def webauthn_registro():
         print(f'Email: {email_usuario}')
         print(f'Dados recebidos: {dados}')
     
+    # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
+    if 'rawId' in dados and 'raw_id' not in dados:
+        dados['raw_id'] = dados['rawId']
+    if 'response' in dados and isinstance(dados['response'], dict):
+        resp = dados['response']
+        if 'clientDataJSON' in resp and 'client_data_json' not in resp:
+            resp['client_data_json'] = resp['clientDataJSON']
+        if 'attestationObject' in resp and 'attestation_object' not in resp:
+            resp['attestation_object'] = resp['attestationObject']
+    
     try:
         verificado = verify_registration_response(
             credential=_load_webauthn_model(RegistrationCredential, dados),
@@ -521,6 +531,16 @@ def webauthn_login():
     
     # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
     tipo_escolhido = dados.get('tipo')
+    
+    # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
+    if 'rawId' in dados and 'raw_id' not in dados:
+        dados['raw_id'] = dados['rawId']
+    if 'response' in dados and isinstance(dados['response'], dict):
+        resp = dados['response']
+        if 'clientDataJSON' in resp and 'client_data_json' not in resp:
+            resp['client_data_json'] = resp['clientDataJSON']
+        if 'authenticatorData' in resp and 'authenticator_data' not in resp:
+            resp['authenticator_data'] = resp['authenticatorData']
     
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
