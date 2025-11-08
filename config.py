@@ -65,6 +65,16 @@ WEBAUTHN_ORIGIN = os.getenv('WEBAUTHN_ORIGIN', f'http://localhost:{PORT}')
 WEBAUTHN_ALLOW_ATTESTATION = os.getenv('WEBAUTHN_ALLOW_ATTESTATION', 'false').lower() in ('1','true','yes','on')
 WEBAUTHN_DEBUG = os.getenv('WEBAUTHN_DEBUG', 'true').lower() in ('1','true','yes','on')  # ativa prints de verificação
 
+# Debug: Imprime configurações WebAuthn na inicialização (apenas se DEBUG ativo)
+if DEBUG:
+    print("=" * 70)
+    print("CONFIGURAÇÃO WEBAUTHN CARREGADA:")
+    print(f"  WEBAUTHN_RP_ID    : {WEBAUTHN_RP_ID}")
+    print(f"  WEBAUTHN_RP_NAME  : {WEBAUTHN_RP_NAME}")
+    print(f"  WEBAUTHN_ORIGIN   : {WEBAUTHN_ORIGIN}")
+    print(f"  WEBAUTHN_DEBUG    : {WEBAUTHN_DEBUG}")
+    print("=" * 70)
+
 # ============================================
 # CONFIGURAÇÕES DE PAGINAÇÃO
 # ============================================

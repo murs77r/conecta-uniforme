@@ -341,6 +341,15 @@ def webauthn_registro_opcoes():
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
 
+    if WEBAUTHN_DEBUG:
+        print('=' * 70)
+        print('DEBUG WEBAUTHN - REGISTRO OPÇÕES')
+        print(f'  RP_ID           : {WEBAUTHN_RP_ID}')
+        print(f'  RP_NAME         : {WEBAUTHN_RP_NAME}')
+        print(f'  ORIGIN          : {WEBAUTHN_ORIGIN}')
+        print(f'  Usuário         : {usuario.get("email")}')
+        print('=' * 70)
+
     # ID de usuário deve ser bytes estáveis (usar email como identificador)
     # Passkey fica vinculada ao EMAIL, não ao perfil específico
     email_usuario = (usuario.get('email') or '').strip().lower() if isinstance(usuario, dict) else ''
@@ -355,21 +364,33 @@ def webauthn_registro_opcoes():
         creds = []
     exclude = [PublicKeyCredentialDescriptor(id=_decode_b64url(c['credential_id'])) for c in creds if isinstance(c, dict) and c.get('credential_id')]
 
-    options = generate_registration_options(
-        rp_id=WEBAUTHN_RP_ID,
-        rp_name=WEBAUTHN_RP_NAME,
-        user_id=user_id_bytes,
-        user_name=email_usuario,
-        user_display_name=usuario['nome'],
-        exclude_credentials=exclude,
-        authenticator_selection=AuthenticatorSelectionCriteria(
-            user_verification=UserVerificationRequirement.PREFERRED
-        ),
-        attestation=AttestationConveyancePreference.NONE,
-    )
-    # Armazena challenge usando email ao invés de usuario_id
-    _challenges_registro[email_usuario] = options.challenge
-    return jsonify(json.loads(options_to_json(options)))
+    try:
+        options = generate_registration_options(
+            rp_id=WEBAUTHN_RP_ID,
+            rp_name=WEBAUTHN_RP_NAME,
+            user_id=user_id_bytes,
+            user_name=email_usuario,
+            user_display_name=usuario['nome'],
+            exclude_credentials=exclude,
+            authenticator_selection=AuthenticatorSelectionCriteria(
+                user_verification=UserVerificationRequirement.PREFERRED
+            ),
+            attestation=AttestationConveyancePreference.NONE,
+        )
+        # Armazena challenge usando email ao invés de usuario_id
+        _challenges_registro[email_usuario] = options.challenge
+        
+        if WEBAUTHN_DEBUG:
+            print(f'Opções de registro geradas com sucesso!')
+            print(f'Challenge armazenado para: {email_usuario}')
+        
+        return jsonify(json.loads(options_to_json(options)))
+    except Exception as e:
+        if WEBAUTHN_DEBUG:
+            print(f'ERRO ao gerar opções de registro: {type(e).__name__}: {e}')
+            import traceback
+            traceback.print_exc()
+        return jsonify({'erro': 'falha_gerar_opcoes', 'detalhes': str(e)}), 500
 
 
 @autenticacao_bp.route('/webauthn/registro', methods=['POST'])
@@ -568,6 +589,45 @@ def webauthn_tem():
         return jsonify({'tem': False})
     reg = executar_query("SELECT 1 FROM webauthn_credentials WHERE email=%s AND ativo=TRUE LIMIT 1", (email,), fetchone=True)
     return jsonify({'tem': bool(reg)})
+
+
+# ============================================
+# WEBAuthn - DIAGNÓSTICO (apenas em DEBUG)
+# ============================================
+@autenticacao_bp.route('/webauthn/diagnostico')
+def webauthn_diagnostico():
+    """Endpoint de diagnóstico para verificar configuração WebAuthn (apenas em modo DEBUG)."""
+    if not DEBUG:
+        return jsonify({'erro': 'disponivel_apenas_em_debug'}), 403
+    
+    # Pega informações do request
+    host_header = request.headers.get('Host', 'N/A')
+    origin_header = request.headers.get('Origin', 'N/A')
+    referer_header = request.headers.get('Referer', 'N/A')
+    scheme = request.scheme
+    full_url = request.url
+    
+    return jsonify({
+        'configuracao': {
+            'WEBAUTHN_RP_ID': WEBAUTHN_RP_ID,
+            'WEBAUTHN_RP_NAME': WEBAUTHN_RP_NAME,
+            'WEBAUTHN_ORIGIN': WEBAUTHN_ORIGIN,
+            'WEBAUTHN_DEBUG': WEBAUTHN_DEBUG,
+        },
+        'request_info': {
+            'scheme': scheme,
+            'host': host_header,
+            'origin': origin_header,
+            'referer': referer_header,
+            'full_url': full_url,
+        },
+        'diagnostico': {
+            'rp_id_matches_host': WEBAUTHN_RP_ID == host_header or WEBAUTHN_RP_ID in host_header,
+            'origin_matches': WEBAUTHN_ORIGIN == f"{scheme}://{host_header}",
+            'sugestao_rp_id': host_header,
+            'sugestao_origin': f"{scheme}://{host_header}",
+        }
+    })
 
 
 # ============================================
