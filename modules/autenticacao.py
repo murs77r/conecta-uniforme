@@ -33,7 +33,10 @@ _challenges_login = {}
 def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b'=').decode('utf-8')
 
-def _decode_b64url(data: str) -> bytes:
+def _decode_b64url(data) -> bytes:
+    """Decodifica base64url aceitando tanto str quanto bytes."""
+    if isinstance(data, bytes):
+        data = data.decode('utf-8')
     padding = '=' * (-len(data) % 4)
     return base64.urlsafe_b64decode(data + padding)
 
@@ -393,11 +396,14 @@ def webauthn_registro_opcoes():
             attestation=AttestationConveyancePreference.NONE,
         )
         # Armazena challenge usando email ao invés de usuario_id
+        # Challenge deve ser bytes
         _challenges_registro[email_usuario] = options.challenge
         
         if WEBAUTHN_DEBUG:
             print(f'Opções de registro geradas com sucesso!')
             print(f'Challenge armazenado para: {email_usuario}')
+            print(f'Challenge tipo: {type(options.challenge)}')
+            print(f'Challenge length: {len(options.challenge) if hasattr(options.challenge, "__len__") else "N/A"}')
         
         return jsonify(json.loads(options_to_json(options)))
     except Exception as e:
@@ -427,7 +433,8 @@ def webauthn_registro():
     if WEBAUTHN_DEBUG:
         print('=== DEBUG REGISTRO PASSKEY ===')
         print(f'Email: {email_usuario}')
-        print(f'Dados recebidos: {dados}')
+        print(f'Dados recebidos (tipo): {type(dados)}')
+        print(f'Dados recebidos (keys): {dados.keys() if isinstance(dados, dict) else "N/A"}')
     
     # Converte rawId para raw_id se necessário (compatibilidade com formato do browser)
     if 'rawId' in dados and 'raw_id' not in dados:
@@ -436,16 +443,31 @@ def webauthn_registro():
     # Guarda e remove 'transports' se existir, pois não faz parte do RegistrationCredential
     transports = dados.pop('transports', [])
 
+    # Processa response e garante que os campos base64 sejam tratados corretamente
     if 'response' in dados and isinstance(dados['response'], dict):
         resp = dados['response']
         if 'clientDataJSON' in resp and 'client_data_json' not in resp:
             resp['client_data_json'] = resp['clientDataJSON']
         if 'attestationObject' in resp and 'attestation_object' not in resp:
             resp['attestation_object'] = resp['attestationObject']
+        
+        # Remove campos que já foram convertidos
+        resp.pop('clientDataJSON', None)
+        resp.pop('attestationObject', None)
     
     try:
+        if WEBAUTHN_DEBUG:
+            print(f'Tentando carregar modelo com dados: {dados}')
+        
+        credencial = _load_webauthn_model(RegistrationCredential, dados)
+        
+        if WEBAUTHN_DEBUG:
+            print(f'Modelo carregado com sucesso')
+            print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
+            print(f'Challenge esperado (len): {len(challenge_esperado) if hasattr(challenge_esperado, "__len__") else "N/A"}')
+        
         verificado = verify_registration_response(
-            credential=_load_webauthn_model(RegistrationCredential, dados),
+            credential=credencial,
             expected_challenge=challenge_esperado,
             expected_rp_id=WEBAUTHN_RP_ID,
             expected_origin=WEBAUTHN_ORIGIN,
@@ -514,8 +536,14 @@ def webauthn_login_opcoes():
         rp_id=WEBAUTHN_RP_ID,
         user_verification=UserVerificationRequirement.PREFERRED,
     )
-    # Guarda challenge na sessão
+    # Guarda challenge na sessão (precisa ser bytes)
     session['webauthn_challenge'] = options.challenge
+    
+    if WEBAUTHN_DEBUG:
+        print('=== DEBUG LOGIN OPÇÕES ===')
+        print(f'Challenge tipo: {type(options.challenge)}')
+        print(f'Challenge length: {len(options.challenge) if hasattr(options.challenge, "__len__") else "N/A"}')
+    
     if usuario and isinstance(usuario, dict):
         session['webauthn_login_email'] = usuario.get('email')
         session['webauthn_login_tipo'] = usuario.get('tipo')
@@ -528,6 +556,11 @@ def webauthn_login():
     challenge_esperado = session.pop('webauthn_challenge', None)
     if not challenge_esperado:
         return jsonify({'erro':'challenge_expirado'}), 400
+    
+    if WEBAUTHN_DEBUG:
+        print('=== DEBUG LOGIN PASSKEY ===')
+        print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
+    
     # Identifica credencial enviada
     cred_id_b64 = dados.get('id') or dados.get('rawId')
     if not cred_id_b64:
@@ -545,6 +578,10 @@ def webauthn_login():
             resp['client_data_json'] = resp['clientDataJSON']
         if 'authenticatorData' in resp and 'authenticator_data' not in resp:
             resp['authenticator_data'] = resp['authenticatorData']
+        
+        # Remove campos que já foram convertidos
+        resp.pop('clientDataJSON', None)
+        resp.pop('authenticatorData', None)
     
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
@@ -552,6 +589,9 @@ def webauthn_login():
     if not isinstance(reg, dict) or not reg:
         return jsonify({'erro':'credencial_desconhecida'}), 404
     try:
+        if WEBAUTHN_DEBUG:
+            print(f'Tentando verificar autenticação com challenge tipo: {type(challenge_esperado)}')
+        
         verificado = verify_authentication_response(
             credential=_load_webauthn_model(AuthenticationCredential, dados),
             expected_challenge=challenge_esperado,
@@ -561,10 +601,15 @@ def webauthn_login():
             credential_public_key=_decode_b64url(reg.get('public_key','')),
             credential_current_sign_count=reg.get('sign_count', 0),
         )
+        
+        if WEBAUTHN_DEBUG:
+            print('Verificação de login bem-sucedida!')
     except Exception as e:
         if WEBAUTHN_DEBUG:
-            print('Erro verificação login WebAuthn:', e)
-        return jsonify({'erro':'verificacao_falhou'}), 400
+            print(f'Erro verificação login WebAuthn: {type(e).__name__}: {e}')
+            import traceback
+            traceback.print_exc()
+        return jsonify({'erro':'verificacao_falhou', 'detalhes': str(e)}), 400
     # Atualiza sign_count
     executar_query("UPDATE webauthn_credentials SET sign_count=%s, ultimo_uso=NOW() WHERE credential_id=%s", (verificado.new_sign_count, cred_id_b64), commit=True)
     # Cria sessão normal
