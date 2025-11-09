@@ -337,7 +337,7 @@ def detalhes(id):
     query_pedido = """
         SELECT p.*, 
                r.cpf as responsavel_cpf,
-               r.telefone as responsavel_telefone,
+               u.telefone as responsavel_telefone,
                r.endereco as responsavel_endereco,
                u.nome as responsavel_nome,
                u.email as responsavel_email,
