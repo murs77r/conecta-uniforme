@@ -3,142 +3,161 @@
 {% block title %}Home - Conecta Uniforme{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="jumbotron bg-light p-5 rounded">
-            <h1 class="display-4">Bem-vindo, {{ usuario_logado.nome }}!</h1>
-            <p class="lead">
-                Você está logado como <strong>{{ usuario_logado.tipo | title }}</strong>
-            </p>
-            <hr class="my-4">
-            <p>Selecione uma opção no menu acima para começar.</p>
-        </div>
+<!-- Hero (Bootstrap 5 pattern) -->
+<div class="p-5 mb-4 bg-body-tertiary rounded-3">
+    <div class="container py-5">
+        <h1 class="display-5 fw-bold">
+                {% if usuario_logado %}Bem-vindo, {{ usuario_logado.nome }}!{% else %}Conecta Uniforme{% endif %}
+        </h1>
+        <p class="col-lg-8 fs-5 mt-2 mb-4">
+                {% if usuario_logado %}
+                        Você está logado como <strong>{{ usuario_logado.tipo | title }}</strong>. Selecione uma das ações abaixo para começar.
+                {% else %}
+                        Plataforma para conectar escolas, fornecedores e responsáveis de forma simples e segura.
+                {% endif %}
+        </p>
+
+        {% if usuario_logado %}
+            {% if usuario_logado.tipo == 'administrador' %}
+                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-people me-1"></i> Gerenciar usuários
+                </a>
+                <a href="{{ url_for('escolas.listar') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-building me-1"></i> Ver escolas
+                </a>
+            {% elif usuario_logado.tipo == 'fornecedor' %}
+                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-box me-1"></i> Meus produtos
+                </a>
+                <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-plus-circle me-1"></i> Novo produto
+                </a>
+            {% elif usuario_logado.tipo == 'responsavel' %}
+                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-shop me-1"></i> Ver vitrine
+                </a>
+                <a href="{{ url_for('pedidos.ver_carrinho') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-cart me-1"></i> Ir ao carrinho
+                </a>
+            {% elif usuario_logado.tipo == 'escola' %}
+                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-truck me-1"></i> Fornecedores
+                </a>
+                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-receipt me-1"></i> Pedidos
+                </a>
+            {% endif %}
+        {% endif %}
     </div>
+  
 </div>
 
-<div class="row mt-4">
-    
-    <!-- Dashboard para Administrador -->
-    {% if usuario_logado.tipo == 'administrador' %}
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-people text-primary" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Usuários</h5>
-                <p class="card-text">Gerenciar usuários do sistema</p>
-                <a href="{{ url_for('usuarios.listar') }}" class="btn btn-primary">Acessar</a>
+<!-- Ações rápidas por perfil -->
+<div class="row row-cols-1 row-cols-md-3 g-4">
+        {% if usuario_logado and usuario_logado.tipo == 'administrador' %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people text-primary fs-1"></i>
+                        <h5 class="card-title mt-3">Usuários</h5>
+                        <p class="card-text text-muted">Gerencie contas, permissões e acessos.</p>
+                        <a href="{{ url_for('usuarios.listar') }}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-building text-success" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Escolas</h5>
-                <p class="card-text">Gerenciar escolas cadastradas</p>
-                <a href="{{ url_for('escolas.listar') }}" class="btn btn-success">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-building text-success fs-1"></i>
+                        <h5 class="card-title mt-3">Escolas</h5>
+                        <p class="card-text text-muted">Cadastre e gerencie escolas participantes.</p>
+                        <a href="{{ url_for('escolas.listar') }}" class="btn btn-success">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-truck text-warning" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Fornecedores</h5>
-                <p class="card-text">Gerenciar fornecedores</p>
-                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-warning">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-truck text-warning fs-1"></i>
+                        <h5 class="card-title mt-3">Fornecedores</h5>
+                        <p class="card-text text-muted">Homologação e gestão de fornecedores.</p>
+                        <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-warning">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Dashboard para Fornecedor -->
-    {% if usuario_logado.tipo == 'fornecedor' %}
-    <div class="col-md-6">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-box text-primary" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Meus Produtos</h5>
-                <p class="card-text">Visualizar produtos cadastrados</p>
-                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Acessar</a>
+        {% elif usuario_logado and usuario_logado.tipo == 'fornecedor' %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-box text-primary fs-1"></i>
+                        <h5 class="card-title mt-3">Meus Produtos</h5>
+                        <p class="card-text text-muted">Visualize e atualize seu catálogo.</p>
+                        <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-plus-circle text-success" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Novo Produto</h5>
-                <p class="card-text">Cadastrar novo produto</p>
-                <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-success">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-plus-circle text-success fs-1"></i>
+                        <h5 class="card-title mt-3">Novo Produto</h5>
+                        <p class="card-text text-muted">Cadastre rapidamente um novo item.</p>
+                        <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-success">Cadastrar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Dashboard para Responsável -->
-    {% if usuario_logado.tipo == 'responsavel' %}
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-shop text-primary" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Vitrine</h5>
-                <p class="card-text">Comprar uniformes escolares</p>
-                <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Acessar</a>
+        {% elif usuario_logado and usuario_logado.tipo == 'responsavel' %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-shop text-primary fs-1"></i>
+                        <h5 class="card-title mt-3">Vitrine</h5>
+                        <p class="card-text text-muted">Explore uniformes por escola e tamanho.</p>
+                        <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-primary">Ver produtos</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-cart text-success" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Carrinho</h5>
-                <p class="card-text">Ver meu carrinho de compras</p>
-                <a href="{{ url_for('pedidos.ver_carrinho') }}" class="btn btn-success">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-cart text-success fs-1"></i>
+                        <h5 class="card-title mt-3">Carrinho</h5>
+                        <p class="card-text text-muted">Finalize sua compra com segurança.</p>
+                        <a href="{{ url_for('pedidos.ver_carrinho') }}" class="btn btn-success">Ir ao carrinho</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-list-check text-info" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Meus Pedidos</h5>
-                <p class="card-text">Ver histórico de pedidos</p>
-                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-info">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-check text-info fs-1"></i>
+                        <h5 class="card-title mt-3">Meus Pedidos</h5>
+                        <p class="card-text text-muted">Acompanhe o status dos seus pedidos.</p>
+                        <a href="{{ url_for('pedidos.listar') }}" class="btn btn-info">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Dashboard para Escola -->
-    {% if usuario_logado.tipo == 'escola' %}
-    <div class="col-md-6">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-truck text-primary" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Fornecedores</h5>
-                <p class="card-text">Gerenciar fornecedores homologados</p>
-                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-primary">Acessar</a>
+        {% elif usuario_logado and usuario_logado.tipo == 'escola' %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-truck text-primary fs-1"></i>
+                        <h5 class="card-title mt-3">Fornecedores</h5>
+                        <p class="card-text text-muted">Gerencie homologações e parcerias.</p>
+                        <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-primary">Acessar</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-receipt text-success" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Pedidos</h5>
-                <p class="card-text">Visualizar pedidos realizados</p>
-                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-success">Acessar</a>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-receipt text-success fs-1"></i>
+                        <h5 class="card-title mt-3">Pedidos</h5>
+                        <p class="card-text text-muted">Visualize e filtre pedidos realizados.</p>
+                        <a href="{{ url_for('pedidos.listar') }}" class="btn btn-success">Ver pedidos</a>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    {% endif %}
-    
+        {% endif %}
 </div>
 {% endblock %}

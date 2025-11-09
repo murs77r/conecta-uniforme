@@ -311,7 +311,8 @@ def logs(id):
     logs = Database.executar(query_logs, (id,), fetchall=True)
     logs = _preparar_detalhes_logs(logs or [])
     
-    return render_template('usuarios/logs.html', usuario=usuario, logs=logs)
+    # Template movido para templates/logs/
+    return render_template('logs/logs.html', usuario=usuario, logs=logs)
 
 
 @usuarios_bp.route('/logs-acesso/<int:id>')
@@ -337,7 +338,8 @@ def logs_acesso(id):
     """
     logs = Database.executar(query_logs, (id,), fetchall=True)
     
-    return render_template('usuarios/logs_acesso.html', usuario=usuario, logs=logs or [])
+    # Template movido para templates/logs/
+    return render_template('logs/logs_acesso.html', usuario=usuario, logs=logs or [])
 
 
 @usuarios_bp.route('/logs')
@@ -377,7 +379,8 @@ def logs_sistema():
     logs = Database.executar(query, tuple(parametros) if parametros else None, fetchall=True)
     logs = _preparar_detalhes_logs(logs or [])
     
-    return render_template('usuarios/logs.html', usuario=None, logs=logs)
+    # Template movido para templates/logs/
+    return render_template('logs/logs.html', usuario=None, logs=logs)
 
 
 # ============================================
