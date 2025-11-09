@@ -338,7 +338,14 @@ def pagina_passkeys():
     if not usuario:
         flash('Faça login para acessar o cadastro de Passkey.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
-    return render_template('auth/passkey.html', usuario=usuario)
+
+    # Busca as passkeys existentes para o email do usuário
+    q = "SELECT credential_id, data_criacao, ultimo_uso FROM webauthn_credentials WHERE email = %s AND ativo = TRUE ORDER BY data_criacao DESC"
+    passkeys = executar_query(q, (usuario['email'],), fetchall=True)
+    if not isinstance(passkeys, list):
+        passkeys = []
+
+    return render_template('auth/passkey.html', usuario=usuario, passkeys=passkeys)
 
 
 # ============================================
@@ -582,6 +589,42 @@ def webauthn_registro():
         print(f'Credencial salva com sucesso! ID: {cred_id_b64}')
     
     return jsonify({'status': 'ok'})
+
+
+@autenticacao_bp.route('/webauthn/anular', methods=['POST'])
+def webauthn_anular():
+    """Anula (desativa) uma passkey existente."""
+    usuario = verificar_sessao()
+    if not usuario:
+        return jsonify({'erro': 'nao_autenticado'}), 401
+
+    dados = request.get_json(force=True)
+    credencial_id = dados.get('id')
+
+    if not credencial_id:
+        return jsonify({'erro': 'id_nao_fornecido'}), 400
+
+    # Desativa a credencial no banco, garantindo que pertence ao usuário logado
+    q = "UPDATE webauthn_credentials SET ativo = FALSE WHERE credential_id = %s AND email = %s"
+    resultado = executar_query(q, (credencial_id, usuario['email']), commit=True)
+
+    if resultado > 0:
+        # Log da anulação
+        try:
+            registrar_log(
+                usuario_id=usuario['id'],
+                tabela='webauthn_credentials',
+                registro_id=None, # O ID da tabela não é o credential_id
+                acao='DELETE', # Semanticamente é uma remoção
+                dados_antigos={'credential_id': credencial_id, 'ativo': True},
+                dados_novos={'ativo': False},
+                descricao=f'Anulação de Passkey'
+            )
+        except Exception:
+            pass
+        return jsonify({'status': 'ok'})
+    else:
+        return jsonify({'erro': 'falha_ao_anular'}), 500
 
 
 # ============================================

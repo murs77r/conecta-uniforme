@@ -7,7 +7,7 @@
   <div class="col-md-10 offset-md-1">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0"><i class="bi bi-people"></i> Gestores - {{ escola.escola_nome }}</h2>
-      <a href="{{ url_for('gestores.cadastrar', escola_id=escola.id) }}" class="btn btn-primary">
+      <a href="{{ url_for('escolas.cadastrar_gestor', escola_id=escola.id) }}" class="btn btn-primary">
         <i class="bi bi-person-plus"></i> Novo Gestor
       </a>
     </div>
@@ -34,10 +34,10 @@
                 <td>{{ g.telefone or '-' }}</td>
                 <td>{{ g.tipo_gestor or '-' }}</td>
                 <td class="text-end">
-                  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestores.editar', id=g.id) }}">
+                  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('escolas.editar_gestor', id=g.id) }}">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  <form method="POST" action="{{ url_for('gestores.excluir', id=g.id) }}" class="d-inline" onsubmit="return confirm('Excluir este gestor?');">
+                  <form method="POST" action="{{ url_for('escolas.excluir_gestor', id=g.id) }}" class="d-inline" onsubmit="return confirm('Excluir este gestor?');">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                       <i class="bi bi-trash"></i>
                     </button>

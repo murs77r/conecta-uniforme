@@ -18,7 +18,6 @@ from modules.fornecedores import fornecedores_bp
 from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
 from modules.repasses import repasses_bp
-from modules.gestores import gestores_bp
 from utils import conectar_banco
 
 # ============================================
@@ -44,7 +43,7 @@ app.register_blueprint(autenticacao_bp)
 # RF01 - Cadastro de Usuários
 app.register_blueprint(usuarios_bp)
 
-# RF04 - Gerenciar Escolas
+# RF04 - Gerenciar Escolas e Gestores Escolares
 app.register_blueprint(escolas_bp)
 
 # RF05 - Gerenciar Fornecedores
@@ -58,9 +57,6 @@ app.register_blueprint(pedidos_bp)
 
 # RF07 - Gerenciar Repasses Financeiros
 app.register_blueprint(repasses_bp)
-
-# RF04.x - Gerenciar Gestores Escolares
-app.register_blueprint(gestores_bp)
 
 
 # ============================================
