@@ -1,5 +1,18 @@
 # Módulo de Pedidos
 
+============================================
+RF06 - MANTER CADASTRO DE PEDIDO
+============================================
+Este módulo é responsável por:
+- RF06.1: Criar pedido
+- RF06.2: Apagar pedido
+- RF06.3: Editar pedido
+- RF06.4: Consultar pedido
+
+Controla o processo de controle de pedidos no sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Pedidos** gerencia o processo completo de compra de uniformes escolares, desde o carrinho de compras até a finalização e acompanhamento de pedidos. É o core da operação comercial do Conecta Uniforme.
@@ -9,8 +22,6 @@ O módulo de **Pedidos** gerencia o processo completo de compra de uniformes esc
 - Processar finalização de pedidos
 - Listar e filtrar pedidos por status e usuário
 - Calcular valores totais e aplicar regras de negócio
-
-**Sigla**: RF06 = Requisito Funcional 06 (Gerenciar Pedidos)
 
 ---
 
@@ -28,7 +39,6 @@ O módulo de **Pedidos** gerencia o processo completo de compra de uniformes esc
 2. Ajusta quantidades/remove itens
 3. Finaliza pedido (status='pendente')
 4. Pagamento confirmado (status='pago')
-5. Repasse gerado para fornecedores
 ```
 
 ---
@@ -54,7 +64,7 @@ class Pedido:
 **Estados do Pedido (State Machine):**
 - `'carrinho'`: Em edição, não finalizado
 - `'pendente'`: Finalizado, aguardando pagamento
-- `'pago'`: Pagamento confirmado, gera repasses
+- `'pago'`: Pagamento confirmado
 - `'cancelado'`: Pedido cancelado, estoque liberado
 
 #### ItemPedido
@@ -671,7 +681,6 @@ CREATE INDEX idx_itens_produto ON itens_pedido(produto_id);
 ```python
 subtotal_item = preco_unitario * quantidade
 valor_total_pedido = SUM(subtotal_item for all items)
-# Taxa da plataforma aplicada apenas nos repasses
 ```
 
 ### 4. Status de Pedido
@@ -683,7 +692,7 @@ carrinho → pendente → pago
 
 - **carrinho**: Em edição pelo responsável
 - **pendente**: Aguardando confirmação de pagamento
-- **pago**: Pagamento confirmado, gera repasses
+- **pago**: Pagamento confirmado
 - **cancelado**: Pedido cancelado (estoque liberado)
 
 ### 5. Integridade Referencial

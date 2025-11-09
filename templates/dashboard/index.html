@@ -59,24 +59,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- Repasses -->
-    <div class="col-md-3">
-        <div class="card h-100">
-            <div class="card-header bg-warning text-dark">
-                <i class="bi bi-currency-dollar"></i> Repasses
-            </div>
-            <div class="card-body">
-                <h3 class="text-warning">{{ stats.repasses.total or 0 }}</h3>
-                <p class="mb-1"><small><i class="bi bi-clock text-warning"></i> {{ stats.repasses.pendentes or 0 }} pendentes</small></p>
-                <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.repasses.concluidos or 0 }} concluídos</small></p>
-                <hr>
-                <p class="mb-1"><strong>Valor Total:</strong></p>
-                <h5 class="text-warning mb-1">R$ {{ "%.2f"|format(stats.repasses.valor_total or 0) }}</h5>
-                <p class="mb-0"><small>Pendente: R$ {{ "%.2f"|format(stats.repasses.valor_pendente or 0) }}</small></p>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Gráficos e Tabelas -->

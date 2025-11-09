@@ -17,7 +17,6 @@ from modules.escolas import escolas_bp
 from modules.fornecedores import fornecedores_bp
 from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
-from modules.repasses import repasses_bp
 from modules.dashboard import dashboard_bp
 from core.database import Database
 
@@ -55,9 +54,6 @@ app.register_blueprint(produtos_bp)
 
 # RF06 - Gerenciar Pedidos
 app.register_blueprint(pedidos_bp)
-
-# RF07 - Gerenciar Repasses Financeiros
-app.register_blueprint(repasses_bp)
 
 # Dashboard - Estatísticas Gerais
 app.register_blueprint(dashboard_bp)

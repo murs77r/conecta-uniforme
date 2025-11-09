@@ -62,18 +62,6 @@ def index():
     """
     stats['produtos'] = Database.executar(query_produtos, fetchone=True) or {}
     
-    # Repasses
-    query_repasses = """
-        SELECT 
-            COUNT(*) as total,
-            COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
-            COUNT(*) FILTER (WHERE status = 'concluido') as concluidos,
-            SUM(valor_liquido) as valor_total,
-            SUM(CASE WHEN status = 'pendente' THEN valor_liquido ELSE 0 END) as valor_pendente
-        FROM repasses_financeiros
-    """
-    stats['repasses'] = Database.executar(query_repasses, fetchone=True) or {}
-    
     # Últimos pedidos
     query_ultimos_pedidos = """
         SELECT p.*, u.nome as responsavel_nome

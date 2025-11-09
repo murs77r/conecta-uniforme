@@ -1,5 +1,18 @@
 # Módulo de Fornecedores
 
+============================================
+RF04 - MANTER CADASTRO DE FORNECEDOR
+============================================
+Este módulo é responsável por:
+- RF04.1: Criar fornecedor
+- RF04.2: Apagar fornecedor
+- RF04.3: Editar fornecedor
+- RF04.4: Consultar fornecedor
+
+Controla o processo de controle de fornecedores no sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Fornecedores** gerencia empresas que vendem uniformes escolares na plataforma Conecta Uniforme. Cada fornecedor está vinculado a um usuário e possui cadastro completo com informações comerciais (CNPJ, razão social, endereço).
@@ -206,11 +219,6 @@ dependencias = [
         'tabela': 'produtos', 
         'campo': 'fornecedor_id', 
         'mensagem': 'produtos'
-    },
-    {
-        'tabela': 'repasses_financeiros', 
-        'campo': 'fornecedor_id', 
-        'mensagem': 'repasses'
     }
 ]
 

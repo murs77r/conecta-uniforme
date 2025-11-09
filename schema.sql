@@ -165,24 +165,6 @@ CREATE TABLE IF NOT EXISTS itens_pedido (
 );
 
 -- ============================================
--- TABELA: repasses_financeiros
--- Armazena os repasses financeiros para fornecedores
--- Status: 'pendente', 'processando', 'concluido', 'cancelado'
--- ============================================
-CREATE TABLE IF NOT EXISTS repasses_financeiros (
-    id SERIAL PRIMARY KEY,
-    fornecedor_id INTEGER NOT NULL REFERENCES fornecedores(id) ON DELETE RESTRICT,
-    pedido_id INTEGER REFERENCES pedidos(id) ON DELETE RESTRICT,
-    valor DECIMAL(10, 2) NOT NULL,
-    taxa_plataforma DECIMAL(10, 2) DEFAULT 0.00,
-    valor_liquido DECIMAL(10, 2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'processando', 'concluido', 'cancelado')),
-    data_repasse TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    data_processamento TIMESTAMP,
-    observacoes TEXT
-);
-
--- ============================================
 -- TABELA: logs_alteracoes
 -- Registra todas as alterações importantes no sistema (INSERT, UPDATE, DELETE)
 -- Para auditoria e rastreabilidade
@@ -228,7 +210,6 @@ CREATE INDEX idx_produtos_escola ON produtos(escola_id);
 CREATE INDEX idx_pedidos_responsavel ON pedidos(responsavel_id);
 CREATE INDEX idx_pedidos_status ON pedidos(status);
 CREATE INDEX idx_itens_pedido_pedido ON itens_pedido(pedido_id);
-CREATE INDEX idx_repasses_fornecedor ON repasses_financeiros(fornecedor_id);
 CREATE INDEX idx_logs_usuario ON logs_alteracoes(usuario_id);
 CREATE INDEX idx_logs_tabela ON logs_alteracoes(tabela);
 CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
@@ -453,28 +434,6 @@ FROM (VALUES
 WHERE v.pedido_id IS NOT NULL AND v.produto_id IS NOT NULL;
 
 -- ============================================
--- DADOS SIMULADOS: Repasses Financeiros
--- ============================================
-INSERT INTO repasses_financeiros (fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, data_repasse, data_processamento, observacoes)
-SELECT fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, CAST(data_repasse AS TIMESTAMP), CAST(data_processamento AS TIMESTAMP), observacoes
-FROM (VALUES
-    -- Repasses de pedidos entregues
-    ((SELECT id FROM fornecedores WHERE cnpj = '12.345.678/0001-90'), 1, 111.80, 5.59, 106.21, 'concluido', '2025-03-15 10:30:00', '2025-03-22 14:00:00', 'Repasse processado com sucesso'),
-    ((SELECT id FROM fornecedores WHERE cnpj = '11.222.333/0001-44'), 4, 215.00, 10.75, 204.25, 'concluido', '2025-09-10 11:20:00', '2025-09-17 15:30:00', 'Repasse efetivado'),
-    
-    -- Repasses de pedidos pagos (em processamento)
-    ((SELECT id FROM fornecedores WHERE cnpj = '12.345.678/0001-90'), 2, 130.00, 6.50, 123.50, 'processando', '2025-10-20 14:15:00', NULL, 'Em processamento'),
-    ((SELECT id FROM fornecedores WHERE cnpj = '98.765.432/0001-10'), 5, 89.90, 4.50, 85.40, 'processando', '2025-11-05 16:45:00', NULL, 'Aguardando confirmação bancária'),
-    
-    -- Repasses de pedidos enviados
-    ((SELECT id FROM fornecedores WHERE cnpj = '12.345.678/0001-90'), 3, 80.50, 4.03, 76.47, 'pendente', '2025-10-18 09:00:00', NULL, 'Aguardando confirmação de entrega'),
-    
-    -- Repasse cancelado
-    ((SELECT id FROM fornecedores WHERE cnpj = '98.765.432/0001-10'), 7, 52.00, 2.60, 49.40, 'cancelado', '2025-10-01 12:00:00', NULL, 'Pedido cancelado pelo cliente')
-) AS v(fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, data_repasse, data_processamento, observacoes)
-WHERE v.fornecedor_id IS NOT NULL AND v.pedido_id IS NOT NULL;
-
--- ============================================
 -- DADOS SIMULADOS: Logs de Acesso
 -- ============================================
 INSERT INTO logs_acesso (usuario_id, acao, tipo_autenticacao, data_acesso, ip_usuario, user_agent, sucesso, descricao)
@@ -531,13 +490,6 @@ FROM (VALUES
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'pedidos', 1, 'UPDATE', '{"status": "pendente"}', '{"status": "pago"}', '2025-03-15 14:00:00', '192.168.1.100', 'Status do pedido atualizado para pago'),
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'pedidos', 1, 'UPDATE', '{"status": "pago"}', '{"status": "enviado"}', '2025-03-18 09:00:00', '192.168.1.100', 'Pedido enviado para entrega'),
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'pedidos', 1, 'UPDATE', '{"status": "enviado"}', '{"status": "entregue"}', '2025-03-20 15:30:00', '192.168.1.100', 'Pedido entregue ao cliente'),
-    
-    -- Criação de repasse
-    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'repasses_financeiros', 1, 'INSERT', NULL, '{"fornecedor_id": 1, "valor": 111.80, "status": "pendente"}', '2025-03-15 10:35:00', '192.168.1.100', 'Repasse financeiro criado'),
-    
-    -- Atualização de repasse
-    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'repasses_financeiros', 1, 'UPDATE', '{"status": "pendente"}', '{"status": "processando"}', '2025-03-20 16:00:00', '192.168.1.100', 'Repasse em processamento'),
-    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'repasses_financeiros', 1, 'UPDATE', '{"status": "processando"}', '{"status": "concluido", "data_processamento": "2025-03-22 14:00:00"}', '2025-03-22 14:00:00', '192.168.1.100', 'Repasse concluído com sucesso'),
     
     -- Cancelamento de pedido
     ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'responsavel'), 'pedidos', 7, 'UPDATE', '{"status": "pendente"}', '{"status": "cancelado"}', '2025-10-01 12:30:00', '192.168.1.110', 'Pedido cancelado a pedido do cliente'),

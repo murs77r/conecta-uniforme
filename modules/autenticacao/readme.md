@@ -1,5 +1,16 @@
 # Módulo de Autenticação
 
+============================================
+RF02 - GERENCIAR AUTENTICAÇÃO E ACESSO
+============================================
+Este módulo é responsável por:
+- RF02.1: Solicitar código de Acesso ou Passkey
+- RF02.2: Validar Código de Acesso ou Passkey
+
+Controla o processo de autenticação e autorização de usuários, garantindo segurança no acesso ao sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Autenticação** gerencia todo o fluxo de login, controle de acesso e sessões de usuários no Conecta Uniforme. Implementa autenticação moderna com **Passkeys (WebAuthn)** além do sistema tradicional de código por e-mail.

@@ -92,11 +92,6 @@ EXTENSOES_PERMITIDAS = set(os.getenv('EXTENSOES_PERMITIDAS', 'png,jpg,jpeg,gif')
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(5 * 1024 * 1024)))  # Tamanho máximo em bytes (padrão: 5MB)
 
 # ============================================
-# CONFIGURAÇÕES DE REPASSE FINANCEIRO
-# ============================================
-TAXA_PLATAFORMA_PERCENTUAL = float(os.getenv('TAXA_PLATAFORMA_PERCENTUAL', '15.0'))  # % deduzida do valor bruto antes de repassar ao fornecedor
-
-# ============================================
 # MENSAGENS PADRÃO DO SISTEMA
 # ============================================
 # Dicionário centralizado de mensagens para consistência de UX e facilitar i18n futuro

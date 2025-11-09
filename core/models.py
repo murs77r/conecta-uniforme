@@ -118,20 +118,6 @@ class Responsavel:
 
 
 @dataclass
-class RepasseFinanceiro:
-    """Modelo de repasse financeiro"""
-    id: Optional[int] = None
-    fornecedor_id: int = 0
-    pedido_id: int = 0
-    valor: float = 0.0
-    taxa_plataforma: float = 0.0
-    valor_liquido: float = 0.0
-    status: str = 'pendente'  # pendente, concluido, cancelado
-    data_repasse: Optional[datetime] = None
-    data_processamento: Optional[datetime] = None
-
-
-@dataclass
 class LogAcesso:
     """Modelo de log de acesso (LOGIN/LOGOFF)"""
     id: Optional[int] = None

@@ -57,22 +57,11 @@
             </div>
         </div>
     </div>
-    
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-currency-dollar text-info" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Repasses</h5>
-                <p class="card-text">Gerenciar repasses financeiros</p>
-                <a href="{{ url_for('repasses.listar') }}" class="btn btn-info">Acessar</a>
-            </div>
-        </div>
-    </div>
     {% endif %}
     
     <!-- Dashboard para Fornecedor -->
     {% if usuario_logado.tipo == 'fornecedor' %}
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card text-center">
             <div class="card-body">
                 <i class="bi bi-box text-primary" style="font-size: 3rem;"></i>
@@ -83,24 +72,13 @@
         </div>
     </div>
     
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card text-center">
             <div class="card-body">
                 <i class="bi bi-plus-circle text-success" style="font-size: 3rem;"></i>
                 <h5 class="card-title mt-3">Novo Produto</h5>
                 <p class="card-text">Cadastrar novo produto</p>
                 <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-success">Acessar</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card text-center">
-            <div class="card-body">
-                <i class="bi bi-currency-dollar text-info" style="font-size: 3rem;"></i>
-                <h5 class="card-title mt-3">Repasses</h5>
-                <p class="card-text">Ver meus repasses</p>
-                <a href="{{ url_for('repasses.listar') }}" class="btn btn-info">Acessar</a>
             </div>
         </div>
     </div>

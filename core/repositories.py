@@ -262,27 +262,3 @@ class ResponsavelRepository(BaseRepository):
         """Busca responsável pelo ID do usuário"""
         query = "SELECT id FROM responsaveis WHERE usuario_id = %s"
         return Database.executar(query, (usuario_id,), fetchone=True)
-
-
-class RepasseFinanceiroRepository(BaseRepository):
-    """Repositório de repasses financeiros"""
-    
-    def __init__(self):
-        super().__init__('repasses_financeiros')
-    
-    def listar_com_fornecedor(self, fornecedor_id: Optional[int] = None) -> List[Dict]:
-        """Lista repasses com dados do fornecedor"""
-        query = """
-            SELECT r.*, f.razao_social as fornecedor_nome, u.nome
-            FROM repasses_financeiros r
-            JOIN fornecedores f ON r.fornecedor_id = f.id
-            JOIN usuarios u ON f.usuario_id = u.id
-        """
-        parametros = []
-        
-        if fornecedor_id:
-            query += " WHERE r.fornecedor_id = %s"
-            parametros.append(fornecedor_id)
-        
-        query += " ORDER BY r.data_repasse DESC"
-        return Database.executar(query, tuple(parametros) if parametros else None, fetchall=True) or []

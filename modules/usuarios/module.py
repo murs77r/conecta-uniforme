@@ -408,8 +408,7 @@ def _verificar_dependencias_usuario(id: int, usuario: dict) -> list:
         if isinstance(forn, dict):
             forn_id = forn['id']
             checks = [
-                ('produtos', 'fornecedor_id', 'produtos'),
-                ('repasses_financeiros', 'fornecedor_id', 'repasses financeiros')
+                ('produtos', 'fornecedor_id', 'produtos')
             ]
             for tabela, campo, msg in checks:
                 q = f"SELECT COUNT(*) AS total FROM {tabela} WHERE {campo} = %s"

@@ -1,5 +1,18 @@
 # Módulo de Escolas
 
+============================================
+RF03 - MANTER CADASTRO DE ESCOLA
+============================================
+Este módulo é responsável por:
+- RF03.1: Criar escola
+- RF03.2: Apagar escola
+- RF03.3: Editar escola
+- RF03.4: Consultar escola
+
+Controla o processo de controle de escolas no sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Escolas** gerencia instituições de ensino homologadas e seus gestores escolares no sistema Conecta Uniforme. Este módulo é fundamental para conectar escolas, fornecedores e responsáveis na plataforma, permitindo homologação de fornecedores e gestão de relacionamentos entre entidades.

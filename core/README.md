@@ -68,7 +68,7 @@ print(usuario.tipo)  # escola
 - `Pedido`: Pedidos realizados
 - `ItemPedido`: Itens de um pedido
 - `Responsavel`: Responsáveis por alunos
-- `RepasseFinanceiro`: Repasses financeiros
+- `LogAcesso`: Logs de acesso (login/logout)
 
 ### 3. `repositories.py` - Padrão Repository
 

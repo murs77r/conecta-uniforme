@@ -202,8 +202,7 @@ def excluir(id):
     
     # Verifica dependências
     bloqueios = crud_service.verificar_dependencias(id, [
-        {'tabela': 'produtos', 'campo': 'fornecedor_id', 'mensagem': 'produtos'},
-        {'tabela': 'repasses_financeiros', 'campo': 'fornecedor_id', 'mensagem': 'repasses'}
+        {'tabela': 'produtos', 'campo': 'fornecedor_id', 'mensagem': 'produtos'}
     ])
     
     if bloqueios:

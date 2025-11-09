@@ -1,5 +1,18 @@
 # Módulo de Usuários
 
+============================================
+RF01 - MANTER CADASTRO DE USUÁRIO
+============================================
+Este módulo é responsável por:
+- RF01.1: Criar usuário
+- RF01.2: Apagar usuário
+- RF01.3: Editar Usuário
+- RF01.4: Consultar Usuário
+
+Controla o processo de controle de usuários no sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Usuários** é responsável pelo gerenciamento completo do ciclo de vida dos usuários do sistema Conecta Uniforme. Ele implementa operações CRUD (Create, Read, Update, Delete) com logging automático, validações robustas e controle de permissões granular.

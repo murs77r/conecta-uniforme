@@ -47,11 +47,6 @@ O **Conecta Uniforme** é uma plataforma de e-commerce (marketplace) que conecta
 - Histórico de compras
 - Estados: carrinho → pendente → pago → cancelado
 
-### RF07 - Gerenciar Repasses Financeiros
-- Controle de repasses para fornecedores
-- Cálculo automático de taxas (10% plataforma)
-- Rastreamento de pagamentos
-
 ---
 
 ## 🏗️ Arquitetura Técnica
@@ -85,9 +80,6 @@ conecta-uniforme/
 │   ├── pedidos/
 │   │   ├── module.py             # Carrinho + pedidos
 │   │   └── readme.md
-│   └── repasses/
-│       ├── module.py             # Repasses financeiros
-│       └── readme.md
 │
 ├── templates/                     # Camada de apresentação (Jinja2)
 ├── static/                        # Recursos estáticos (CSS, JS, imagens)
@@ -137,7 +129,7 @@ app.register_blueprint(produtos_bp)
 
 #### 2️⃣ **Camada de Modelos** (`core/models.py`)
 - Dataclasses Python para entidades do domínio
-- Modelos: `Usuario`, `Escola`, `GestorEscolar`, `Fornecedor`, `Produto`, `Pedido`, `ItemPedido`, `Responsavel`, `RepasseFinanceiro`
+- Modelos: `Usuario`, `Escola`, `GestorEscolar`, `Fornecedor`, `Produto`, `Pedido`, `ItemPedido`, `Responsavel`, `LogAcesso`
 - Tipagem forte com `Optional` e valores padrão
 
 #### 3️⃣ **Camada de Repositórios** (`core/repositories.py`)
@@ -150,7 +142,6 @@ app.register_blueprint(produtos_bp)
   - `ProdutoRepository`: Produtos com estoque
   - `PedidoRepository`: Carrinho e pedidos finalizados
   - `ResponsavelRepository`: Responsáveis por alunos
-  - `RepasseFinanceiroRepository`: Repasses para fornecedores
 
 #### 4️⃣ **Camada de Serviços** (`core/services.py`)
 - **AutenticacaoService**: Verifica sessão e permissões
@@ -175,8 +166,7 @@ A aplicação passou por uma refatoração completa para arquitetura em camadas 
 | usuarios.py | 720 linhas | 380 linhas | **-47%** |
 | escolas.py | 850 linhas | 420 linhas | **-51%** |
 | pedidos.py | 280 linhas | 155 linhas | **-45%** |
-| repasses.py | 180 linhas | 105 linhas | **-42%** |
-| **TOTAL** | **2.030 linhas** | **1.060 linhas** | **-48%** |
+| **TOTAL** | **1.850 linhas** | **955 linhas** | **-48%** |
 
 ### Benefícios Alcançados
 
@@ -261,7 +251,6 @@ Cada módulo possui documentação técnica detalhada em seu respectivo `readme.
 - **`modules/fornecedores/readme.md`** - CRUD de fornecedores e validação de CNPJ
 - **`modules/produtos/readme.md`** - Catálogo, vitrine com filtros e controle de estoque
 - **`modules/pedidos/readme.md`** - Carrinho de compras e finalização
-- **`modules/repasses/readme.md`** - Cálculo de repasses e taxas financeiras
 
 ---
 

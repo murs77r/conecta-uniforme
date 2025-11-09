@@ -57,11 +57,6 @@
                             <i class="bi bi-truck"></i> Fornecedores
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('repasses.listar') }}">
-                            <i class="bi bi-currency-dollar"></i> Repasses
-                        </a>
-                    </li>
                     {% endif %}
                     
                     {# Escola: gerenciamento de fornecedores homologados e gestores escolares #}
@@ -78,7 +73,7 @@
                     </li>
                     {% endif %}
                     
-                    {# Fornecedor: CRUD de produtos e visualização de repasses financeiros #}
+                    {# Fornecedor: CRUD de produtos #}
                     {% if usuario_logado.tipo == 'fornecedor' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('produtos.vitrine') }}">
@@ -88,11 +83,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('produtos.cadastrar') }}">
                             <i class="bi bi-plus-circle"></i> Novo Produto
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('repasses.listar') }}">
-                            <i class="bi bi-currency-dollar"></i> Repasses
                         </a>
                     </li>
                     {% endif %}

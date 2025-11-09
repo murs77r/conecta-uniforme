@@ -1,5 +1,18 @@
 # Módulo de Produtos
 
+============================================
+RF05 - MANTER CADASTRO DE PRODUTO
+============================================
+Este módulo é responsável por:
+- RF05.1: Criar produto
+- RF05.2: Apagar produto
+- RF05.3: Editar produto
+- RF05.4: Consultar produto
+
+Controla o processo de controle de produtos no sistema.
+
+---
+
 ## 📋 Visão Geral
 
 O módulo de **Produtos** gerencia o catálogo de uniformes escolares disponíveis para venda na plataforma Conecta Uniforme. Fornecedores cadastram produtos vinculados a escolas específicas, criando um marketplace segmentado.
@@ -313,7 +326,6 @@ CATEGORIAS_PERMITIDAS = [
 ### 4. Precificação
 - Preço definido pelo fornecedor
 - Preço congelado no momento da adição ao carrinho
-- Taxa da plataforma aplicada apenas nos repasses (invisível para responsável)
 
 ### 5. Vinculação Escola-Produto
 - `escola_id` é opcional (NULL = produto genérico)
