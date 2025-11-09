@@ -2,7 +2,7 @@
 
 /* Remove bordas dos cards de estatísticas */
 .card {
-    border: 1px solid rgba(0,0,0,.125) !important;
+    border: 0px solid rgba(0,0,0,.125) !important;
 }
 
 /* Remove classes de borda colorida do Bootstrap */
@@ -14,5 +14,5 @@
 .card.border-info,
 .card.border-light,
 .card.border-dark {
-    border: 1px solid rgba(0,0,0,.125) !important;
+    border: 0px solid rgba(0,0,0,.125) !important;
 }
