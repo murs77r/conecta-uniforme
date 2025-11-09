@@ -1,7 +1,14 @@
 """
 ============================================
-RF04 - GERENCIAR ESCOLAS HOMOLOGADAS (REFATORADO)
+RF03 - MANTER CADASTRO DE ESCOLA
 ============================================
+Este módulo é responsável por:
+- RF03.1: Criar escola
+- RF03.2: Apagar escola
+- RF03.3: Editar escola
+- RF03.4: Consultar escola
+
+Controla o processo de controle de escolas no sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -22,7 +29,7 @@ validacao = ValidacaoService()
 
 
 # ============================================
-# RF04.2 - CONSULTAR ESCOLAS (LISTAGEM)
+# RF03.4 - CONSULTAR ESCOLAS (LISTAGEM)
 # ============================================
 
 @escolas_bp.route('/')
@@ -170,7 +177,7 @@ def cadastrar():
 
 
 # ============================================
-# RF04.2 - VISUALIZAR ESCOLA
+# RF03.4 - VISUALIZAR ESCOLA
 # ============================================
 
 @escolas_bp.route('/visualizar/<int:id>')
@@ -207,7 +214,7 @@ def visualizar(id):
 
 
 # ============================================
-# RF04.x - HOMOLOGAR FORNECEDOR PARA ESCOLA
+# HOMOLOGAR FORNECEDOR PARA ESCOLA
 # ============================================
 
 @escolas_bp.route('/homologar/<int:escola_id>', methods=['GET', 'POST'])
@@ -372,7 +379,7 @@ def editar(id):
 
 
 # ============================================
-# RF04.4 - EXCLUIR ESCOLA
+# RF03.2 - EXCLUIR ESCOLA
 # ============================================
 
 @escolas_bp.route('/excluir/<int:id>', methods=['POST'])
@@ -402,215 +409,6 @@ def excluir(id):
     
     crud_service.excluir_com_log(id, dict(escola), usuario_logado['id'])
     return redirect(url_for('escolas.listar'))
-
-
-# ============================================
-# RF04.5 - CADASTRAR GESTOR ESCOLAR
-# ============================================
-
-@escolas_bp.route('/escola/<int:escola_id>/gestores/cadastrar', methods=['GET', 'POST'])
-def cadastrar_gestor(escola_id):
-    """Cadastra um novo gestor escolar"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    escola = escola_repo.buscar_com_usuario(escola_id)
-    if not escola:
-        flash('Escola não encontrada.', 'danger')
-        return redirect(url_for('escolas.listar'))
-    
-    # Verifica permissão
-    if usuario_logado['tipo'] != 'administrador' and \
-       (usuario_logado['tipo'] != 'escola' or escola['usuario_id'] != usuario_logado['id']):
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
-    
-    if request.method == 'GET':
-        return render_template('gestores/cadastrar.html', escola=escola)
-    
-    # POST - coleta dados
-    dados = {
-        'escola_id': escola_id,
-        'nome': request.form.get('nome', '').strip(),
-        'email': request.form.get('email', '').strip().lower() or None,
-        'telefone': request.form.get('telefone', '').strip() or None,
-        'cpf': request.form.get('cpf', '').strip() or None,
-        'tipo_gestor': request.form.get('tipo_gestor', '').strip() or None
-    }
-    
-    if not dados['nome']:
-        flash('Informe o nome do gestor.', 'danger')
-        return render_template('gestores/cadastrar.html', escola=escola)
-    
-    if dados['telefone'] and not validacao.validar_telefone(dados['telefone']):
-        flash('Telefone inválido.', 'danger')
-        return render_template('gestores/cadastrar.html', escola=escola)
-    
-    if dados['cpf'] and not validacao.validar_cpf(dados['cpf']):
-        flash('CPF inválido.', 'danger')
-        return render_template('gestores/cadastrar.html', escola=escola)
-    
-    gestor_id = gestor_repo.inserir(dados)
-    if gestor_id:
-        LogService.registrar(usuario_logado['id'], 'gestores_escolares', gestor_id, 'INSERT',
-                           dados_novos=dados, descricao='Cadastro de gestor escolar')
-        flash('Gestor cadastrado com sucesso!', 'success')
-    
-    return redirect(url_for('escolas.listar_gestores', escola_id=escola_id))
-
-
-# ============================================
-# RF04.6 - CONSULTAR GESTORES ESCOLARES
-# ============================================
-
-@escolas_bp.route('/escola/<int:escola_id>/gestores')
-def listar_gestores(escola_id):
-    """Lista todos os gestores de uma escola"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    escola = escola_repo.buscar_com_usuario(escola_id)
-    if not escola:
-        flash('Escola não encontrada.', 'danger')
-        return redirect(url_for('escolas.listar'))
-    
-    # Verifica permissão
-    if usuario_logado['tipo'] != 'administrador' and \
-       (usuario_logado['tipo'] != 'escola' or escola['usuario_id'] != usuario_logado['id']):
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
-    
-    gestores = gestor_repo.listar_por_escola(escola_id)
-    
-    return render_template('gestores/listar.html', escola=escola, gestores=gestores)
-
-
-# ============================================
-# RF04.7 - EDITAR GESTOR ESCOLAR
-# ============================================
-
-@escolas_bp.route('/gestores/editar/<int:id>', methods=['GET', 'POST'])
-def editar_gestor(id):
-    """Edita um gestor escolar existente"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    gestor = Database.executar(
-        """SELECT g.*, e.usuario_id, u.nome as escola_nome, e.id as escola_id
-           FROM gestores_escolares g
-           JOIN escolas e ON g.escola_id = e.id
-           JOIN usuarios u ON e.usuario_id = u.id
-           WHERE g.id = %s""",
-        (id,), fetchone=True
-    )
-    
-    if not gestor:
-        flash('Gestor não encontrado.', 'danger')
-        return redirect(url_for('home'))
-    
-    # Verifica permissão
-    if usuario_logado['tipo'] != 'administrador' and \
-       (usuario_logado['tipo'] != 'escola' or gestor['usuario_id'] != usuario_logado['id']):
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
-    
-    if request.method == 'GET':
-        return render_template('gestores/editar.html', gestor=gestor)
-    
-    # POST - atualiza
-    dados = {
-        'nome': request.form.get('nome', '').strip(),
-        'email': request.form.get('email', '').strip().lower() or None,
-        'telefone': request.form.get('telefone', '').strip() or None,
-        'cpf': request.form.get('cpf', '').strip() or None,
-        'tipo_gestor': request.form.get('tipo_gestor', '').strip() or None
-    }
-    
-    if not dados['nome']:
-        flash('Informe o nome do gestor.', 'danger')
-        return render_template('gestores/editar.html', gestor=gestor)
-    
-    if dados['telefone'] and not validacao.validar_telefone(dados['telefone']):
-        flash('Telefone inválido.', 'danger')
-        return render_template('gestores/editar.html', gestor=gestor)
-    
-    if dados['cpf'] and not validacao.validar_cpf(dados['cpf']):
-        flash('CPF inválido.', 'danger')
-        return render_template('gestores/editar.html', gestor=gestor)
-    
-    if gestor_repo.atualizar(id, dados):
-        LogService.registrar(usuario_logado['id'], 'gestores_escolares', id, 'UPDATE',
-                           dados_antigos=dict(gestor), dados_novos=dados,
-                           descricao='Atualização de gestor escolar')
-        flash('Gestor atualizado com sucesso!', 'success')
-    
-    return redirect(url_for('escolas.listar_gestores', escola_id=gestor['escola_id']))
-
-
-# ============================================
-# RF04.8 - EXCLUIR GESTOR ESCOLAR
-# ============================================
-
-@escolas_bp.route('/gestores/excluir/<int:id>', methods=['POST'])
-def excluir_gestor(id):
-    """Exclui um gestor escolar"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    gestor = Database.executar(
-        """SELECT g.id, g.escola_id, e.usuario_id FROM gestores_escolares g 
-           JOIN escolas e ON g.escola_id = e.id WHERE g.id = %s""",
-        (id,), fetchone=True
-    )
-    
-    if not gestor:
-        flash('Gestor não encontrado.', 'danger')
-        return redirect(url_for('home'))
-    
-    # Verifica permissão
-    if usuario_logado['tipo'] != 'administrador' and \
-       (usuario_logado['tipo'] != 'escola' or gestor['usuario_id'] != usuario_logado['id']):
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
-    
-    if gestor_repo.excluir(id):
-        LogService.registrar(usuario_logado['id'], 'gestores_escolares', id, 'DELETE',
-                           dados_antigos=dict(gestor), descricao='Exclusão de gestor escolar')
-        flash('Gestor excluído com sucesso!', 'success')
-    
-    return redirect(url_for('escolas.listar_gestores', escola_id=gestor['escola_id']))
-
-
-# ============================================
-# ATALHO - GESTORES DA PRÓPRIA ESCOLA
-# ============================================
-
-@escolas_bp.route('/meus-gestores')
-def meus_gestores():
-    """Redireciona a escola para a listagem de seus próprios gestores"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    if usuario_logado['tipo'] != 'escola':
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
-    
-    escola = escola_repo.buscar_por_usuario_id(usuario_logado['id'])
-    if not escola:
-        flash('Escola não encontrada.', 'danger')
-        return redirect(url_for('home'))
-    
-    return redirect(url_for('escolas.listar_gestores', escola_id=escola['id']))
 
 
 # ============================================

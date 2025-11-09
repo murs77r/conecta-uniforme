@@ -24,9 +24,6 @@
             <button type="submit" class="btn btn-primary btn-lg" id="btnEnviar">
               <i class="bi bi-envelope"></i> Enviar Código
             </button>
-            <button type="button" class="btn btn-outline-secondary btn-lg" id="btnPasskeyLogin" style="display:none;">
-              <i class="bi bi-fingerprint"></i> Entrar com Passkey
-            </button>
           </div>
                 </form>
                 
@@ -168,128 +165,6 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
 
   // Observa mudanças no email: ao alterar, limpa tipo previamente selecionado (novo email = nova escolha)
   emailInput.addEventListener('input', ()=> { tipoHidden.value=''; });
-
-  // ============================================
-  // AUTENTICAÇÃO VIA PASSKEY (WEBAUTHN/FIDO2)
-  // ============================================
-  // Fluxo alternativo ao código por email: autenticação biométrica/PIN diretamente
-  const btnPasskey = document.getElementById('btnPasskeyLogin');
-  if(btnPasskey){
-    // Verifica se email tem Passkey cadastrada (consulta assíncrona ao backend)
-    async function atualizarVisibilidadePasskey(){
-      const emailVal = (emailInput.value || '').trim().toLowerCase();
-      if(!emailVal){ btnPasskey.style.display = 'none'; return; }
-      try{
-        const r = await fetch(`/auth/webauthn/tem?email=${encodeURIComponent(emailVal)}`);
-        const j = await r.json();
-        btnPasskey.style.display = j.tem ? '' : 'none';  // Exibe botão apenas se Passkey existe
-      }catch(_){ btnPasskey.style.display = 'none'; }
-    }
-    
-    // Atualiza visibilidade ao perder foco do campo email (debounce natural)
-    emailInput.addEventListener('blur', atualizarVisibilidadePasskey);
-    emailInput.addEventListener('input', ()=> btnPasskey.style.display='none');
-    if((emailInput.value||'').trim()){ atualizarVisibilidadePasskey(); }
-
-    // Funções de conversão base64url ↔ ArrayBuffer (formato FIDO2)
-    function b64urlToArrayBuffer(b64url){
-      const pad = '='.repeat((4 - b64url.length % 4) % 4);
-      const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
-      const raw = atob(b64);
-      const buffer = new ArrayBuffer(raw.length);
-      const view = new Uint8Array(buffer);
-      for(let i=0;i<raw.length;i++){view[i]=raw.charCodeAt(i);} return buffer;
-    }
-    function arrayBufferToB64url(buf){
-      const bytes = new Uint8Array(buf); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
-      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    }
-    
-    // Função principal: realiza login via Passkey (WebAuthn Assertion)
-    async function realizarLoginPasskey(tipoEscolhido){
-      const emailVal = (emailInput.value || '').trim().toLowerCase();
-      if(!emailVal){ alert('Digite o email antes de usar Passkey.'); emailInput.focus(); return; }
-      
-      // PASSO 1: Obter challenge e opções do servidor
-      const params = new URLSearchParams({email: emailVal}); 
-      if(tipoEscolhido) params.append('tipo', tipoEscolhido);
-      
-      let resp = await fetch(`/auth/webauthn/login/opcoes?${params.toString()}`);
-      let options = await resp.json();
-      if(options.erro){ alert('Não foi possível obter opções de Passkey: ' + options.erro); return; }
-      
-      // PASSO 2: Converter base64url → ArrayBuffer
-      if(options.allowCredentials){ options.allowCredentials = options.allowCredentials.map(c=>({type:c.type,id:b64urlToArrayBuffer(c.id)})); }
-      options.challenge = b64urlToArrayBuffer(options.challenge);
-      
-      try{
-        // PASSO 3: Solicitar assertion (mostra diálogo de autenticação)
-        const assertion = await navigator.credentials.get({publicKey: options});
-        
-        // PASSO 4: Serializar assertion para JSON
-        const data = { 
-          id: assertion.id, 
-          rawId: arrayBufferToB64url(assertion.rawId), 
-          type: assertion.type, 
-          response: { 
-            authenticatorData: arrayBufferToB64url(assertion.response.authenticatorData), 
-            clientDataJSON: arrayBufferToB64url(assertion.response.clientDataJSON), 
-            signature: arrayBufferToB64url(assertion.response.signature), 
-            userHandle: assertion.response.userHandle ? arrayBufferToB64url(assertion.response.userHandle) : null 
-          }
-        };
-        
-        // Adiciona tipo escolhido ao payload se múltiplos perfis
-        if(tipoEscolhido){
-          data.tipo = tipoEscolhido;
-        }
-        
-        // PASSO 5: Enviar assertion ao backend para verificação
-        const finish = await fetch('/auth/webauthn/login', { 
-          method:'POST', 
-          headers:{'Content-Type':'application/json'}, 
-          body: JSON.stringify(data) 
-        });
-        const rjson = await finish.json();
-        
-        if(rjson.status === 'ok'){ 
-          window.location.href = '/home'; 
-        }
-        else if(rjson.erro === 'selecionar_tipo' && Array.isArray(rjson.tipos)){
-          // Backend retornou múltiplos perfis: abre modal para escolher
-          const lista = modalEl.querySelector('.vstack');
-          if(lista){
-            lista.innerHTML = '';
-            rjson.tipos.forEach(t => {
-              const label = (window.ROTULOS_TIPOS && window.ROTULOS_TIPOS[t]) || (t.charAt(0).toUpperCase()+t.slice(1));
-              const b = document.createElement('button');
-              b.type = 'button';
-              b.className = 'btn btn-outline-primary w-100 escolha-tipo-passkey';
-              b.setAttribute('data-tipo', t);
-              b.textContent = label;
-              b.addEventListener('click', async function(){
-                // Fecha modal e refaz login com tipo específico
-                if(modalInstance){ modalInstance.hide(); }
-                await new Promise(r=>setTimeout(r,300));  // Aguarda animação
-                realizarLoginPasskey(t);  // Recursivo com tipo
-              });
-              lista.appendChild(b);
-            });
-            abrirModalTipos();
-          }
-        }
-        else { 
-          alert('Falha no login Passkey: ' + (rjson.erro || 'desconhecido')); 
-        }
-      }catch(e){ 
-        console.error(e); 
-        alert('Falha ao realizar autenticação Passkey.'); 
-      }
-    }
-    
-    // Event listener: clique no botão inicia fluxo Passkey
-    btnPasskey.addEventListener('click', () => realizarLoginPasskey(null));
-  }
 })();
 </script>
 {% endblock %}

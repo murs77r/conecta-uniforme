@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS logs_acesso (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER REFERENCES usuarios(id) ON DELETE RESTRICT,
     acao VARCHAR(20) NOT NULL CHECK (acao IN ('LOGIN', 'LOGOFF')),
-    tipo_autenticacao VARCHAR(50), -- 'codigo', 'passkey'
+    tipo_autenticacao VARCHAR(50), -- 'codigo'
     data_acesso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ip_usuario VARCHAR(50),
     user_agent TEXT,
@@ -215,45 +215,6 @@ CREATE INDEX idx_logs_tabela ON logs_alteracoes(tabela);
 CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
 CREATE INDEX IF NOT EXISTS idx_logs_acesso_usuario ON logs_acesso(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_logs_acesso_data ON logs_acesso(data_acesso);
-
--- ============================================
--- TABELA: webauthn_credentials
--- Armazena credenciais Passkey/WebAuthn vinculadas a usuários
--- Cada usuário pode ter múltiplas credenciais (ex: notebook, celular)
--- ============================================
-CREATE TABLE IF NOT EXISTS webauthn_credentials (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    email VARCHAR(200),                         -- Email vinculado à credencial
-    credential_id VARCHAR(200) UNIQUE NOT NULL, -- Base64URL do ID da credencial
-    public_key VARCHAR(500) NOT NULL,           -- Base64URL da chave pública (COSE public key)
-    sign_count INTEGER DEFAULT 0,               -- Contador para proteção de replay
-    transports VARCHAR(200),                    -- JSON com transports (ex: ["internal"])
-    backup_eligible BOOLEAN DEFAULT FALSE,      -- Se o autenticador é elegível a backup
-    backup_state BOOLEAN DEFAULT FALSE,         -- Se o backup está efetivamente em uso
-    aaguid VARCHAR(50),                         -- Identificador do autenticador
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ultimo_uso TIMESTAMP,
-    ativo BOOLEAN DEFAULT TRUE
-);
-
-CREATE INDEX IF NOT EXISTS idx_webauthn_usuario ON webauthn_credentials(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_webauthn_email ON webauthn_credentials(email);
-
--- ============================================
--- TABELA: webauthn_challenges
--- Armazena challenges temporários para o fluxo de registro WebAuthn
--- Substitui o armazenamento em memória para suportar múltiplos workers
--- ============================================
-CREATE TABLE IF NOT EXISTS webauthn_challenges (
-    id SERIAL PRIMARY KEY,
-    challenge VARCHAR(200) UNIQUE NOT NULL, -- Base64URL do challenge
-    email VARCHAR(200) NOT NULL,
-    data_expiracao TIMESTAMP NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_email ON webauthn_challenges(email);
-CREATE INDEX IF NOT EXISTS idx_webauthn_challenges_expiracao ON webauthn_challenges(data_expiracao);
 
 -- ============================================
 -- DADOS INICIAIS: usuários por email e tipo (evita duplicidade por conflito)
@@ -442,7 +403,6 @@ FROM (VALUES
     -- Acessos do administrador João Paulo
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'LOGIN', 'codigo', '2025-11-09 08:00:00', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', TRUE, 'Login bem-sucedido via código'),
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'LOGOFF', NULL, '2025-11-09 12:30:00', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', TRUE, 'Logout normal'),
-    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'LOGIN', 'passkey', '2025-11-09 14:00:00', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', TRUE, 'Login via Passkey'),
     
     -- Acessos do fornecedor Murilo
     ((SELECT id FROM usuarios WHERE email = 'murilosr@outlook.com.br' AND tipo = 'fornecedor'), 'LOGIN', 'codigo', '2025-11-08 09:15:00', '192.168.1.105', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', TRUE, 'Acesso para cadastrar produtos'),

@@ -1,7 +1,14 @@
 """
 ============================================
-RF01 - MANTER CADASTRO DE USUÁRIO (REFATORADO)
+RF01 - MANTER CADASTRO DE USUÁRIO
 ============================================
+Este módulo é responsável por:
+- RF01.1: Criar usuário
+- RF01.2: Apagar usuário
+- RF01.3: Editar Usuário
+- RF01.4: Consultar Usuário
+
+Controla o processo de controle de usuários no sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash

@@ -4,8 +4,8 @@
 RF02 - GERENCIAR AUTENTICAÇÃO E ACESSO
 ============================================
 Este módulo é responsável por:
-- RF02.1: Solicitar código de Acesso ou Passkey
-- RF02.2: Validar Código de Acesso ou Passkey
+- RF02.1: Solicitar código de Acesso
+- RF02.2: Validar Código de Acesso
 
 Controla o processo de autenticação e autorização de usuários, garantindo segurança no acesso ao sistema.
 
@@ -13,33 +13,25 @@ Controla o processo de autenticação e autorização de usuários, garantindo s
 
 ## 📋 Visão Geral
 
-O módulo de **Autenticação** gerencia todo o fluxo de login, controle de acesso e sessões de usuários no Conecta Uniforme. Implementa autenticação moderna com **Passkeys (WebAuthn)** além do sistema tradicional de código por e-mail.
+O módulo de **Autenticação** gerencia todo o fluxo de login, controle de acesso e sessões de usuários no Conecta Uniforme. Implementa autenticação tradicional por código enviado via e-mail.
 
 ### Propósito
-- Autenticar usuários via código de acesso (e-mail) ou passkeys
+- Autenticar usuários via código de acesso (e-mail)
 - Gerenciar sessões seguras com expiração configurável
 - Controlar permissões por tipo de usuário
-- Implementar autenticação sem senha (Passwordless)
 
 ---
 
 ## 🏗️ Arquitetura
 
 ### Métodos de Autenticação
-1. **Código por E-mail** (Tradicional)
+**Código por E-mail**
    - Usuário informa email + tipo
    - Sistema gera código aleatório (6 dígitos)
    - Código enviado por SMTP
    - Validade: configurável (padrão 2 horas)
 
-2. **Passkeys (WebAuthn)** (Moderno)
-   - Registro de credencial no dispositivo
-   - Autenticação biométrica (Face ID, Touch ID, Windows Hello)
-   - Sem senha, sem código
-   - Padrão W3C (FIDO2)
-
 ### Padrões Utilizados
-- **Strategy Pattern**: Múltiplos métodos de autenticação
 - **Session Management**: Flask sessions com tokens únicos
 - **Middleware Pattern**: Verificação de sessão em decorators
 
@@ -227,169 +219,7 @@ ORDER BY tipo
 
 ---
 
-## 🔐 Passkeys (WebAuthn)
-
-### Registro de Passkey
-
-#### 1. `POST /auth/passkey/register/begin`
-**Descrição**: Inicia processo de registro de passkey
-
-**Corpo**:
-```json
-{
-    "email": "string",
-    "tipo": "string"
-}
-```
-
-**Resposta**:
-```json
-{
-    "publicKey": {
-        "challenge": "base64url",
-        "rp": {"id": "localhost", "name": "Conecta Uniforme"},
-        "user": {
-            "id": "base64url(user_id)",
-            "name": "usuario@exemplo.com",
-            "displayName": "Nome do Usuário"
-        },
-        "pubKeyCredParams": [...],
-        "timeout": 60000,
-        "authenticatorSelection": {
-            "userVerification": "preferred"
-        }
-    }
-}
-```
-
-**Armazenamento Temporário**:
-```python
-# Challenge salvo na sessão para verificação posterior
-session['passkey_challenge'] = challenge
-session['passkey_user_id'] = user_id
-```
-
----
-
-#### 2. `POST /auth/passkey/register/complete`
-**Descrição**: Completa registro após criação de credencial no dispositivo
-
-**Corpo**:
-```json
-{
-    "credential": {
-        "id": "base64url",
-        "rawId": "base64url",
-        "response": {
-            "clientDataJSON": "base64url",
-            "attestationObject": "base64url"
-        },
-        "type": "public-key"
-    }
-}
-```
-
-**Validação e Armazenamento**:
-```python
-# 1. Verifica resposta WebAuthn
-verification = verify_registration_response(
-    credential=credential,
-    expected_challenge=session['passkey_challenge'],
-    expected_rp_id=WEBAUTHN_RP_ID,
-    expected_origin=WEBAUTHN_ORIGIN
-)
-
-# 2. Salva credencial no banco
-executar_query("""
-    INSERT INTO passkeys (usuario_id, credential_id, public_key, counter)
-    VALUES (%s, %s, %s, %s)
-""", (user_id, credential_id, public_key, sign_count))
-
-# 3. Cria sessão automaticamente
-session['usuario_id'] = user_id
-session['tipo_usuario'] = tipo
-# ... (mesma lógica de validar_codigo)
-```
-
----
-
-### Autenticação com Passkey
-
-#### 3. `POST /auth/passkey/authenticate/begin`
-**Descrição**: Inicia autenticação com passkey
-
-**Corpo**:
-```json
-{
-    "email": "string",
-    "tipo": "string"
-}
-```
-
-**Resposta**:
-```json
-{
-    "publicKey": {
-        "challenge": "base64url",
-        "timeout": 60000,
-        "rpId": "localhost",
-        "allowCredentials": [
-            {"id": "base64url", "type": "public-key"}
-        ],
-        "userVerification": "preferred"
-    }
-}
-```
-
----
-
-#### 4. `POST /auth/passkey/authenticate/complete`
-**Descrição**: Completa autenticação após verificação biométrica
-
-**Corpo**:
-```json
-{
-    "credential": {
-        "id": "base64url",
-        "rawId": "base64url",
-        "response": {
-            "clientDataJSON": "base64url",
-            "authenticatorData": "base64url",
-            "signature": "base64url"
-        }
-    }
-}
-```
-
-**Validação**:
-```python
-# 1. Busca credencial salva
-passkey = executar_query("""
-    SELECT * FROM passkeys WHERE credential_id = %s
-""", (credential_id,), fetchone=True)
-
-# 2. Verifica assinatura
-verification = verify_authentication_response(
-    credential=credential,
-    expected_challenge=session['passkey_challenge'],
-    credential_public_key=passkey['public_key'],
-    credential_current_sign_count=passkey['counter'],
-    expected_rp_id=WEBAUTHN_RP_ID,
-    expected_origin=WEBAUTHN_ORIGIN
-)
-
-# 3. Atualiza contador
-executar_query("""
-    UPDATE passkeys SET counter = %s WHERE id = %s
-""", (verification.new_sign_count, passkey['id']))
-
-# 4. Cria sessão
-# ... (mesma lógica de validar_codigo)
-```
-
----
-
-## 📊 Modelos de Dados
+##  Modelos de Dados
 
 ### Tabela `codigos_acesso`
 ```sql
@@ -406,40 +236,17 @@ CREATE INDEX idx_codigos_usuario ON codigos_acesso(usuario_id);
 CREATE INDEX idx_codigos_expiracao ON codigos_acesso(data_expiracao);
 ```
 
-### Tabela `passkeys`
-```sql
-CREATE TABLE passkeys (
-    id SERIAL PRIMARY KEY,
-    usuario_id INT NOT NULL REFERENCES usuarios(id),
-    credential_id TEXT UNIQUE NOT NULL,
-    public_key TEXT NOT NULL,
-    counter INT DEFAULT 0,
-    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ultimo_uso TIMESTAMP
-);
-
-CREATE INDEX idx_passkeys_usuario ON passkeys(usuario_id);
-CREATE INDEX idx_passkeys_credential ON passkeys(credential_id);
-```
-
 ---
 
 ## 🔐 Segurança
 
-### 1. Código de Acesso
+### Código de Acesso
 - **Geração**: Aleatório (6 dígitos), criptograficamente seguro
 - **Validade**: 2 horas (configurável)
 - **Uso Único**: Marcado como `usado=TRUE` após validação
 - **Rate Limiting**: Máximo de 3 tentativas por minuto (recomendado)
 
-### 2. Passkeys (WebAuthn)
-- **Challenge**: Aleatório de 32 bytes, único por tentativa
-- **Verificação de Origem**: `expected_origin` valida domínio
-- **Counter**: Previne replay attacks
-- **User Verification**: Biometria ou PIN do dispositivo
-- **Phishing-Resistant**: Credencial vinculada ao domínio
-
-### 3. Sessões
+### Sessões
 - **Token Único**: UUID v4 gerado por sessão
 - **Expiração**: Configurável (padrão: 7 dias)
 - **HttpOnly**: Cookies não acessíveis por JavaScript

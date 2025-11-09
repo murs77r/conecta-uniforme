@@ -1,13 +1,13 @@
 # Módulo de Produtos
 
 ============================================
-RF05 - MANTER CADASTRO DE PRODUTO
+RF06 - MANTER CADASTRO DE PRODUTO
 ============================================
 Este módulo é responsável por:
-- RF05.1: Criar produto
-- RF05.2: Apagar produto
-- RF05.3: Editar produto
-- RF05.4: Consultar produto
+- RF06.1: Criar produto
+- RF06.2: Apagar produto
+- RF06.3: Editar produto
+- RF06.4: Consultar produto
 
 Controla o processo de controle de produtos no sistema.
 

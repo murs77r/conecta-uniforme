@@ -209,7 +209,7 @@ class LogService:
         Parâmetros:
             usuario_id (int): ID do usuário
             acao (str): Tipo de ação ('LOGIN' ou 'LOGOFF')
-            tipo_autenticacao (str): Tipo de autenticação ('codigo', 'passkey')
+            tipo_autenticacao (str): Tipo de autenticação ('codigo')
             ip_usuario (str): IP do usuário
             user_agent (str): User agent do navegador
             sucesso (bool): Se o acesso foi bem-sucedido

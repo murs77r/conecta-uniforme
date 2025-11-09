@@ -62,6 +62,17 @@ def index():
     """
     stats['produtos'] = Database.executar(query_produtos, fetchone=True) or {}
     
+    # Escolas
+    query_escolas = """
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'homologada') as homologadas,
+            COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+            COUNT(*) FILTER (WHERE status = 'reprovada') as reprovadas
+        FROM escolas
+    """
+    stats['escolas'] = Database.executar(query_escolas, fetchone=True) or {}
+    
     # Últimos pedidos
     query_ultimos_pedidos = """
         SELECT p.*, u.nome as responsavel_nome
@@ -111,4 +122,5 @@ def index():
                          stats=stats,
                          ultimos_pedidos=ultimos_pedidos,
                          top_produtos=top_produtos,
-                         pedidos_por_mes=pedidos_por_mes)
+                         pedidos_por_mes=pedidos_por_mes,
+                         usuario_logado=usuario_logado)

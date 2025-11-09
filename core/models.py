@@ -123,7 +123,7 @@ class LogAcesso:
     id: Optional[int] = None
     usuario_id: int = 0
     acao: str = ''  # LOGIN ou LOGOFF
-    tipo_autenticacao: Optional[str] = None  # codigo, passkey
+    tipo_autenticacao: Optional[str] = None  # codigo
     data_acesso: Optional[datetime] = None
     ip_usuario: Optional[str] = None
     user_agent: Optional[str] = None

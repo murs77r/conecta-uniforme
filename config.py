@@ -57,28 +57,6 @@ CODIGO_ACESSO_TAMANHO = int(os.getenv('CODIGO_ACESSO_TAMANHO', '6'))  # Quantida
 SESSAO_DURACAO_DIAS = int(os.getenv('SESSAO_DURACAO_DIAS', '7'))  # Validade do cookie de sessão após login
 
 # ============================================
-# CONFIGURAÇÕES DE WEBAUTHN / PASSKEYS (FIDO2)
-# ============================================
-# RP_ID: Domínio ou hostname do Relying Party (deve corresponder ao origin sem protocolo)
-# Em produção, usar domínio real (ex: 'app.conecta.com'). Em dev, 'localhost' é válido.
-# Para testes em dispositivos móveis, configurar domínio local no /etc/hosts (ex: 'dev.conecta.local')
-WEBAUTHN_RP_ID = os.getenv('WEBAUTHN_RP_ID', 'localhost')
-WEBAUTHN_RP_NAME = os.getenv('WEBAUTHN_RP_NAME', 'Conecta Uniforme')
-WEBAUTHN_ORIGIN = os.getenv('WEBAUTHN_ORIGIN', f'http://localhost:{PORT}')  # Origin completo com protocolo
-WEBAUTHN_ALLOW_ATTESTATION = os.getenv('WEBAUTHN_ALLOW_ATTESTATION', 'false').lower() in ('1','true','yes','on')
-WEBAUTHN_DEBUG = os.getenv('WEBAUTHN_DEBUG', 'true').lower() in ('1','true','yes','on')  # Logs detalhados de verificação
-
-# Diagnóstico: imprime configurações WebAuthn na inicialização se DEBUG ativo
-if DEBUG:
-    print("=" * 70)
-    print("CONFIGURAÇÃO WEBAUTHN CARREGADA:")
-    print(f"  WEBAUTHN_RP_ID    : {WEBAUTHN_RP_ID}")
-    print(f"  WEBAUTHN_RP_NAME  : {WEBAUTHN_RP_NAME}")
-    print(f"  WEBAUTHN_ORIGIN   : {WEBAUTHN_ORIGIN}")
-    print(f"  WEBAUTHN_DEBUG    : {WEBAUTHN_DEBUG}")
-    print("=" * 70)
-
-# ============================================
 # CONFIGURAÇÕES DE PAGINAÇÃO
 # ============================================
 ITENS_POR_PAGINA = int(os.getenv('ITENS_POR_PAGINA', '20'))  # Quantidade padrão de registros por página em listagens

@@ -20,7 +20,8 @@
 <body>
     
     {# Navbar: Renderizada apenas se usuário autenticado (verificado via context processor) #}
-    {% if usuario_logado %}
+    {# E não estiver na página inicial (request.endpoint != 'home') #}
+    {% if usuario_logado and request.endpoint != 'home' %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('home') }}">
@@ -67,7 +68,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('escolas.meus_gestores') }}">
+                        <a class="nav-link" href="{{ url_for('gestores.meus_gestores') }}">
                             <i class="bi bi-people"></i> Gestores
                         </a>
                     </li>
@@ -115,7 +116,7 @@
                     
                 </ul>
                 
-                {# Dropdown do usuário: exibe nome, tipo e ações (Passkey, Logout) #}
+                {# Dropdown do usuário: exibe nome, tipo e ações (Logout) #}
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -126,12 +127,6 @@
                                 <span class="dropdown-item-text small">
                                     <strong>Tipo:</strong> {{ usuario_logado.tipo | title }}
                                 </span>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="#" id="btnCriarPasskey">
-                                    <i class="bi bi-fingerprint"></i> Criar Passkey
-                                </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
@@ -179,115 +174,8 @@
     
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     
-    {# Script WebAuthn/Passkey: permite criar Passkey diretamente do dropdown da navbar #}
-    {# Fluxo: 1) Busca opções do servidor, 2) Chama navigator.credentials.create(), 3) Envia credencial #}
+    
     {% if usuario_logado %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const btnCriarPasskey = document.getElementById('btnCriarPasskey');
-        if (!btnCriarPasskey) return;
-        
-        // Converte ArrayBuffer para base64url (formato esperado pelo backend py-webauthn)
-        function base64urlEncode(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        }
-        
-        btnCriarPasskey.addEventListener('click', async function(e) {
-            e.preventDefault();
-            
-            // Verifica suporte do navegador à API WebAuthn (Chrome 67+, Firefox 60+, Safari 13+)
-            if (!window.PublicKeyCredential) {
-                alert('Seu navegador não suporta Passkeys (WebAuthn).');
-                return;
-            }
-            
-            try {
-                // PASSO 1: Obter opções de registro (challenge, rp, user info) do servidor
-                const respOpcoes = await fetch('/auth/webauthn/registro/opcoes');
-                if (!respOpcoes.ok) {
-                    throw new Error('Falha ao obter opções de registro');
-                }
-                const opcoes = await respOpcoes.json();
-                
-                if (opcoes.erro) {
-                    alert('Erro ao gerar opções: ' + opcoes.erro);
-                    return;
-                }
-                
-                // PASSO 2: Converter dados base64url string → ArrayBuffer (formato da API do navegador)
-                // challenge: bytes aleatórios criptográficos para prevenir replay attacks
-                // user.id: identificador estável do usuário (usando email como chave)
-                const opcoesCredencial = {
-                    publicKey: {
-                        challenge: Uint8Array.from(atob(opcoes.challenge.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)),
-                        rp: opcoes.rp,
-                        user: {
-                            id: Uint8Array.from(atob(opcoes.user.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)),
-                            name: opcoes.user.name,
-                            displayName: opcoes.user.displayName
-                        },
-                        pubKeyCredParams: opcoes.pubKeyCredParams,
-                        timeout: opcoes.timeout,
-                        excludeCredentials: (opcoes.excludeCredentials || []).map(cred => ({
-                            id: Uint8Array.from(atob(cred.id.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)),
-                            type: cred.type,
-                            transports: cred.transports
-                        })),
-                        authenticatorSelection: opcoes.authenticatorSelection,
-                        attestation: opcoes.attestation
-                    }
-                };
-                
-                // PASSO 3: Solicitar criação de credencial (mostra diálogo nativo do SO/navegador)
-                // Usuário interage com autenticador (biometria, PIN, chave de segurança)
-                const credencial = await navigator.credentials.create(opcoesCredencial);
-                
-                if (!credencial) {
-                    alert('Criação de Passkey cancelada.');
-                    return;
-                }
-                
-                // PASSO 4: Serializar credencial (ArrayBuffer → base64url) para envio JSON ao servidor
-                // Inclui chave pública, attestation e metadados do autenticador
-                const dadosCredencial = {
-                    id: credencial.id,
-                    rawId: base64urlEncode(credencial.rawId),
-                    type: credencial.type,
-                    response: {
-                        clientDataJSON: base64urlEncode(credencial.response.clientDataJSON),
-                        attestationObject: base64urlEncode(credencial.response.attestationObject)
-                    },
-                    transports: credencial.response.getTransports ? credencial.response.getTransports() : []
-                };
-                
-                // PASSO 5: Enviar credencial ao backend para verificação e persistência
-                // Backend valida challenge, origin, RP_ID e armazena chave pública
-                const respRegistro = await fetch('/auth/webauthn/registro', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dadosCredencial)
-                });
-                
-                const resultado = await respRegistro.json();
-                
-                if (resultado.status === 'ok') {
-                    alert('Passkey criada com sucesso! Você poderá usá-la no próximo login.');
-                } else {
-                    alert('Erro ao registrar Passkey: ' + (resultado.erro || 'desconhecido'));
-                }
-                
-            } catch (erro) {
-                console.error('Erro ao criar Passkey:', erro);
-                alert('Erro ao criar Passkey: ' + erro.message);
-            }
-        });
-    });
-    </script>
     {% endif %}
     
     {# Scripts Block: permite templates filhos injetarem scripts adicionais específicos #}

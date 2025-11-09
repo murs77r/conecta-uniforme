@@ -1,7 +1,14 @@
 """
 ============================================
-RF05 - GERENCIAR FORNECEDORES (REFATORADO)
+RF05 - MANTER CADASTRO DE FORNECEDOR
 ============================================
+Este módulo é responsável por:
+- RF05.1: Criar fornecedor
+- RF05.2: Apagar fornecedor
+- RF05.3: Editar fornecedor
+- RF05.4: Consultar fornecedor
+
+Controla o processo de controle de fornecedores no sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash

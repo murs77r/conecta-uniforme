@@ -1,7 +1,14 @@
 """
 ============================================
-RF06 - GERENCIAR PEDIDOS (REFATORADO)
+RF07 - MANTER CADASTRO DE PEDIDO
 ============================================
+Este módulo é responsável por:
+- RF07.1: Criar pedido
+- RF07.2: Apagar pedido
+- RF07.3: Editar pedido
+- RF07.4: Consultar pedido
+
+Controla o processo de controle de pedidos no sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -19,7 +26,7 @@ auth_service = AutenticacaoService()
 
 
 # ============================================
-# RF06.2 - LISTAR PEDIDOS
+# RF07.2 - LISTAR PEDIDOS
 # ============================================
 
 @pedidos_bp.route('/')
@@ -180,7 +187,7 @@ def listar():
 
 
 # ============================================
-# RF06.1 - ADICIONAR AO CARRINHO
+# RF07.1 - ADICIONAR AO CARRINHO
 # ============================================
 
 @pedidos_bp.route('/adicionar-carrinho/<int:produto_id>', methods=['POST'])
@@ -284,7 +291,7 @@ def ver_carrinho():
 
 
 # ============================================
-# RF06.1 - FINALIZAR PEDIDO
+# RF07.1 - FINALIZAR PEDIDO
 # ============================================
 
 @pedidos_bp.route('/finalizar/<int:id>', methods=['POST'])
@@ -303,7 +310,7 @@ def finalizar(id):
 
 
 # ============================================
-# RF06.4 - CANCELAR PEDIDO
+# RF07.4 - CANCELAR PEDIDO
 # ============================================
 
 @pedidos_bp.route('/cancelar/<int:id>', methods=['POST'])

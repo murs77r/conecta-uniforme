@@ -22,7 +22,6 @@ O **Conecta Uniforme** é uma plataforma de e-commerce (marketplace) que conecta
 - Sistema de login por código de acesso enviado via email
 - Código válido por 24 horas
 - Sessões seguras
-- Login com Passkey (WebAuthn) – use Windows Hello, Face/Touch ID ou chave de segurança
 
 ### RF03 - Gerenciar Produtos e Vitrine
 - Cadastro de produtos (uniformes)
@@ -63,7 +62,7 @@ conecta-uniforme/
 │
 ├── modules/                       # Camada de aplicação (Blueprints)
 │   ├── autenticacao/
-│   │   ├── module.py             # Autenticação (código + WebAuthn)
+│   │   ├── module.py             # Autenticação (código via e-mail)
 │   │   └── readme.md             # Documentação técnica
 │   ├── usuarios/
 │   │   ├── module.py             # CRUD de usuários
@@ -188,56 +187,7 @@ A aplicação passou por uma refatoração completa para arquitetura em camadas 
 - **Bootstrap 5** - Interface responsiva
 - **Jinja2** - Template engine
 - **SMTP** - Envio de emails (códigos de acesso)
-- **WebAuthn/Passkeys** - Autenticação sem senha (FIDO2)
-- **JavaScript** - Utilitários e WebAuthn (`base.js`)
-
----
-
-## 🔐 Passkeys (WebAuthn)
-
-Autenticação moderna sem senha usando biometria ou chaves de segurança:
-
-### Como usar
-
-1. **Cadastro de Passkey**: 
-   - Faça login normalmente com código de acesso
-   - Acesse "Cadastrar/gerenciar Passkey" na Home
-   - Ou vá para `/auth/passkeys`
-   - Clique em "Cadastrar Passkey"
-   - Use Windows Hello, Touch/Face ID ou chave de segurança física
-
-2. **Login com Passkey**:
-   - Na tela de login, digite seu email
-   - Clique em "Entrar com Passkey"
-   - Autentique com biometria ou chave de segurança
-
-### Configuração (Produção)
-
-No arquivo `.env`:
-
-```env
-WEBAUTHN_RP_ID=seu-dominio.com
-WEBAUTHN_ORIGIN=https://seu-dominio.com
-WEBAUTHN_RP_NAME=Conecta Uniforme
-```
-
-### Configuração (Desenvolvimento)
-
-Padrões para desenvolvimento local com `localhost`:
-
-```env
-WEBAUTHN_RP_ID=localhost
-WEBAUTHN_ORIGIN=http://localhost:5000
-WEBAUTHN_RP_NAME=Conecta Uniforme
-```
-
-### Banco de Dados
-
-Aplique as alterações de schema (tabela `webauthn_credentials`):
-
-```bash
-psql -U usuario -d conecta_uniforme -f schema.sql
-```
+- **JavaScript** - Utilitários (`base.js`)
 
 ---
 
@@ -245,7 +195,7 @@ psql -U usuario -d conecta_uniforme -f schema.sql
 
 Cada módulo possui documentação técnica detalhada em seu respectivo `readme.md`:
 
-- **`modules/autenticacao/readme.md`** - WebAuthn + Código por E-mail (2 métodos de autenticação)
+- **`modules/autenticacao/readme.md`** - Autenticação por código via e-mail
 - **`modules/usuarios/readme.md`** - CRUD completo, validações, logs de auditoria
 - **`modules/escolas/readme.md`** - Gestão de escolas, gestores e homologação
 - **`modules/fornecedores/readme.md`** - CRUD de fornecedores e validação de CNPJ

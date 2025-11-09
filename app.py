@@ -14,10 +14,10 @@ from config import SECRET_KEY, DEBUG, PORT, CODIGO_ACESSO_TAMANHO, CODIGO_ACESSO
 from modules.autenticacao import autenticacao_bp, verificar_sessao
 from modules.usuarios import usuarios_bp
 from modules.escolas import escolas_bp
+from modules.gestores import gestores_bp
 from modules.fornecedores import fornecedores_bp
 from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
-from modules.dashboard import dashboard_bp
 from core.database import Database
 
 # ============================================
@@ -43,20 +43,20 @@ app.register_blueprint(autenticacao_bp)
 # RF01 - Cadastro de Usuários
 app.register_blueprint(usuarios_bp)
 
-# RF04 - Gerenciar Escolas e Gestores Escolares
+# RF03 - Gerenciar Escolas
 app.register_blueprint(escolas_bp)
+
+# RF04 - Gerenciar Gestores Escolares
+app.register_blueprint(gestores_bp)
 
 # RF05 - Gerenciar Fornecedores
 app.register_blueprint(fornecedores_bp)
 
-# RF03 - Gerenciar Produtos
+# RF06 - Gerenciar Produtos
 app.register_blueprint(produtos_bp)
 
-# RF06 - Gerenciar Pedidos
+# RF07 - Gerenciar Pedidos
 app.register_blueprint(pedidos_bp)
-
-# Dashboard - Estatísticas Gerais
-app.register_blueprint(dashboard_bp)
 
 
 # ============================================
@@ -87,9 +87,9 @@ def index():
 @app.route('/home')
 def home():
     """
-    Dashboard principal pós-autenticação
+    Página inicial pós-autenticação
     
-    Valida sessão ativa e redireciona para o dashboard com estatísticas.
+    Exibe menu principal com opções de navegação baseadas no tipo de usuário.
     Evita acesso direto sem autenticação (guarda de rota).
     """
     # Valida sessão via verificação de cookies assinados pelo Flask
@@ -99,8 +99,8 @@ def home():
     if not usuario:
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Sessão válida: acessa dashboard com estatísticas gerais
-    return redirect(url_for('dashboard.index'))
+    # Sessão válida: exibe página inicial com menu de navegação
+    return render_template('pagina_inicial.html')
 
 
 # ============================================
