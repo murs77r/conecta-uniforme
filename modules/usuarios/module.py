@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import UsuarioRepository, EscolaRepository, FornecedorRepository, ResponsavelRepository
 from core.services import AutenticacaoService, CRUDService, ValidacaoService, LogService
 from core.database import Database
+from core.pagination import paginate_query, Pagination
 import json
 import re
 
@@ -29,23 +30,61 @@ validacao = ValidacaoService()
 @usuarios_bp.route('/')
 @usuarios_bp.route('/listar')
 def listar():
-    """Lista todos os usuários cadastrados"""
+    """Lista todos os usuários cadastrados com paginação"""
     usuario_logado = auth_service.verificar_permissao(['administrador'])
     if not usuario_logado:
         flash('Acesso negado. Apenas administradores podem acessar esta página.', 'danger')
         return redirect(url_for('home'))
     
+    # Parâmetros de paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
     filtros = {
         'tipo': request.args.get('tipo', ''),
-        'busca': request.args.get('busca', '')
+        'busca': request.args.get('busca', ''),
+        'ativo': request.args.get('ativo', '')
     }
     
-    usuarios = usuario_repo.listar_com_filtros(filtros)
+    # Base query
+    query = "SELECT * FROM usuarios WHERE 1=1"
+    params = []
+    
+    # Aplicar filtros
+    if filtros['tipo']:
+        query += " AND tipo = %s"
+        params.append(filtros['tipo'])
+    
+    if filtros['busca']:
+        query += " AND (nome ILIKE %s OR email ILIKE %s)"
+        busca = f"%{filtros['busca']}%"
+        params.extend([busca, busca])
+    
+    if filtros['ativo']:
+        query += " AND ativo = %s"
+        params.append(filtros['ativo'] == 'true')
+    
+    # Ordenação
+    query += " ORDER BY data_cadastro DESC"
+    
+    # Paginar
+    paginated_query, paginated_params, pagination = paginate_query(
+        query, tuple(params), page, per_page
+    )
+    
+    # Executar query
+    usuarios = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    
+    # Estatísticas
+    estatisticas = _calcular_estatisticas_usuarios()
     
     return render_template('usuarios/listar.html', 
-                         usuarios=usuarios, 
+                         usuarios=usuarios,
+                         pagination=pagination,
                          filtro_tipo=filtros['tipo'],
-                         filtro_busca=filtros['busca'])
+                         filtro_busca=filtros['busca'],
+                         filtro_ativo=filtros['ativo'],
+                         estatisticas=estatisticas)
 
 
 # ============================================
@@ -455,3 +494,32 @@ def _preparar_detalhes_logs(logs):
         l['mudancas'] = mudancas
     
     return logs
+
+
+def _calcular_estatisticas_usuarios():
+    """Calcula estatísticas dos usuários"""
+    query_totais = """
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE ativo = TRUE) as ativos,
+            COUNT(*) FILTER (WHERE ativo = FALSE) as inativos,
+            COUNT(*) FILTER (WHERE tipo = 'administrador') as administradores,
+            COUNT(*) FILTER (WHERE tipo = 'escola') as escolas,
+            COUNT(*) FILTER (WHERE tipo = 'fornecedor') as fornecedores,
+            COUNT(*) FILTER (WHERE tipo = 'responsavel') as responsaveis
+        FROM usuarios
+    """
+    
+    result = Database.executar(query_totais, fetchone=True)
+    
+    stats = {
+        'total': result['total'] if result else 0,
+        'ativos': result['ativos'] if result else 0,
+        'inativos': result['inativos'] if result else 0,
+        'administradores': result['administradores'] if result else 0,
+        'escolas': result['escolas'] if result else 0,
+        'fornecedores': result['fornecedores'] if result else 0,
+        'responsaveis': result['responsaveis'] if result else 0
+    }
+    
+    return stats

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+<!-- Estatísticas Principais -->
+<div class="row mb-4">
+    <!-- Usuários -->
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-people"></i> Usuários
+            </div>
+            <div class="card-body">
+                <h3 class="text-primary">{{ stats.usuarios.total or 0 }}</h3>
+                <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.usuarios.ativos or 0 }} ativos</small></p>
+                <hr>
+                <p class="mb-1"><small>Admins: {{ stats.usuarios.administradores or 0 }}</small></p>
+                <p class="mb-1"><small>Escolas: {{ stats.usuarios.escolas or 0 }}</small></p>
+                <p class="mb-1"><small>Fornecedores: {{ stats.usuarios.fornecedores or 0 }}</small></p>
+                <p class="mb-0"><small>Responsáveis: {{ stats.usuarios.responsaveis or 0 }}</small></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pedidos -->
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-receipt"></i> Pedidos
+            </div>
+            <div class="card-body">
+                <h3 class="text-success">{{ stats.pedidos.total or 0 }}</h3>
+                <p class="mb-1"><small><i class="bi bi-clock text-warning"></i> {{ stats.pedidos.pendentes or 0 }} pendentes</small></p>
+                <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.pedidos.pagos or 0 }} pagos</small></p>
+                <hr>
+                <p class="mb-1"><strong>Valor Total:</strong></p>
+                <h5 class="text-success">R$ {{ "%.2f"|format(stats.pedidos.valor_total or 0) }}</h5>
+                <p class="mb-0"><small>Pago: R$ {{ "%.2f"|format(stats.pedidos.valor_pago or 0) }}</small></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Produtos -->
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-box"></i> Produtos
+            </div>
+            <div class="card-body">
+                <h3 class="text-info">{{ stats.produtos.total or 0 }}</h3>
+                <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.produtos.ativos or 0 }} ativos</small></p>
+                <hr>
+                <p class="mb-1"><strong>Estoque Total:</strong></p>
+                <h5 class="text-info">{{ stats.produtos.estoque_total or 0 }} unid.</h5>
+                <p class="mb-0"><small>Preço Médio: R$ {{ "%.2f"|format(stats.produtos.preco_medio or 0) }}</small></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Repasses -->
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-currency-dollar"></i> Repasses
+            </div>
+            <div class="card-body">
+                <h3 class="text-warning">{{ stats.repasses.total or 0 }}</h3>
+                <p class="mb-1"><small><i class="bi bi-clock text-warning"></i> {{ stats.repasses.pendentes or 0 }} pendentes</small></p>
+                <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.repasses.concluidos or 0 }} concluídos</small></p>
+                <hr>
+                <p class="mb-1"><strong>Valor Total:</strong></p>
+                <h5 class="text-warning">R$ {{ "%.2f"|format(stats.repasses.valor_total or 0) }}</h5>
+                <p class="mb-0"><small>Pendente: R$ {{ "%.2f"|format(stats.repasses.valor_pendente or 0) }}</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos e Tabelas -->
+<div class="row">
+    <!-- Últimos Pedidos -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-receipt"></i> Últimos Pedidos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Responsável</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in ultimos_pedidos %}
+                            <tr>
+                                <td>{{ pedido.id }}</td>
+                                <td>{{ pedido.responsavel_nome }}</td>
+                                <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                                <td>
+                                    {% if pedido.status == 'pendente' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                    {% elif pedido.status == 'pago' %}
+                                    <span class="badge bg-success">Pago</span>
+                                    {% elif pedido.status == 'entregue' %}
+                                    <span class="badge bg-primary">Entregue</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ pedido.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pedido.data_pedido.strftime('%d/%m') if pedido.data_pedido else '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">Nenhum pedido registrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Produtos -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-trophy"></i> Top 5 Produtos Mais Vendidos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th>Qtd. Vendida</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produto in top_produtos %}
+                            <tr>
+                                <td>{{ produto.nome }}</td>
+                                <td>{{ produto.qtd_total }}</td>
+                                <td><strong>R$ {{ "%.2f"|format(produto.valor_total) }}</strong></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center">Nenhum produto vendido ainda</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pedidos por Mês -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Pedidos por Mês (Últimos 6 meses)
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Total de Pedidos</th>
+                                <th>Valor Total</th>
+                                <th>Valor Médio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mes in pedidos_por_mes %}
+                            <tr>
+                                <td><strong>{{ mes.mes }}</strong></td>
+                                <td>{{ mes.total }}</td>
+                                <td>R$ {{ "%.2f"|format(mes.valor) }}</td>
+                                <td>R$ {{ "%.2f"|format(mes.valor / mes.total if mes.total > 0 else 0) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">Nenhum dado disponível</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Links Rápidos -->
+{% if usuario_logado.tipo == 'administrador' %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-link-45deg"></i> Links Rápidos
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('usuarios.listar') }}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="bi bi-people"></i> Gerenciar Usuários
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('escolas.listar') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="bi bi-building"></i> Gerenciar Escolas
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="bi bi-truck"></i> Gerenciar Fornecedores
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('pedidos.listar') }}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="bi bi-receipt"></i> Ver Todos os Pedidos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

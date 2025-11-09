@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import RepasseFinanceiroRepository, FornecedorRepository
 from core.services import AutenticacaoService, LogService
 from core.database import Database
+from core.pagination import paginate_query, Pagination
 from config import TAXA_PLATAFORMA_PERCENTUAL
 
 # Blueprint e Serviços
@@ -24,21 +25,117 @@ auth_service = AutenticacaoService()
 @repasses_bp.route('/')
 @repasses_bp.route('/listar')
 def listar():
-    """Lista repasses financeiros"""
+    """Lista repasses financeiros com paginação e filtros"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Se for fornecedor, mostra apenas seus repasses
+    # Parâmetros de paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Filtros
+    filtros = {
+        'status': request.args.get('status', ''),
+        'fornecedor_id': request.args.get('fornecedor_id', ''),
+        'data_inicio': request.args.get('data_inicio', ''),
+        'data_fim': request.args.get('data_fim', ''),
+        'valor_min': request.args.get('valor_min', ''),
+        'valor_max': request.args.get('valor_max', '')
+    }
+    
+    # Base query
+    query = """
+        SELECT r.*, 
+               f.razao_social as fornecedor_nome,
+               u.nome as fornecedor_usuario_nome
+        FROM repasses_financeiros r
+        JOIN fornecedores f ON r.fornecedor_id = f.id
+        JOIN usuarios u ON f.usuario_id = u.id
+        WHERE 1=1
+    """
+    params = []
+    
+    # Se for fornecedor, filtra apenas seus repasses
     if usuario_logado['tipo'] == 'fornecedor':
         fornecedor = fornecedor_repo.buscar_por_usuario_id(usuario_logado['id'])
-        fornecedor_id = fornecedor['id'] if fornecedor else None
-        repasses = repasse_repo.listar_com_fornecedor(fornecedor_id) if fornecedor_id else []
-    else:
-        repasses = repasse_repo.listar_com_fornecedor()
+        if fornecedor:
+            query += " AND r.fornecedor_id = %s"
+            params.append(fornecedor['id'])
+        else:
+            # Fornecedor sem registro, não mostra nada
+            repasses = []
+            pagination = Pagination(page=1, per_page=per_page, total=0)
+            estatisticas = _calcular_estatisticas_repasses(None)
+            fornecedores = []
+            return render_template('repasses/listar.html', 
+                                 repasses=repasses, 
+                                 pagination=pagination,
+                                 filtros=filtros,
+                                 estatisticas=estatisticas,
+                                 fornecedores=fornecedores)
     
-    return render_template('repasses/listar.html', repasses=repasses)
+    # Aplicar filtros
+    if filtros['status']:
+        query += " AND r.status = %s"
+        params.append(filtros['status'])
+    
+    if filtros['fornecedor_id']:
+        query += " AND r.fornecedor_id = %s"
+        params.append(int(filtros['fornecedor_id']))
+    
+    if filtros['data_inicio']:
+        query += " AND r.data_repasse >= %s"
+        params.append(filtros['data_inicio'])
+    
+    if filtros['data_fim']:
+        query += " AND r.data_repasse <= %s"
+        params.append(filtros['data_fim'])
+    
+    if filtros['valor_min']:
+        query += " AND r.valor_liquido >= %s"
+        params.append(float(filtros['valor_min']))
+    
+    if filtros['valor_max']:
+        query += " AND r.valor_liquido <= %s"
+        params.append(float(filtros['valor_max']))
+    
+    # Ordenação
+    query += " ORDER BY r.data_repasse DESC, r.id DESC"
+    
+    # Paginar
+    paginated_query, paginated_params, pagination = paginate_query(
+        query, tuple(params), page, per_page
+    )
+    
+    # Executar query
+    repasses = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    
+    # Calcular estatísticas
+    fornecedor_id_filtro = None
+    if usuario_logado['tipo'] == 'fornecedor':
+        fornecedor_id_filtro = fornecedor['id'] if fornecedor else None
+    estatisticas = _calcular_estatisticas_repasses(fornecedor_id_filtro)
+    
+    # Lista de fornecedores para o filtro (apenas admin)
+    fornecedores = []
+    if usuario_logado['tipo'] == 'administrador':
+        query_fornecedores = """
+            SELECT f.id, u.nome, f.razao_social
+            FROM fornecedores f
+            JOIN usuarios u ON f.usuario_id = u.id
+            WHERE u.ativo = TRUE
+            ORDER BY u.nome
+        """
+        fornecedores = Database.executar(query_fornecedores, fetchall=True) or []
+    
+    return render_template('repasses/listar.html', 
+                         repasses=repasses, 
+                         pagination=pagination,
+                         filtros=filtros,
+                         estatisticas=estatisticas,
+                         fornecedores=fornecedores)
 
 
 # ============================================
@@ -144,3 +241,40 @@ def cancelar(id):
         flash('Repasse cancelado!', 'success')
     
     return redirect(url_for('repasses.listar'))
+
+
+# ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
+
+def _calcular_estatisticas_repasses(fornecedor_id=None):
+    """Calcula estatísticas dos repasses"""
+    query_base = "SELECT status, COUNT(*) as total, SUM(valor_liquido) as soma FROM repasses_financeiros"
+    
+    if fornecedor_id:
+        query_base += f" WHERE fornecedor_id = {fornecedor_id}"
+    
+    query_base += " GROUP BY status"
+    
+    resultados = Database.executar(query_base, fetchall=True) or []
+    
+    stats = {
+        'total_repasses': 0,
+        'total_valor': 0,
+        'pendente': {'qtd': 0, 'valor': 0},
+        'concluido': {'qtd': 0, 'valor': 0},
+        'cancelado': {'qtd': 0, 'valor': 0}
+    }
+    
+    for r in resultados:
+        status = r['status']
+        qtd = int(r['total']) if r['total'] else 0
+        valor = float(r['soma']) if r['soma'] else 0
+        
+        stats['total_repasses'] += qtd
+        stats['total_valor'] += valor
+        
+        if status in stats:
+            stats[status] = {'qtd': qtd, 'valor': valor}
+    
+    return stats

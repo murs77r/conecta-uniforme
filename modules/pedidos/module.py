@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import PedidoRepository, ProdutoRepository, ResponsavelRepository
 from core.services import AutenticacaoService, LogService
 from core.database import Database
+from core.pagination import paginate_query, Pagination
 
 # Blueprint e Serviços
 pedidos_bp = Blueprint('pedidos', __name__, url_prefix='/pedidos')
@@ -24,32 +25,114 @@ auth_service = AutenticacaoService()
 @pedidos_bp.route('/')
 @pedidos_bp.route('/listar')
 def listar():
-    """Lista pedidos"""
+    """Lista pedidos com paginação e filtros"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
+    # Parâmetros de paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Filtros
+    filtros = {
+        'status': request.args.get('status', ''),
+        'responsavel_id': request.args.get('responsavel_id', ''),
+        'data_inicio': request.args.get('data_inicio', ''),
+        'data_fim': request.args.get('data_fim', ''),
+        'valor_min': request.args.get('valor_min', ''),
+        'valor_max': request.args.get('valor_max', '')
+    }
+    
+    # Base query
+    query = """
+        SELECT p.*, r.usuario_id, u.nome as responsavel_nome
+        FROM pedidos p
+        JOIN responsaveis r ON p.responsavel_id = r.id
+        JOIN usuarios u ON r.usuario_id = u.id
+        WHERE p.status != 'carrinho'
+    """
+    params = []
+    
     # Se for responsável, mostra apenas seus pedidos
     if usuario_logado['tipo'] == 'responsavel':
         responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
         if responsavel:
-            pedidos = pedido_repo.listar_por_responsavel(responsavel['id'])
+            query += " AND p.responsavel_id = %s"
+            params.append(responsavel['id'])
         else:
             pedidos = []
-    else:
-        # Admin e outros veem todos
-        query = """
-            SELECT p.*, r.usuario_id, u.nome as responsavel_nome
-            FROM pedidos p
-            JOIN responsaveis r ON p.responsavel_id = r.id
-            JOIN usuarios u ON r.usuario_id = u.id
-            WHERE p.status != 'carrinho'
-            ORDER BY p.data_pedido DESC
-        """
-        pedidos = Database.executar(query, fetchall=True) or []
+            pagination = Pagination(page=1, per_page=per_page, total=0)
+            estatisticas = _calcular_estatisticas_pedidos(None)
+            responsaveis = []
+            return render_template('pedidos/listar.html',
+                                 pedidos=pedidos,
+                                 pagination=pagination,
+                                 filtros=filtros,
+                                 estatisticas=estatisticas,
+                                 responsaveis=responsaveis)
     
-    return render_template('pedidos/listar.html', pedidos=pedidos)
+    # Aplicar filtros
+    if filtros['status']:
+        query += " AND p.status = %s"
+        params.append(filtros['status'])
+    
+    if filtros['responsavel_id']:
+        query += " AND p.responsavel_id = %s"
+        params.append(int(filtros['responsavel_id']))
+    
+    if filtros['data_inicio']:
+        query += " AND p.data_pedido >= %s"
+        params.append(filtros['data_inicio'])
+    
+    if filtros['data_fim']:
+        query += " AND p.data_pedido <= %s"
+        params.append(filtros['data_fim'])
+    
+    if filtros['valor_min']:
+        query += " AND p.valor_total >= %s"
+        params.append(float(filtros['valor_min']))
+    
+    if filtros['valor_max']:
+        query += " AND p.valor_total <= %s"
+        params.append(float(filtros['valor_max']))
+    
+    # Ordenação
+    query += " ORDER BY p.data_pedido DESC"
+    
+    # Paginar
+    paginated_query, paginated_params, pagination = paginate_query(
+        query, tuple(params), page, per_page
+    )
+    
+    # Executar query
+    pedidos = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    
+    # Calcular estatísticas
+    responsavel_id_filtro = None
+    if usuario_logado['tipo'] == 'responsavel':
+        responsavel_id_filtro = responsavel['id'] if responsavel else None
+    estatisticas = _calcular_estatisticas_pedidos(responsavel_id_filtro)
+    
+    # Lista de responsáveis para o filtro (apenas admin)
+    responsaveis = []
+    if usuario_logado['tipo'] in ['administrador', 'escola']:
+        query_responsaveis = """
+            SELECT r.id, u.nome
+            FROM responsaveis r
+            JOIN usuarios u ON r.usuario_id = u.id
+            WHERE u.ativo = TRUE
+            ORDER BY u.nome
+        """
+        responsaveis = Database.executar(query_responsaveis, fetchall=True) or []
+    
+    return render_template('pedidos/listar.html',
+                         pedidos=pedidos,
+                         pagination=pagination,
+                         filtros=filtros,
+                         estatisticas=estatisticas,
+                         responsaveis=responsaveis)
 
 
 # ============================================
@@ -192,3 +275,46 @@ def cancelar(id):
         flash('Pedido cancelado!', 'success')
     
     return redirect(url_for('pedidos.listar'))
+
+
+# ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
+
+def _calcular_estatisticas_pedidos(responsavel_id=None):
+    """Calcula estatísticas dos pedidos"""
+    query_base = """
+        SELECT status, COUNT(*) as total, SUM(valor_total) as soma 
+        FROM pedidos 
+        WHERE status != 'carrinho'
+    """
+    
+    if responsavel_id:
+        query_base += f" AND responsavel_id = {responsavel_id}"
+    
+    query_base += " GROUP BY status"
+    
+    resultados = Database.executar(query_base, fetchall=True) or []
+    
+    stats = {
+        'total_pedidos': 0,
+        'total_valor': 0,
+        'pendente': {'qtd': 0, 'valor': 0},
+        'pago': {'qtd': 0, 'valor': 0},
+        'enviado': {'qtd': 0, 'valor': 0},
+        'entregue': {'qtd': 0, 'valor': 0},
+        'cancelado': {'qtd': 0, 'valor': 0}
+    }
+    
+    for r in resultados:
+        status = r['status']
+        qtd = int(r['total']) if r['total'] else 0
+        valor = float(r['soma']) if r['soma'] else 0
+        
+        stats['total_pedidos'] += qtd
+        stats['total_valor'] += valor
+        
+        if status in stats:
+            stats[status] = {'qtd': qtd, 'valor': valor}
+    
+    return stats

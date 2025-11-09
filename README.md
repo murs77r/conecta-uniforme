@@ -199,6 +199,7 @@ A aplicação passou por uma refatoração completa para arquitetura em camadas 
 - **Jinja2** - Template engine
 - **SMTP** - Envio de emails (códigos de acesso)
 - **WebAuthn/Passkeys** - Autenticação sem senha (FIDO2)
+- **JavaScript** - Utilitários e WebAuthn (`base.js`)
 
 ---
 

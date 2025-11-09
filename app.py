@@ -18,6 +18,7 @@ from modules.fornecedores import fornecedores_bp
 from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
 from modules.repasses import repasses_bp
+from modules.dashboard import dashboard_bp
 from core.database import Database
 
 # ============================================
@@ -58,6 +59,9 @@ app.register_blueprint(pedidos_bp)
 # RF07 - Gerenciar Repasses Financeiros
 app.register_blueprint(repasses_bp)
 
+# Dashboard - Estatísticas Gerais
+app.register_blueprint(dashboard_bp)
+
 
 # ============================================
 # ROTA PRINCIPAL (HOME)
@@ -84,7 +88,7 @@ def index():
 def home():
     """
     Dashboard principal após login
-    Exibe informações personalizadas conforme o tipo de usuário
+    Redireciona para o dashboard com estatísticas
     """
     
     # Verifica se o usuário está autenticado
@@ -94,8 +98,8 @@ def home():
     if not usuario:
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Renderiza a home passando os dados do usuário
-    return render_template('home.html', usuario=usuario)
+    # Redireciona para o dashboard
+    return redirect(url_for('dashboard.index'))
 
 
 # ============================================

@@ -7,6 +7,8 @@ RF05 - GERENCIAR FORNECEDORES (REFATORADO)
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import FornecedorRepository, UsuarioRepository
 from core.services import AutenticacaoService, CRUDService, ValidacaoService
+from core.pagination import paginate_query, Pagination
+from core.database import Database
 
 # Blueprint
 fornecedores_bp = Blueprint('fornecedores', __name__, url_prefix='/fornecedores')
@@ -22,18 +24,77 @@ validacao = ValidacaoService()
 @fornecedores_bp.route('/')
 @fornecedores_bp.route('/listar')
 def listar():
-    """Lista fornecedores"""
+    """Lista fornecedores com paginação"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    filtros = {'busca': request.args.get('busca', '')}
-    fornecedores = fornecedor_repo.listar_com_usuario(filtros)
+    # Parâmetros de paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    filtros = {
+        'busca': request.args.get('busca', ''),
+        'ativo': request.args.get('ativo', ''),
+        'estado': request.args.get('estado', ''),
+        'cidade': request.args.get('cidade', '')
+    }
+    
+    # Base query
+    query = """
+        SELECT f.*, u.nome, u.email, u.telefone, u.ativo as usuario_ativo
+        FROM fornecedores f
+        JOIN usuarios u ON f.usuario_id = u.id
+        WHERE 1=1
+    """
+    params = []
+    
+    # Aplicar filtros
+    if filtros['busca']:
+        query += " AND (u.nome ILIKE %s OR f.razao_social ILIKE %s OR f.cnpj ILIKE %s)"
+        busca = f"%{filtros['busca']}%"
+        params.extend([busca, busca, busca])
+    
+    if filtros['ativo']:
+        query += " AND f.ativo = %s"
+        params.append(filtros['ativo'] == 'true')
+    
+    if filtros['estado']:
+        query += " AND f.estado = %s"
+        params.append(filtros['estado'])
+    
+    if filtros['cidade']:
+        query += " AND f.cidade ILIKE %s"
+        params.append(f"%{filtros['cidade']}%")
+    
+    # Ordenação
+    query += " ORDER BY u.nome"
+    
+    # Paginar
+    paginated_query, paginated_params, pagination = paginate_query(
+        query, tuple(params), page, per_page
+    )
+    
+    # Executar query
+    fornecedores = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    
+    # Estatísticas
+    estatisticas = _calcular_estatisticas_fornecedores()
+    
+    # Lista de estados para filtro
+    query_estados = "SELECT DISTINCT estado FROM fornecedores WHERE estado IS NOT NULL ORDER BY estado"
+    estados = Database.executar(query_estados, fetchall=True) or []
     
     return render_template('fornecedores/listar.html', 
                          fornecedores=fornecedores,
-                         filtro_busca=filtros['busca'])
+                         pagination=pagination,
+                         filtro_busca=filtros['busca'],
+                         filtro_ativo=filtros['ativo'],
+                         filtro_estado=filtros['estado'],
+                         filtro_cidade=filtros['cidade'],
+                         estatisticas=estatisticas,
+                         estados=estados)
 
 
 @fornecedores_bp.route('/cadastrar', methods=['GET', 'POST'])
@@ -151,3 +212,42 @@ def excluir(id):
     
     crud_service.excluir_com_log(id, dict(fornecedor), usuario_logado['id'])
     return redirect(url_for('fornecedores.listar'))
+
+
+# ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
+
+def _calcular_estatisticas_fornecedores():
+    """Calcula estatísticas dos fornecedores"""
+    query_totais = """
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE ativo = TRUE) as ativos,
+            COUNT(*) FILTER (WHERE ativo = FALSE) as inativos
+        FROM fornecedores
+    """
+    
+    result = Database.executar(query_totais, fetchone=True)
+    
+    # Produtos por fornecedor
+    query_produtos = """
+        SELECT f.id, u.nome, COUNT(p.id) as total_produtos
+        FROM fornecedores f
+        JOIN usuarios u ON f.usuario_id = u.id
+        LEFT JOIN produtos p ON f.id = p.fornecedor_id
+        GROUP BY f.id, u.nome
+        ORDER BY total_produtos DESC
+        LIMIT 5
+    """
+    
+    top_fornecedores = Database.executar(query_produtos, fetchall=True) or []
+    
+    stats = {
+        'total': result['total'] if result else 0,
+        'ativos': result['ativos'] if result else 0,
+        'inativos': result['inativos'] if result else 0,
+        'top_fornecedores': top_fornecedores
+    }
+    
+    return stats

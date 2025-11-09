@@ -5,6 +5,129 @@
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-receipt"></i> Pedidos</h2>
 
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total de Pedidos</h6>
+                <h3 class="card-title text-primary">{{ estatisticas.total_pedidos }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-success">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Valor Total</h6>
+                <h4 class="card-title text-success">R$ {{ "%.2f"|format(estatisticas.total_valor) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-warning">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Pendentes</h6>
+                <h4 class="card-title text-warning">{{ estatisticas.pendente.qtd }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-success">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Pagos</h6>
+                <h4 class="card-title text-success">{{ estatisticas.pago.qtd }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-info">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Enviados</h6>
+                <h4 class="card-title text-info">{{ estatisticas.enviado.qtd }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Entregues</h6>
+                <h4 class="card-title text-primary">{{ estatisticas.entregue.qtd }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-funnel"></i> Filtros
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if filtros.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="pago" {% if filtros.status == 'pago' %}selected{% endif %}>Pago</option>
+                    <option value="enviado" {% if filtros.status == 'enviado' %}selected{% endif %}>Enviado</option>
+                    <option value="entregue" {% if filtros.status == 'entregue' %}selected{% endif %}>Entregue</option>
+                    <option value="cancelado" {% if filtros.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            {% if usuario_logado.tipo in ['administrador', 'escola'] and responsaveis %}
+            <div class="col-md-3">
+                <label class="form-label">Responsável</label>
+                <select name="responsavel_id" class="form-select">
+                    <option value="">Todos</option>
+                    {% for r in responsaveis %}
+                    <option value="{{ r.id }}" {% if filtros.responsavel_id == r.id|string %}selected{% endif %}>
+                        {{ r.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-md-2">
+                <label class="form-label">Data Início</label>
+                <input type="date" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data Fim</label>
+                <input type="date" name="data_fim" class="form-control" value="{{ filtros.data_fim }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Valor Mín</label>
+                <input type="number" name="valor_min" class="form-control" step="0.01" placeholder="0.00" value="{{ filtros.valor_min }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Valor Máx</label>
+                <input type="number" name="valor_max" class="form-control" step="0.01" placeholder="0.00" value="{{ filtros.valor_max }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Por Página</label>
+                <select name="per_page" class="form-select">
+                    <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10</option>
+                    <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20</option>
+                    <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista -->
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
@@ -46,6 +169,8 @@
                                     <i class="bi bi-x-circle"></i> Cancelar
                                 </button>
                             </form>
+                            {% else %}
+                            -
                             {% endif %}
                         </td>
                     </tr>
@@ -57,6 +182,42 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Paginação -->
+        {% if pagination and pagination.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('pedidos.listar', page=pagination.prev_num, per_page=request.args.get('per_page', 20), **filtros) if pagination.has_prev else '#' }}">
+                        Anterior
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('pedidos.listar', page=page_num, per_page=request.args.get('per_page', 20), **filtros) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('pedidos.listar', page=pagination.next_num, per_page=request.args.get('per_page', 20), **filtros) if pagination.has_next else '#' }}">
+                        Próxima
+                    </a>
+                </li>
+            </ul>
+            <p class="text-center text-muted">
+                Mostrando página {{ pagination.page }} de {{ pagination.pages }} ({{ pagination.total }} pedidos no total)
+            </p>
+        </nav>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

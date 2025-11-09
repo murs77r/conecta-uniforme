@@ -12,11 +12,42 @@
     {% endif %}
 </div>
 
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Total de Escolas</h6>
+                <h3 class="card-title text-primary">{{ estatisticas.total }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Escolas Ativas</h6>
+                <h3 class="card-title text-success">{{ estatisticas.ativos }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Escolas Inativas</h6>
+                <h3 class="card-title text-danger">{{ estatisticas.inativos }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Filtros -->
 <div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-funnel"></i> Filtros
+    </div>
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-8">
+            <div class="col-md-4">
                 <label class="form-label">Buscar</label>
                 <input type="text" name="busca" class="form-control" placeholder="Nome, razão social ou CNPJ" value="{{ filtro_busca }}">
             </div>
@@ -29,10 +60,34 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-primary w-100">
+                <label class="form-label">Estado</label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos</option>
+                    {% for e in estados %}
+                    <option value="{{ e.estado }}" {% if filtro_estado == e.estado %}selected{% endif %}>{{ e.estado }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Cidade</label>
+                <input type="text" name="cidade" class="form-control" placeholder="Cidade" value="{{ filtro_cidade }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Por Página</label>
+                <select name="per_page" class="form-select">
+                    <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10</option>
+                    <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20</option>
+                    <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
                     <i class="bi bi-search"></i> Filtrar
                 </button>
+                <a href="{{ url_for('escolas.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
             </div>
         </form>
     </div>
@@ -91,6 +146,42 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Paginação -->
+        {% if pagination and pagination.pages > 1 %}
+        <nav aria-label="Navegação de páginas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.prev_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) if pagination.has_prev else '#' }}">
+                        Anterior
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('escolas.listar', page=page_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.next_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) if pagination.has_next else '#' }}">
+                        Próxima
+                    </a>
+                </li>
+            </ul>
+            <p class="text-center text-muted">
+                Mostrando página {{ pagination.page }} de {{ pagination.pages }} ({{ pagination.total }} escolas no total)
+            </p>
+        </nav>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

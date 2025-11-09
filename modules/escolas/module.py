@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import EscolaRepository, UsuarioRepository, GestorEscolarRepository
 from core.services import AutenticacaoService, CRUDService, ValidacaoService, LogService
 from core.database import Database
+from core.pagination import paginate_query, Pagination
 import json
 
 # Blueprint e Serviços
@@ -27,23 +28,77 @@ validacao = ValidacaoService()
 @escolas_bp.route('/')
 @escolas_bp.route('/listar')
 def listar():
-    """Lista todas as escolas cadastradas"""
+    """Lista todas as escolas cadastradas com paginação"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
+    # Parâmetros de paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
     filtros = {
         'busca': request.args.get('busca', ''),
-        'ativo': request.args.get('ativo', '')
+        'ativo': request.args.get('ativo', ''),
+        'estado': request.args.get('estado', ''),
+        'cidade': request.args.get('cidade', '')
     }
     
-    escolas = escola_repo.listar_com_filtros(filtros)
+    # Base query
+    query = """
+        SELECT e.*, u.nome, u.email, u.telefone, u.ativo as usuario_ativo
+        FROM escolas e
+        JOIN usuarios u ON e.usuario_id = u.id
+        WHERE 1=1
+    """
+    params = []
+    
+    # Aplicar filtros
+    if filtros['busca']:
+        query += """ AND (u.nome ILIKE %s OR e.razao_social ILIKE %s OR e.cnpj ILIKE %s)"""
+        busca = f"%{filtros['busca']}%"
+        params.extend([busca, busca, busca])
+    
+    if filtros['ativo']:
+        query += " AND e.ativo = %s"
+        params.append(filtros['ativo'] == 'true')
+    
+    if filtros['estado']:
+        query += " AND e.estado = %s"
+        params.append(filtros['estado'])
+    
+    if filtros['cidade']:
+        query += " AND e.cidade ILIKE %s"
+        params.append(f"%{filtros['cidade']}%")
+    
+    # Ordenação
+    query += " ORDER BY u.nome"
+    
+    # Paginar
+    paginated_query, paginated_params, pagination = paginate_query(
+        query, tuple(params), page, per_page
+    )
+    
+    # Executar query
+    escolas = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    
+    # Estatísticas
+    estatisticas = _calcular_estatisticas_escolas()
+    
+    # Lista de estados para filtro
+    query_estados = "SELECT DISTINCT estado FROM escolas WHERE estado IS NOT NULL ORDER BY estado"
+    estados = Database.executar(query_estados, fetchall=True) or []
     
     return render_template('escolas/listar.html', 
                          escolas=escolas,
+                         pagination=pagination,
                          filtro_busca=filtros['busca'],
-                         filtro_ativo=filtros['ativo'])
+                         filtro_ativo=filtros['ativo'],
+                         filtro_estado=filtros['estado'],
+                         filtro_cidade=filtros['cidade'],
+                         estatisticas=estatisticas,
+                         estados=estados)
 
 
 # ============================================
@@ -588,3 +643,36 @@ def _processar_gestores(form_data, escola_id):
         }
         
         gestor_repo.inserir(dados)
+
+
+def _calcular_estatisticas_escolas():
+    """Calcula estatísticas das escolas"""
+    query_totais = """
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE ativo = TRUE) as ativos,
+            COUNT(*) FILTER (WHERE ativo = FALSE) as inativos
+        FROM escolas
+    """
+    
+    result = Database.executar(query_totais, fetchone=True)
+    
+    query_por_estado = """
+        SELECT estado, COUNT(*) as total
+        FROM escolas
+        WHERE estado IS NOT NULL
+        GROUP BY estado
+        ORDER BY total DESC
+        LIMIT 5
+    """
+    
+    por_estado = Database.executar(query_por_estado, fetchall=True) or []
+    
+    stats = {
+        'total': result['total'] if result else 0,
+        'ativos': result['ativos'] if result else 0,
+        'inativos': result['inativos'] if result else 0,
+        'por_estado': por_estado
+    }
+    
+    return stats

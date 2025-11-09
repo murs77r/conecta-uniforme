@@ -13,11 +13,6 @@
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    
-    <style>
-        /* Garante que o botão de fechar do modal de flash ocupe 100% da largura SEMPRE */
-        .flash-close { width: 100% !important; }
-    </style>
 </head>
 <body>
     
@@ -35,6 +30,13 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    
+                    <!-- Dashboard para todos -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
                     
                     <!-- Menu para Administrador -->
                     {% if usuario_logado.tipo == 'administrador' %}
@@ -152,26 +154,16 @@
     </nav>
     {% endif %}
     
-    <!-- Mensagens Flash como Modal -->
+    <!-- Mensagens Flash -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        <div class="modal fade" id="flashModal" tabindex="-1" aria-labelledby="flashModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <div class="vstack gap-2">
-                            {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} m-0" role="alert">
-                                {{ message }}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="border-top: 0px ! Important; justify-content: normal !important; padding-top: 0px !important;">
-                        <button type="button" class="btn btn-primary flash-close" data-bs-dismiss="modal">Fechar</button>
-                    </div>
-                </div>
+        <div class="container mt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
     {% endwith %}
@@ -182,7 +174,7 @@
     </main>
     
     <!-- Rodapé -->
-    <footer class="bg-light text-center text-muted py-3 mt-5 fixed-bottom">
+    <footer class="bg-light text-center text-muted py-3 mt-5">
         <div class="container">
             <p class="mb-0">© 2025 Conecta Uniforme</p>
         </div>
@@ -190,57 +182,8 @@
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Abre automaticamente o modal de flash quando existir
-        (function() {
-            function showFlashModal() {
-                var el = document.getElementById('flashModal');
-                if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                    var modal = new bootstrap.Modal(el);
-                    modal.show();
-                }
-            }
-            // Garante execução após o carregamento dos scripts
-            if (document.readyState === 'complete') {
-                showFlashModal();
-            } else {
-                window.addEventListener('load', showFlashModal);
-            }
-        })();
-    </script>
-
-    <!-- Máscaras/validações globais: CPF, CNPJ, CEP, TELEFONE -->
-    <script>
-    (function(){
-      function onlyDigits(v){return (v||'').replace(/\D+/g,'');}
-      function maskCPF(v){v=onlyDigits(v).slice(0,11);return v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');}
-      function maskCNPJ(v){v=onlyDigits(v).slice(0,14);return v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');}
-      function maskCEP(v){v=onlyDigits(v).slice(0,8);return v.replace(/(\d{5})(\d{1,3})$/,'$1-$2');}
-      function maskFone(v){v=onlyDigits(v).slice(0,11);return v.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{4,5})(\d{4})$/,'$1-$2');}
-
-      function isCPFValid(v){v=onlyDigits(v);if(v.length!==11||/(\d)\1{10}/.test(v))return false;var s=0;for(let i=0;i<9;i++)s+=parseInt(v[i])*(10-i);var d1=(s*10)%11;d1=d1===10?0:d1;if(d1!=v[9])return false;s=0;for(let i=0;i<10;i++)s+=parseInt(v[i])*(11-i);var d2=(s*10)%11;d2=d2===10?0:d2;return d2==v[10];}
-      function isCNPJValid(v){v=onlyDigits(v);if(v.length!==14||/(\d)\1{13}/.test(v))return false;function calc(t){var j=t.length-7,s=0;for(let i=0;i<t.length;i++){s+=parseInt(t[i])*j--;if(j<2)j=9;}var r=s%11;return r<2?0:11-r;}var d1=calc(v.slice(0,12));if(d1!=parseInt(v[12]))return false;var d2=calc(v.slice(0,13));return d2==parseInt(v[13]);}
-
-      function attachMask(selector, masker, validator){
-        document.querySelectorAll(selector).forEach(function(el){
-          el.addEventListener('input', function(){ this.value = masker(this.value); });
-          if(validator){
-            el.addEventListener('blur', function(){
-              var ok = validator(this.value);
-              this.classList.toggle('is-invalid', !ok && this.value.trim()!=='');
-              this.classList.toggle('is-valid', ok);
-            });
-          }
-        });
-      }
-
-      // Seletores por id ou name comuns no projeto (incluindo campos aninhados)
-      attachMask('input#cpf, input[name="cpf"], input[name*="[cpf]"]', maskCPF, isCPFValid);
-      attachMask('input#cnpj, input[name="cnpj"], input[name*="[cnpj]"]', maskCNPJ, isCNPJValid);
-      attachMask('input#cep, input[name="cep"], input[name*="[cep]"]', maskCEP);
-      attachMask('input#telefone, input[name="telefone"], input[name*="[telefone]"], input[name*="telefone"]', maskFone);
-    })();
-    </script>
+    
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     
     <!-- Scripts adicionais -->
     {% block scripts %}{% endblock %}
