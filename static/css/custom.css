@@ -1,0 +1,18 @@
+/* Conecta Uniforme - Estilos Customizados */
+
+/* Remove bordas dos cards de estatísticas */
+.card {
+    border: 1px solid rgba(0,0,0,.125) !important;
+}
+
+/* Remove classes de borda colorida do Bootstrap */
+.card.border-primary,
+.card.border-secondary,
+.card.border-success,
+.card.border-danger,
+.card.border-warning,
+.card.border-info,
+.card.border-light,
+.card.border-dark {
+    border: 1px solid rgba(0,0,0,.125) !important;
+}
