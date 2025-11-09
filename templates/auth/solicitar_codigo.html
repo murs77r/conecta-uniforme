@@ -32,17 +32,19 @@
                 
                 <hr class="my-4">
                 
-                <div class="text-center text-muted small">
+                    <div class="text-center text-muted small">
                     <p class="mb-0">Você receberá um código de {{ CODIGO_ACESSO_TAMANHO }} dígitos no seu email.</p>
                     <p class="mb-0">O código é válido por {{ CODIGO_ACESSO_DURACAO_HORAS }} horas.</p>
                 </div>
-                {# Seção de fallback removida: a seleção de perfil é feita exclusivamente pelo modal obrigatório #}
+                {# Modal de seleção de tipo: obrigatório quando usuário possui múltiplos perfis (ex: escola+fornecedor) #}
+                {# Não permite submit do form até que um tipo seja escolhido (backdrop: static, keyboard: false) #}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal de seleção de tipo -->
+{# Modal Bootstrap: exibe lista de perfis quando email tem múltiplos tipos de usuário #}
+{# Preenchido dinamicamente via JavaScript ou renderizado pelo backend quando abrir_modal_tipo=True #}
 <div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -68,38 +70,44 @@
 
 {% block scripts %}
 <script>
-// Expor rótulos amigáveis dos tipos no escopo do script para uso dinâmico
+// Expõe dicionário de rótulos de tipos para uso em JavaScript (mapeamento slug → label UI)
 window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
-// Fluxo reforçado: modal OBRIGATÓRIO quando múltiplos perfis; não deixa enviar até escolher
+
+// Fluxo de autenticação com seleção obrigatória de tipo quando usuário tem múltiplos perfis
+// Previne envio de formulário até que tipo seja explicitamente escolhido via modal
 (function(){
   const form = document.getElementById('formLogin');
   const emailInput = document.getElementById('email');
   const tipoHidden = document.getElementById('tipo');
-  const abrir = "{{ '1' if abrir_modal_tipo else '0' }}" === "1";
+  const abrir = "{{ '1' if abrir_modal_tipo else '0' }}" === "1";  // Backend sinaliza necessidade de abrir modal
   let modalInstance = null;
   const modalEl = document.getElementById('modalTipo');
 
   function abrirModalTipos(){
     if(!modalEl) return;
+    // backdrop: static = não fecha ao clicar fora; keyboard: false = não fecha com ESC
     if(!modalInstance){ modalInstance = new bootstrap.Modal(modalEl, {backdrop:'static', keyboard:false}); }
     modalInstance.show();
   }
 
+  // Abre modal imediatamente se backend sinalizou múltiplos perfis (flag abrir_modal_tipo)
   if (abrir) {
     abrirModalTipos();
   }
 
-  // Bloqueia submit se múltiplos perfis e nenhum tipo selecionado
+  // Intercepta submit: valida se há múltiplos tipos ANTES de enviar ao backend
+  // Evita round-trip desnecessário ao servidor quando já sabemos que precisa escolher tipo
   form.addEventListener('submit', async function(e){
-    // Sempre valida no client antes do primeiro POST: se houver múltiplos tipos, mostra modal e impede envio
+    // Validação client-side: consulta endpoint /auth/tipos-por-email para verificar múltiplos perfis
     const emailVal = (emailInput.value||'').trim().toLowerCase();
     if(!emailVal){ return; }
     try{
       const resp = await fetch(`/auth/tipos-por-email?email=${encodeURIComponent(emailVal)}`);
       const j = await resp.json();
+      // Se múltiplos tipos E nenhum tipo escolhido: bloqueia submit e força escolha
       if(Array.isArray(j.tipos) && j.tipos.length > 1 && !tipoHidden.value){
         e.preventDefault();
-        // Preenche lista do modal dinamicamente se vier vazia no HTML
+        // Preenche modal dinamicamente se veio vazio do HTML (lazy loading)
         const lista = modalEl.querySelector('.vstack');
         if(lista && (!lista.children || lista.children.length === 0)){
           lista.innerHTML = '';
@@ -122,61 +130,68 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
         abrirModalTipos();
         return; // não submeter
       }
-      // Se apenas um tipo, preenche e segue
+      // Caso único tipo: preenche automaticamente o campo hidden
       if(Array.isArray(j.tipos) && j.tipos.length === 1 && !tipoHidden.value){
         const unico = j.tipos[0];
         tipoHidden.value = (unico.slug || unico);
       }
-      // Se nenhum tipo, deixa o backend validar e exibir mensagem
+      // Se nenhum tipo: deixa backend validar e retornar erro apropriado
     }catch(_){
-      // Silencia e deixa backend cuidar; ainda assim o fallback de botões existe no HTML
+      // Silencia erros de rede; backend fará validação definitiva
     }
-    // Se variável abrir veio do backend e ainda não escolheu tipo, reforça abertura do modal
+    // Reforça: se backend sinalizou múltiplos perfis e usuário ainda não escolheu, bloqueia
     if (abrir && !tipoHidden.value){
       e.preventDefault();
       abrirModalTipos();
     }
   });
 
-  // Escolha de tipo dentro do modal
+  // Click nos botões de escolha de tipo dentro do modal: preenche hidden e submete form
   document.querySelectorAll('.escolha-tipo').forEach(btn => {
     btn.addEventListener('click', function(){
       const tipo = this.getAttribute('data-tipo');
       tipoHidden.value = tipo;
-      // Fecha modal e submete
+      // Fecha modal e submete automaticamente
       if(modalInstance){ modalInstance.hide(); }
       form.submit();
     });
   });
 
-  // Se usuário clicar em cancelar, limpa o campo tipo para impedir envio sem escolha
+  // Botão cancelar: limpa tipo escolhido e retorna foco ao email (recomeça fluxo)
   document.querySelectorAll('.cancelar-modal-tipo').forEach(btn => {
     btn.addEventListener('click', function(){
       tipoHidden.value='';
-      // foca no email para reforçar fluxo
+      // Delay para aguardar animação de fechamento do modal
       setTimeout(()=> emailInput.focus(), 250);
     });
   });
 
-  // Observa mudanças de email: ao alterar email limpamos tipo escolhido
+  // Observa mudanças no email: ao alterar, limpa tipo previamente selecionado (novo email = nova escolha)
   emailInput.addEventListener('input', ()=> { tipoHidden.value=''; });
 
-  // Login via Passkey (código original encapsulado e levemente refatorado)
+  // ============================================
+  // AUTENTICAÇÃO VIA PASSKEY (WEBAUTHN/FIDO2)
+  // ============================================
+  // Fluxo alternativo ao código por email: autenticação biométrica/PIN diretamente
   const btnPasskey = document.getElementById('btnPasskeyLogin');
   if(btnPasskey){
+    // Verifica se email tem Passkey cadastrada (consulta assíncrona ao backend)
     async function atualizarVisibilidadePasskey(){
       const emailVal = (emailInput.value || '').trim().toLowerCase();
       if(!emailVal){ btnPasskey.style.display = 'none'; return; }
       try{
         const r = await fetch(`/auth/webauthn/tem?email=${encodeURIComponent(emailVal)}`);
         const j = await r.json();
-        btnPasskey.style.display = j.tem ? '' : 'none';
+        btnPasskey.style.display = j.tem ? '' : 'none';  // Exibe botão apenas se Passkey existe
       }catch(_){ btnPasskey.style.display = 'none'; }
     }
+    
+    // Atualiza visibilidade ao perder foco do campo email (debounce natural)
     emailInput.addEventListener('blur', atualizarVisibilidadePasskey);
     emailInput.addEventListener('input', ()=> btnPasskey.style.display='none');
     if((emailInput.value||'').trim()){ atualizarVisibilidadePasskey(); }
 
+    // Funções de conversão base64url ↔ ArrayBuffer (formato FIDO2)
     function b64urlToArrayBuffer(b64url){
       const pad = '='.repeat((4 - b64url.length % 4) % 4);
       const b64 = b64url.replace(/-/g,'+').replace(/_/g,'/') + pad;
@@ -190,21 +205,28 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
       return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     }
     
+    // Função principal: realiza login via Passkey (WebAuthn Assertion)
     async function realizarLoginPasskey(tipoEscolhido){
       const emailVal = (emailInput.value || '').trim().toLowerCase();
       if(!emailVal){ alert('Digite o email antes de usar Passkey.'); emailInput.focus(); return; }
       
+      // PASSO 1: Obter challenge e opções do servidor
       const params = new URLSearchParams({email: emailVal}); 
       if(tipoEscolhido) params.append('tipo', tipoEscolhido);
       
       let resp = await fetch(`/auth/webauthn/login/opcoes?${params.toString()}`);
       let options = await resp.json();
       if(options.erro){ alert('Não foi possível obter opções de Passkey: ' + options.erro); return; }
+      
+      // PASSO 2: Converter base64url → ArrayBuffer
       if(options.allowCredentials){ options.allowCredentials = options.allowCredentials.map(c=>({type:c.type,id:b64urlToArrayBuffer(c.id)})); }
       options.challenge = b64urlToArrayBuffer(options.challenge);
       
       try{
+        // PASSO 3: Solicitar assertion (mostra diálogo de autenticação)
         const assertion = await navigator.credentials.get({publicKey: options});
+        
+        // PASSO 4: Serializar assertion para JSON
         const data = { 
           id: assertion.id, 
           rawId: arrayBufferToB64url(assertion.rawId), 
@@ -217,11 +239,12 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
           }
         };
         
-        // Adiciona o tipo escolhido ao payload
+        // Adiciona tipo escolhido ao payload se múltiplos perfis
         if(tipoEscolhido){
           data.tipo = tipoEscolhido;
         }
         
+        // PASSO 5: Enviar assertion ao backend para verificação
         const finish = await fetch('/auth/webauthn/login', { 
           method:'POST', 
           headers:{'Content-Type':'application/json'}, 
@@ -233,7 +256,7 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
           window.location.href = '/home'; 
         }
         else if(rjson.erro === 'selecionar_tipo' && Array.isArray(rjson.tipos)){
-          // Múltiplos perfis: abre modal para escolher
+          // Backend retornou múltiplos perfis: abre modal para escolher
           const lista = modalEl.querySelector('.vstack');
           if(lista){
             lista.innerHTML = '';
@@ -247,10 +270,8 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
               b.addEventListener('click', async function(){
                 // Fecha modal e refaz login com tipo específico
                 if(modalInstance){ modalInstance.hide(); }
-                // Espera modal fechar
-                await new Promise(r=>setTimeout(r,300));
-                // Chama login novamente com tipo
-                realizarLoginPasskey(t);
+                await new Promise(r=>setTimeout(r,300));  // Aguarda animação
+                realizarLoginPasskey(t);  // Recursivo com tipo
               });
               lista.appendChild(b);
             });
@@ -266,6 +287,7 @@ window.ROTULOS_TIPOS = JSON.parse('{{ ROTULOS_TIPOS | tojson | safe }}');
       }
     }
     
+    // Event listener: clique no botão inicia fluxo Passkey
     btnPasskey.addEventListener('click', () => realizarLoginPasskey(null));
   }
 })();

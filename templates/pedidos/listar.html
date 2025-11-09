@@ -88,6 +88,32 @@
                 </select>
             </div>
             {% endif %}
+            {% if usuario_logado.tipo == 'administrador' and escolas %}
+            <div class="col-md-2">
+                <label class="form-label">Escola</label>
+                <select name="escola_id" class="form-select">
+                    <option value="">Todas</option>
+                    {% for e in escolas %}
+                    <option value="{{ e.id }}" {% if filtros.escola_id == e.id|string %}selected{% endif %}>
+                        {{ e.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            {% if usuario_logado.tipo == 'administrador' and fornecedores %}
+            <div class="col-md-2">
+                <label class="form-label">Fornecedor</label>
+                <select name="fornecedor_id" class="form-select">
+                    <option value="">Todos</option>
+                    {% for f in fornecedores %}
+                    <option value="{{ f.id }}" {% if filtros.fornecedor_id == f.id|string %}selected{% endif %}>
+                        {{ f.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
             <div class="col-md-2">
                 <label class="form-label">Data Início</label>
                 <input type="date" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
@@ -136,6 +162,9 @@
                     <tr>
                         <th>#</th>
                         <th>Responsável</th>
+                        {% if usuario_logado.tipo == 'administrador' %}
+                        <th>Escola</th>
+                        {% endif %}
                         <th>Valor Total</th>
                         <th>Status</th>
                         <th>Data</th>
@@ -147,6 +176,9 @@
                     <tr>
                         <td>{{ pedido.id }}</td>
                         <td>{{ pedido.responsavel_nome }}</td>
+                        {% if usuario_logado.tipo == 'administrador' %}
+                        <td>{{ pedido.escola_nome or '-' }}</td>
+                        {% endif %}
                         <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
                         <td>
                             {% if pedido.status == 'pendente' %}
@@ -163,20 +195,21 @@
                         </td>
                         <td>{{ pedido.data_pedido.strftime('%d/%m/%Y %H:%M') if pedido.data_pedido else '' }}</td>
                         <td>
+                            <a href="{{ url_for('pedidos.detalhes', id=pedido.id) }}" class="btn btn-sm btn-info" title="Ver Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </a>
                             {% if pedido.status not in ['cancelado', 'entregue'] %}
                             <form method="POST" action="{{ url_for('pedidos.cancelar', id=pedido.id) }}" style="display:inline;">
                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Confirma cancelamento?')">
-                                    <i class="bi bi-x-circle"></i> Cancelar
+                                    <i class="bi bi-x-circle"></i>
                                 </button>
                             </form>
-                            {% else %}
-                            -
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center">Nenhum pedido encontrado</td>
+                        <td colspan="{% if usuario_logado.tipo == 'administrador' %}7{% else %}6{% endif %}" class="text-center">Nenhum pedido encontrado</td>
                     </tr>
                     {% endfor %}
                 </tbody>

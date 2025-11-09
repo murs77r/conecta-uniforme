@@ -309,7 +309,7 @@ ON CONFLICT (email, tipo) DO NOTHING;
 -- DADOS SIMULADOS: Fornecedores
 -- ============================================
 INSERT INTO fornecedores (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-SELECT u.id, cnpj, razao_social, endereco, cidade, estado, cep, ativo
+SELECT usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo
 FROM (VALUES
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'fornecedor'), '12.345.678/0001-90', 'Uniformes Class One LTDA', 'Rua das Américas, 1500', 'São Paulo', 'SP', '01234-567', TRUE),
     ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'fornecedor'), '98.765.432/0001-10', 'Confecções Moderna LTDA', 'Av. Paulista, 2500', 'São Paulo', 'SP', '01310-100', TRUE),
@@ -321,7 +321,7 @@ WHERE NOT EXISTS (SELECT 1 FROM fornecedores WHERE usuario_id = v.usuario_id);
 -- DADOS SIMULADOS: Escolas
 -- ============================================
 INSERT INTO escolas (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-SELECT u.id, cnpj, razao_social, endereco, cidade, estado, cep, ativo
+SELECT usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo
 FROM (VALUES
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'escola'), '22.333.444/0001-55', 'Escola Estadual Visconde de São Leopoldo', 'Rua da Educação, 100', 'São Paulo', 'SP', '02345-678', TRUE),
     ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'escola'), '33.444.555/0001-66', 'Colégio Municipal Dom Pedro I', 'Av. Brasil, 3000', 'Rio de Janeiro', 'RJ', '20000-000', TRUE),
@@ -334,7 +334,7 @@ WHERE NOT EXISTS (SELECT 1 FROM escolas WHERE usuario_id = v.usuario_id);
 -- DADOS SIMULADOS: Responsáveis
 -- ============================================
 INSERT INTO responsaveis (usuario_id, cpf, endereco, cidade, estado, cep)
-SELECT u.id, cpf, endereco, cidade, estado, cep
+SELECT usuario_id, cpf, endereco, cidade, estado, cep
 FROM (VALUES
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'responsavel'), '123.456.789-00', 'Rua das Flores, 123', 'São Paulo', 'SP', '01234-567'),
     ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'responsavel'), '987.654.321-00', 'Av. Atlântica, 456', 'Rio de Janeiro', 'RJ', '22011-000'),
@@ -363,7 +363,7 @@ AND NOT EXISTS (SELECT 1 FROM gestores_escolares WHERE cpf = v.cpf);
 -- DADOS SIMULADOS: Homologação de Fornecedores
 -- ============================================
 INSERT INTO homologacao_fornecedores (escola_id, fornecedor_id, data_homologacao, ativo, observacoes)
-SELECT escola_id, fornecedor_id, data_homologacao, ativo, observacoes
+SELECT escola_id, fornecedor_id, CAST(data_homologacao AS TIMESTAMP), ativo, observacoes
 FROM (VALUES
     ((SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), (SELECT id FROM fornecedores WHERE cnpj = '12.345.678/0001-90'), '2025-01-15 10:30:00', TRUE, 'Fornecedor homologado após análise de documentação e amostras'),
     ((SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), (SELECT id FROM fornecedores WHERE cnpj = '98.765.432/0001-10'), '2025-02-01 14:00:00', TRUE, 'Homologação aprovada'),
@@ -407,7 +407,7 @@ WHERE v.fornecedor_id IS NOT NULL AND v.escola_id IS NOT NULL;
 -- DADOS SIMULADOS: Pedidos
 -- ============================================
 INSERT INTO pedidos (responsavel_id, escola_id, valor_total, status, data_pedido, observacoes)
-SELECT responsavel_id, escola_id, valor_total, status, data_pedido, observacoes
+SELECT responsavel_id, escola_id, valor_total, status, CAST(data_pedido AS TIMESTAMP), observacoes
 FROM (VALUES
     ((SELECT id FROM responsaveis WHERE cpf = '123.456.789-00'), (SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), 111.80, 'entregue', '2025-03-15 10:30:00', 'Pedido entregue conforme prazo'),
     ((SELECT id FROM responsaveis WHERE cpf = '123.456.789-00'), (SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), 130.00, 'pago', '2025-10-20 14:15:00', 'Aguardando separação'),
@@ -456,7 +456,7 @@ WHERE v.pedido_id IS NOT NULL AND v.produto_id IS NOT NULL;
 -- DADOS SIMULADOS: Repasses Financeiros
 -- ============================================
 INSERT INTO repasses_financeiros (fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, data_repasse, data_processamento, observacoes)
-SELECT fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, data_repasse, data_processamento, observacoes
+SELECT fornecedor_id, pedido_id, valor, taxa_plataforma, valor_liquido, status, CAST(data_repasse AS TIMESTAMP), CAST(data_processamento AS TIMESTAMP), observacoes
 FROM (VALUES
     -- Repasses de pedidos entregues
     ((SELECT id FROM fornecedores WHERE cnpj = '12.345.678/0001-90'), 1, 111.80, 5.59, 106.21, 'concluido', '2025-03-15 10:30:00', '2025-03-22 14:00:00', 'Repasse processado com sucesso'),
@@ -478,7 +478,7 @@ WHERE v.fornecedor_id IS NOT NULL AND v.pedido_id IS NOT NULL;
 -- DADOS SIMULADOS: Logs de Acesso
 -- ============================================
 INSERT INTO logs_acesso (usuario_id, acao, tipo_autenticacao, data_acesso, ip_usuario, user_agent, sucesso, descricao)
-SELECT usuario_id, acao, tipo_autenticacao, data_acesso, ip_usuario, user_agent, sucesso, descricao
+SELECT usuario_id, acao, tipo_autenticacao, CAST(data_acesso AS TIMESTAMP), ip_usuario, user_agent, sucesso, descricao
 FROM (VALUES
     -- Acessos do administrador João Paulo
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'LOGIN', 'codigo', '2025-11-09 08:00:00', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', TRUE, 'Login bem-sucedido via código'),
@@ -507,7 +507,7 @@ WHERE v.usuario_id IS NOT NULL;
 -- DADOS SIMULADOS: Logs de Alterações
 -- ============================================
 INSERT INTO logs_alteracoes (usuario_id, tabela, registro_id, acao, dados_antigos, dados_novos, data_alteracao, ip_usuario, descricao)
-SELECT usuario_id, tabela, registro_id, acao, dados_antigos, dados_novos, data_alteracao, ip_usuario, descricao
+SELECT usuario_id, tabela, registro_id, acao, dados_antigos, dados_novos, CAST(data_alteracao AS TIMESTAMP), ip_usuario, descricao
 FROM (VALUES
     -- Cadastro de fornecedor
     ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'administrador'), 'fornecedores', 1, 'INSERT', NULL, '{"razao_social": "Uniformes Class One LTDA", "cnpj": "12.345.678/0001-90"}', '2025-01-10 10:00:00', '192.168.1.100', 'Cadastro de novo fornecedor'),

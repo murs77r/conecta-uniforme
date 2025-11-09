@@ -2,7 +2,8 @@
 ============================================
 CORE - DATABASE
 ============================================
-Gerenciamento centralizado de conexões e queries ao banco de dados
+Gerenciamento centralizado de conexões e queries ao banco PostgreSQL.
+Implementa padrão Repository/DAO com psycopg2 e RealDictCursor.
 """
 
 import psycopg2
@@ -12,15 +13,27 @@ from typing import Optional, List, Dict, Any, Tuple
 
 
 class Database:
-    """Classe para gerenciar conexões e execução de queries"""
+    """
+    Classe estática para operações de banco de dados com gestão automática de conexões.
+    
+    Características:
+    - Conexões efêmeras (abertas e fechadas a cada operação)
+    - RealDictCursor: retorna resultados como dicionários
+    - Commit explícito por parâmetro (evita auto-commit acidental)
+    - Rollback automático em caso de exceção
+    """
     
     @staticmethod
     def conectar():
         """
-        Cria e retorna uma conexão com o banco de dados PostgreSQL
+        Cria conexão nova com PostgreSQL usando parâmetros de DB_CONFIG.
         
-        Retorna:
-            connection: Objeto de conexão com o banco
+        Características:
+        - connect_timeout evita travamento se banco estiver offline
+        - Retorna None em caso de falha (evita exceção não tratada)
+        
+        Returns:
+            psycopg2.connection ou None
         """
         try:
             conexao = psycopg2.connect(

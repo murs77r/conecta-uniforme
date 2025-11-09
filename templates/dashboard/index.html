@@ -9,7 +9,7 @@
 <div class="row mb-4">
     <!-- Usuários -->
     <div class="col-md-3">
-        <div class="card border-primary">
+        <div class="card border-primary h-100">
             <div class="card-header bg-primary text-white">
                 <i class="bi bi-people"></i> Usuários
             </div>
@@ -27,7 +27,7 @@
     
     <!-- Pedidos -->
     <div class="col-md-3">
-        <div class="card border-success">
+        <div class="card border-success h-100">
             <div class="card-header bg-success text-white">
                 <i class="bi bi-receipt"></i> Pedidos
             </div>
@@ -37,7 +37,7 @@
                 <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.pedidos.pagos or 0 }} pagos</small></p>
                 <hr>
                 <p class="mb-1"><strong>Valor Total:</strong></p>
-                <h5 class="text-success">R$ {{ "%.2f"|format(stats.pedidos.valor_total or 0) }}</h5>
+                <h5 class="text-success mb-1">R$ {{ "%.2f"|format(stats.pedidos.valor_total or 0) }}</h5>
                 <p class="mb-0"><small>Pago: R$ {{ "%.2f"|format(stats.pedidos.valor_pago or 0) }}</small></p>
             </div>
         </div>
@@ -45,7 +45,7 @@
     
     <!-- Produtos -->
     <div class="col-md-3">
-        <div class="card border-info">
+        <div class="card border-info h-100">
             <div class="card-header bg-info text-white">
                 <i class="bi bi-box"></i> Produtos
             </div>
@@ -54,7 +54,7 @@
                 <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.produtos.ativos or 0 }} ativos</small></p>
                 <hr>
                 <p class="mb-1"><strong>Estoque Total:</strong></p>
-                <h5 class="text-info">{{ stats.produtos.estoque_total or 0 }} unid.</h5>
+                <h5 class="text-info mb-1">{{ stats.produtos.estoque_total or 0 }} unid.</h5>
                 <p class="mb-0"><small>Preço Médio: R$ {{ "%.2f"|format(stats.produtos.preco_medio or 0) }}</small></p>
             </div>
         </div>
@@ -62,7 +62,7 @@
     
     <!-- Repasses -->
     <div class="col-md-3">
-        <div class="card border-warning">
+        <div class="card border-warning h-100">
             <div class="card-header bg-warning text-dark">
                 <i class="bi bi-currency-dollar"></i> Repasses
             </div>
@@ -72,7 +72,7 @@
                 <p class="mb-1"><small><i class="bi bi-check-circle text-success"></i> {{ stats.repasses.concluidos or 0 }} concluídos</small></p>
                 <hr>
                 <p class="mb-1"><strong>Valor Total:</strong></p>
-                <h5 class="text-warning">R$ {{ "%.2f"|format(stats.repasses.valor_total or 0) }}</h5>
+                <h5 class="text-warning mb-1">R$ {{ "%.2f"|format(stats.repasses.valor_total or 0) }}</h5>
                 <p class="mb-0"><small>Pendente: R$ {{ "%.2f"|format(stats.repasses.valor_pendente or 0) }}</small></p>
             </div>
         </div>

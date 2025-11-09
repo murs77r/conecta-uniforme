@@ -26,17 +26,17 @@ from core.database import Database
 # ============================================
 app = Flask(__name__)
 
-# Configura a chave secreta para sessões
+# Define chave secreta para assinatura de cookies de sessão (SESSION_COOKIE_HTTPONLY e SESSION_COOKIE_SECURE)
 app.secret_key = SECRET_KEY
 
-# Configura modo debug
+# Ativa modo de depuração: recarregamento automático e mensagens de erro detalhadas
 app.config['DEBUG'] = DEBUG
 
 # ============================================
-# REGISTRO DOS BLUEPRINTS (MICROFRONT-ENDS)
+# REGISTRO DOS BLUEPRINTS (MÓDULOS)
 # ============================================
-# Cada blueprint funciona de forma independente
-# Isso permite trabalhar cada módulo separadamente
+# Cada blueprint representa um módulo funcional independente (padrão micro frontend)
+# permitindo desenvolvimento e manutenção isolados de cada funcionalidade
 
 # RF02 - Autenticação e Acesso
 app.register_blueprint(autenticacao_bp)
@@ -70,14 +70,18 @@ app.register_blueprint(dashboard_bp)
 @app.route('/')
 def index():
     """
-    Página inicial do sistema
-    Redireciona conforme o estado de autenticação
+    Rota raiz: Implementa healthcheck do banco antes de redirecionar
+    
+    Fluxo:
+    1. Verifica conectividade com PostgreSQL via banco_esta_ativo()
+    2. Se banco indisponível: exibe tela de carregamento com polling JS
+    3. Se banco OK: segue fluxo de autenticação padrão (verificar_sessao)
     """
-    # 1) Verifica se o banco está ativo; se não, exibe página de carregamento
+    # Healthcheck: evita erros de sessão se o banco estiver iniciando (ex: Docker)
     if not banco_esta_ativo():
         return render_template('carregando.html')
 
-    # 2) Banco ativo: segue fluxo normal de autenticação
+    # Banco disponível: valida sessão do usuário via cookie
     usuario = verificar_sessao()
     if not usuario:
         return redirect(url_for('autenticacao.solicitar_codigo'))
@@ -87,18 +91,19 @@ def index():
 @app.route('/home')
 def home():
     """
-    Dashboard principal após login
-    Redireciona para o dashboard com estatísticas
-    """
+    Dashboard principal pós-autenticação
     
-    # Verifica se o usuário está autenticado
+    Valida sessão ativa e redireciona para o dashboard com estatísticas.
+    Evita acesso direto sem autenticação (guarda de rota).
+    """
+    # Valida sessão via verificação de cookies assinados pelo Flask
     usuario = verificar_sessao()
     
-    # Se não estiver autenticado, redireciona para login
+    # Sessão inválida: redireciona para fluxo de autenticação
     if not usuario:
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Redireciona para o dashboard
+    # Sessão válida: acessa dashboard com estatísticas gerais
     return redirect(url_for('dashboard.index'))
 
 
@@ -107,7 +112,17 @@ def home():
 # ============================================
 
 def banco_esta_ativo() -> bool:
-    """Tenta abrir uma conexão simples e executar SELECT 1."""
+    """
+    Verifica disponibilidade do PostgreSQL executando query simples.
+    
+    Utilizado para:
+    - Evitar erros ao carregar app durante inicialização do container Docker
+    - Implementar retry logic no frontend via polling
+    - Garantir que migrations foram aplicadas antes de aceitar requests
+    
+    Returns:
+        bool: True se SELECT 1 executou com sucesso, False caso contrário
+    """
     try:
         conexao = Database.conectar()
         if not conexao:
@@ -118,6 +133,7 @@ def banco_esta_ativo() -> bool:
             cur.execute('SELECT 1')
             return True
         finally:
+            # Garante fechamento de recursos mesmo em caso de exceção
             if cur is not None:
                 try:
                     cur.close()
@@ -133,7 +149,12 @@ def banco_esta_ativo() -> bool:
 
 @app.route('/health/db')
 def health_db():
-    """Endpoint para o front verificar se o banco já está pronto."""
+    """
+    Endpoint HTTP para healthcheck do banco (usado pelo frontend e orquestradores).
+    
+    Frontend faz polling neste endpoint quando detecta banco indisponível.
+    Retorna JSON com status HTTP 503 (Service Unavailable) se banco offline.
+    """
     if banco_esta_ativo():
         return jsonify({'ok': True})
     return jsonify({'ok': False}), 503
@@ -145,7 +166,12 @@ def health_db():
 
 @app.route('/favicon.ico')
 def favicon():
-    """Redireciona o favicon para o arquivo em static (evita 404 no navegador)."""
+    """
+    Serve favicon via redirect para static folder.
+    
+    Evita logs de erro 404 repetidos em navegadores que buscam /favicon.ico
+    automaticamente na raiz do domínio.
+    """
     return redirect(url_for('static', filename='favicon.svg'))
 
 
@@ -176,18 +202,23 @@ def erro_servidor(erro):
 # ============================================
 # CONTEXT PROCESSOR
 # ============================================
-# Torna algumas variáveis disponíveis em todos os templates
+# Injeta variáveis globais acessíveis em todos os templates Jinja2 renderizados
 
 @app.context_processor
 def injetar_variaveis():
     """
-    Injeta variáveis que estarão disponíveis em todos os templates
-    """
+    Context processor: disponibiliza dados em todos os templates sem passar explicitamente.
     
-    # Verifica se o usuário está autenticado
+    Variáveis injetadas:
+    - usuario_logado: dados do usuário autenticado (None se não autenticado)
+    - session: objeto de sessão Flask (cookies)
+    - CODIGO_ACESSO_*: constantes de configuração de autenticação
+    - ROTULOS_TIPOS: mapeamento de tipos técnicos para labels UI amigáveis
+    """
+    # Busca dados do usuário na sessão atual (via cookies assinados)
     usuario = verificar_sessao()
     
-    # Rótulos amigáveis para exibição de tipos de usuário
+    # Mapeamento para exibir tipos de usuário de forma humanizada no frontend
     ROTULOS_TIPOS = {
         'administrador': 'Administrador',
         'escola': 'Escola',
@@ -198,10 +229,10 @@ def injetar_variaveis():
     return {
         'usuario_logado': usuario,
         'session': session,
-        # Variáveis de autenticação usadas em templates
+        # Configurações de autenticação expostas ao template
         'CODIGO_ACESSO_TAMANHO': CODIGO_ACESSO_TAMANHO,
         'CODIGO_ACESSO_DURACAO_HORAS': CODIGO_ACESSO_DURACAO_HORAS,
-        # Mapeamento global para labels amigáveis
+        # Labels para tipos de usuário
         'ROTULOS_TIPOS': ROTULOS_TIPOS,
     }
 
@@ -212,7 +243,9 @@ def injetar_variaveis():
 
 if __name__ == '__main__':
     """
-    Inicia o servidor Flask quando o arquivo é executado diretamente
+    Entry point: executa servidor de desenvolvimento Flask (Werkzeug).
+    
+    Em produção, usar WSGI server (Gunicorn, uWSGI) ao invés de app.run().
     """
     
     print("=" * 50)
@@ -222,11 +255,12 @@ if __name__ == '__main__':
     print("Pressione CTRL+C para encerrar")
     print("=" * 50)
     
-    # Inicia o servidor
+    # Inicia servidor Werkzeug (desenvolvimento apenas)
+    # host='0.0.0.0' permite acesso externo (necessário para Docker)
     app.run(
-        host='0.0.0.0',  # Aceita conexões de qualquer IP
-        port=PORT,       # Porta configurada
-        debug=DEBUG      # Modo debug configurado
+        host='0.0.0.0',
+        port=PORT,
+        debug=DEBUG
     )
 
 

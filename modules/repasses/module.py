@@ -74,7 +74,8 @@ def listar():
                                  pagination=pagination,
                                  filtros=filtros,
                                  estatisticas=estatisticas,
-                                 fornecedores=fornecedores)
+                                 fornecedores=fornecedores,
+                                 taxa_plataforma=TAXA_PLATAFORMA_PERCENTUAL)
     
     # Aplicar filtros
     if filtros['status']:
@@ -135,7 +136,8 @@ def listar():
                          pagination=pagination,
                          filtros=filtros,
                          estatisticas=estatisticas,
-                         fornecedores=fornecedores)
+                         fornecedores=fornecedores,
+                         taxa_plataforma=TAXA_PLATAFORMA_PERCENTUAL)
 
 
 # ============================================

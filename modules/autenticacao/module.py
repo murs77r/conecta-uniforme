@@ -346,21 +346,23 @@ def logout():
     return redirect(url_for('autenticacao.solicitar_codigo'))
 
 
-@autenticacao_bp.route('/passkeys')
-def pagina_passkeys():
-    """PÃ¡gina para gerenciamento e cadastro de Passkeys (requer login)."""
-    usuario = verificar_sessao()
-    if not usuario:
-        flash('FaÃ§a login para acessar o cadastro de Passkey.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-
-    # Busca as passkeys existentes para o email do usuÃ¡rio
-    q = "SELECT credential_id, data_criacao, ultimo_uso FROM webauthn_credentials WHERE email = %s AND ativo = TRUE ORDER BY data_criacao DESC"
-    passkeys = Database.executar(q, (usuario['email'],), fetchall=True)
-    if not isinstance(passkeys, list):
-        passkeys = []
-
-    return render_template('auth/passkey.html', usuario=usuario, passkeys=passkeys)
+# REMOVIDO: Página específica de passkeys não é mais necessária
+# Os usuários agora podem criar passkeys diretamente pelo dropdown do navbar
+# @autenticacao_bp.route('/passkeys')
+# def pagina_passkeys():
+#     """Página para gerenciamento e cadastro de Passkeys (requer login)."""
+#     usuario = verificar_sessao()
+#     if not usuario:
+#         flash('Faça login para acessar o cadastro de Passkey.', 'warning')
+#         return redirect(url_for('autenticacao.solicitar_codigo'))
+#
+#     # Busca as passkeys existentes para o email do usuário
+#     q = "SELECT credential_id, data_criacao, ultimo_uso FROM webauthn_credentials WHERE email = %s AND ativo = TRUE ORDER BY data_criacao DESC"
+#     passkeys = Database.executar(q, (usuario['email'],), fetchall=True)
+#     if not isinstance(passkeys, list):
+#         passkeys = []
+#
+#     return render_template('auth/passkey.html', usuario=usuario, passkeys=passkeys)
 
 
 # ============================================
