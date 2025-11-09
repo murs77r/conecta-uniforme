@@ -129,3 +129,17 @@ class RepasseFinanceiro:
     status: str = 'pendente'  # pendente, concluido, cancelado
     data_repasse: Optional[datetime] = None
     data_processamento: Optional[datetime] = None
+
+
+@dataclass
+class LogAcesso:
+    """Modelo de log de acesso (LOGIN/LOGOFF)"""
+    id: Optional[int] = None
+    usuario_id: int = 0
+    acao: str = ''  # LOGIN ou LOGOFF
+    tipo_autenticacao: Optional[str] = None  # codigo, passkey
+    data_acesso: Optional[datetime] = None
+    ip_usuario: Optional[str] = None
+    user_agent: Optional[str] = None
+    sucesso: bool = True
+    descricao: Optional[str] = None

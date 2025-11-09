@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS repasses_financeiros (
 
 -- ============================================
 -- TABELA: logs_alteracoes
--- Registra todas as alterações importantes no sistema
+-- Registra todas as alterações importantes no sistema (INSERT, UPDATE, DELETE)
 -- Para auditoria e rastreabilidade
 -- ============================================
 CREATE TABLE IF NOT EXISTS logs_alteracoes (
@@ -197,6 +197,23 @@ CREATE TABLE IF NOT EXISTS logs_alteracoes (
     dados_novos TEXT,
     data_alteracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ip_usuario VARCHAR(50),
+    descricao TEXT
+);
+
+-- ============================================
+-- TABELA: logs_acesso
+-- Registra eventos de LOGIN e LOGOFF dos usuários
+-- Separado dos logs de alterações para melhor organização
+-- ============================================
+CREATE TABLE IF NOT EXISTS logs_acesso (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER REFERENCES usuarios(id) ON DELETE RESTRICT,
+    acao VARCHAR(20) NOT NULL CHECK (acao IN ('LOGIN', 'LOGOFF')),
+    tipo_autenticacao VARCHAR(50), -- 'codigo', 'passkey'
+    data_acesso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_usuario VARCHAR(50),
+    user_agent TEXT,
+    sucesso BOOLEAN DEFAULT TRUE,
     descricao TEXT
 );
 
@@ -215,6 +232,8 @@ CREATE INDEX idx_repasses_fornecedor ON repasses_financeiros(fornecedor_id);
 CREATE INDEX idx_logs_usuario ON logs_alteracoes(usuario_id);
 CREATE INDEX idx_logs_tabela ON logs_alteracoes(tabela);
 CREATE INDEX IF NOT EXISTS idx_gestores_escola ON gestores_escolares(escola_id);
+CREATE INDEX IF NOT EXISTS idx_logs_acesso_usuario ON logs_acesso(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_logs_acesso_data ON logs_acesso(data_acesso);
 
 -- ============================================
 -- TABELA: webauthn_credentials

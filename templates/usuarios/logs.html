@@ -6,12 +6,17 @@
 <div class="row">
     <div class="col-12">
         <h2 class="mb-4">
-            <i class="bi bi-clock-history"></i> Histórico de Alterações
+            <i class="bi bi-clock-history"></i> Histórico de Alterações (INSERT, UPDATE, DELETE)
         </h2>
         
         {% if usuario %}
         <div class="alert alert-info">
-            <strong>Usuário:</strong> {{ usuario.nome }} ({{ usuario.email }})
+            <strong>Usuário:</strong> {{ usuario.nome }} ({{ usuario.email }})<br>
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Este histórico mostra apenas alterações de dados (criação, atualização e exclusão).
+                Para ver acessos ao sistema, consulte os <a href="{{ url_for('usuarios.logs_acesso', id=usuario.id) if usuario.id else '#' }}">Logs de Acesso</a>.
+            </small>
         </div>
         {% endif %}
         

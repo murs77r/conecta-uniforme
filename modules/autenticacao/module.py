@@ -1,24 +1,25 @@
-"""
+﻿"""
 ============================================
-RF02 - GERENCIAR AUTENTICAÇÃO E ACESSO
+RF02 - GERENCIAR AUTENTICAÃ‡ÃƒO E ACESSO
 ============================================
-Este módulo é responsável por:
-- RF02.1: Solicitar Código de Acesso
-- RF02.2: Validar Código de Acesso
+Este mÃ³dulo Ã© responsÃ¡vel por:
+- RF02.1: Solicitar CÃ³digo de Acesso
+- RF02.2: Validar CÃ³digo de Acesso
 
-Controla o processo de autenticação e autorização de usuários, garantindo segurança no acesso ao sistema.
+Controla o processo de autenticaÃ§Ã£o e autorizaÃ§Ã£o de usuÃ¡rios, garantindo seguranÃ§a no acesso ao sistema.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime, timedelta
-from utils import executar_query, gerar_codigo_acesso, gerar_token_sessao, enviar_codigo_acesso, validar_email, registrar_log
+from core.database import Database
+from core.services import EmailService, UtilsService, ValidacaoService, LogService
 from config import CODIGO_ACESSO_DURACAO_HORAS, SESSAO_DURACAO_DIAS, DEBUG, WEBAUTHN_RP_ID, WEBAUTHN_RP_NAME, WEBAUTHN_ORIGIN, WEBAUTHN_DEBUG
 import os, base64, json
 from webauthn import generate_registration_options, options_to_json, verify_registration_response, generate_authentication_options, verify_authentication_response
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor, RegistrationCredential, AuthenticationCredential, AuthenticatorSelectionCriteria, UserVerificationRequirement, AttestationConveyancePreference, AuthenticatorAttestationResponse, AuthenticatorAssertionResponse
 
 # ============================================
-# CRIAÇÃO DO BLUEPRINT (MICROFRONT-END)
+# CRIAÃ‡ÃƒO DO BLUEPRINT (MICROFRONT-END)
 # ============================================
 # Este blueprint funciona de forma independente
 autenticacao_bp = Blueprint('autenticacao', __name__, url_prefix='/auth')
@@ -37,13 +38,13 @@ def _decode_b64url(data) -> bytes:
 def _load_webauthn_model(model_cls, data):
     """Compat loader for WebAuthn structs across Pydantic v1/v2.
 
-    Estratégia: raw_id deve permanecer bytes (não JSON-safe), enquanto campos internos
-    em 'response' podem ser convertidos apenas se necessário. Pydantic v2 aceita bytes nativamente
-    em model_validate(), então preferimos esse caminho ao invés de JSON serialization.
+    EstratÃ©gia: raw_id deve permanecer bytes (nÃ£o JSON-safe), enquanto campos internos
+    em 'response' podem ser convertidos apenas se necessÃ¡rio. Pydantic v2 aceita bytes nativamente
+    em model_validate(), entÃ£o preferimos esse caminho ao invÃ©s de JSON serialization.
     """
-    # Se for dict, usa validação direta preservando bytes onde a biblioteca espera
+    # Se for dict, usa validaÃ§Ã£o direta preservando bytes onde a biblioteca espera
     if isinstance(data, dict):
-        # Tenta validação direta que preserve bytes (Pydantic v2 model_validate aceita bytes)
+        # Tenta validaÃ§Ã£o direta que preserve bytes (Pydantic v2 model_validate aceita bytes)
         if hasattr(model_cls, 'model_validate'):
             return model_cls.model_validate(data)  # Pydantic v2 (aceita bytes em campos)
         if hasattr(model_cls, 'parse_obj'):
@@ -55,7 +56,7 @@ def _load_webauthn_model(model_cls, data):
     if isinstance(data, str):
         payload = data
     else:
-        # Para outros tipos serializáveis (sem bytes)
+        # Para outros tipos serializÃ¡veis (sem bytes)
         payload = json.dumps(data)
 
     if hasattr(model_cls, 'model_validate_json'):
@@ -76,7 +77,7 @@ def _load_webauthn_model(model_cls, data):
 
 @autenticacao_bp.route('/tipos-por-email')
 def tipos_por_email():
-    """Retorna os tipos de usuário ativos associados a um email (JSON).
+    """Retorna os tipos de usuÃ¡rio ativos associados a um email (JSON).
 
     Resposta: { "email": str, "tipos": [str, ...] }
     """
@@ -84,14 +85,14 @@ def tipos_por_email():
     if not email:
         return jsonify({"email": email, "tipos": []})
     q = "SELECT DISTINCT tipo FROM usuarios WHERE email = %s AND ativo = TRUE ORDER BY tipo"
-    rows = executar_query(q, (email,), fetchall=True)
+    rows = Database.executar(q, (email,), fetchall=True)
     tipos = [r['tipo'] for r in rows] if isinstance(rows, list) else []
-    # Labels amigáveis para cada tipo (acentos e capitalização)
+    # Labels amigÃ¡veis para cada tipo (acentos e capitalizaÃ§Ã£o)
     rotulos = {
         'administrador': 'Administrador',
         'escola': 'Escola',
         'fornecedor': 'Fornecedor',
-        'responsavel': 'Responsável',
+        'responsavel': 'ResponsÃ¡vel',
     }
     tipos_formatados = [
         {"slug": t, "label": rotulos.get(t, t.title())} for t in tipos
@@ -100,153 +101,153 @@ def tipos_por_email():
 
 
 # ============================================
-# RF02.1 - SOLICITAR CÓDIGO DE ACESSO
+# RF02.1 - SOLICITAR CÃ“DIGO DE ACESSO
 # ============================================
 
 @autenticacao_bp.route('/solicitar-codigo', methods=['GET', 'POST'])
 def solicitar_codigo():
     """
-    Tela para solicitar código de acesso
+    Tela para solicitar cÃ³digo de acesso
     
-    GET: Exibe formulário para digitar email
-    POST: Gera código, salva no banco e envia por email
+    GET: Exibe formulÃ¡rio para digitar email
+    POST: Gera cÃ³digo, salva no banco e envia por email
     """
     
-    # Se for GET, apenas mostra o formulário
+    # Se for GET, apenas mostra o formulÃ¡rio
     if request.method == 'GET':
         return render_template('auth/solicitar_codigo.html', passkeys_ativado=False)
     
-    # Se for POST, processa o formulário
-    # Pega o email digitado pelo usuário
+    # Se for POST, processa o formulÃ¡rio
+    # Pega o email digitado pelo usuÃ¡rio
     email = request.form.get('email', '').strip().lower()
-    tipo_escolhido = request.form.get('tipo')  # opcional, quando houver múltiplos
+    tipo_escolhido = request.form.get('tipo')  # opcional, quando houver mÃºltiplos
     
-    # Validação: verifica se o email foi preenchido
+    # ValidaÃ§Ã£o: verifica se o email foi preenchido
     if not email:
         flash('Por favor, digite seu email.', 'danger')
         return render_template('auth/solicitar_codigo.html')
     
-    # Validação: verifica se o email tem formato válido
-    if not validar_email(email):
-        flash('Email inválido. Verifique e tente novamente.', 'danger')
+    # ValidaÃ§Ã£o: verifica se o email tem formato vÃ¡lido
+    if not ValidacaoService.validar_email(email):
+        flash('Email invÃ¡lido. Verifique e tente novamente.', 'danger')
         return render_template('auth/solicitar_codigo.html')
     
-    # Busca todos usuários (tipos) para o email
+    # Busca todos usuÃ¡rios (tipos) para o email
     query_usuario = "SELECT id, nome, email, tipo, ativo FROM usuarios WHERE email = %s AND ativo = TRUE ORDER BY tipo"
-    usuarios_encontrados = executar_query(query_usuario, (email,), fetchall=True)
+    usuarios_encontrados = Database.executar(query_usuario, (email,), fetchall=True)
     if not isinstance(usuarios_encontrados, list):
         usuarios_encontrados = []
 
-    # Se nenhum usuário encontrado
+    # Se nenhum usuÃ¡rio encontrado
     if not usuarios_encontrados:
-        flash('Email não cadastrado no sistema.', 'danger')
+        flash('Email nÃ£o cadastrado no sistema.', 'danger')
         return render_template('auth/solicitar_codigo.html')
 
-    # Se houver mais de um tipo e nenhum escolhido ainda, mostra modal de seleção
+    # Se houver mais de um tipo e nenhum escolhido ainda, mostra modal de seleÃ§Ã£o
     if len(usuarios_encontrados) > 1 and not tipo_escolhido:
         tipos_disponiveis = [u['tipo'] for u in usuarios_encontrados]
-        # Garante abertura do modal imediatamente e força a escolha do tipo antes de prosseguir
+        # Garante abertura do modal imediatamente e forÃ§a a escolha do tipo antes de prosseguir
         return render_template('auth/solicitar_codigo.html', email=email, tipos_disponiveis=tipos_disponiveis, abrir_modal_tipo=True)
 
-    # Determina o usuário alvo
+    # Determina o usuÃ¡rio alvo
     if len(usuarios_encontrados) == 1:
         usuario = usuarios_encontrados[0]
     else:
         usuario = next((u for u in usuarios_encontrados if u['tipo'] == tipo_escolhido), None)
         if not usuario:
-            flash('Tipo de usuário inválido para este email.', 'danger')
+            flash('Tipo de usuÃ¡rio invÃ¡lido para este email.', 'danger')
             return render_template('auth/solicitar_codigo.html')
-        # Log leve da seleção de perfil
+        # Log leve da seleÃ§Ã£o de perfil
         try:
-            registrar_log(
+            LogService.registrar_acesso(
                 usuario_id=usuario['id'],
-                tabela='usuarios',
-                registro_id=usuario['id'],
-                acao='UPDATE',  # usando UPDATE para padronizar visualização de diffs
-                dados_antigos=None,
-                dados_novos=None,
-                descricao=f'Seleção de perfil para login (tipo={usuario.get("tipo")})'
+                acao='LOGIN',
+                tipo_autenticacao='codigo',
+                ip_usuario=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                sucesso=False,  # Ainda nÃ£o completou o login, apenas selecionou perfil
+                descricao=f'SeleÃ§Ã£o de perfil para login (tipo={usuario.get("tipo")})'
             )
         except Exception:
             pass
     
-    # Gera um código de acesso aleatório (6 dígitos)
-    codigo = gerar_codigo_acesso()
+    # Gera um cÃ³digo de acesso aleatÃ³rio (6 dÃ­gitos)
+    codigo = UtilsService.gerar_codigo_acesso()
     
-    # Calcula a data de expiração do código (24 horas)
+    # Calcula a data de expiraÃ§Ã£o do cÃ³digo (24 horas)
     data_expiracao = datetime.now() + timedelta(hours=CODIGO_ACESSO_DURACAO_HORAS)
     
-    # Salva o código no banco de dados
+    # Salva o cÃ³digo no banco de dados
     query_inserir = """
         INSERT INTO codigos_acesso (usuario_id, codigo, data_expiracao)
         VALUES (%s, %s, %s)
     """
-    resultado = executar_query(query_inserir, (usuario['id'], codigo, data_expiracao), commit=True)
+    resultado = Database.executar(query_inserir, (usuario['id'], codigo, data_expiracao), commit=True)
     
     # Verifica se salvou com sucesso
     if not resultado or resultado == 0:
-        flash('Erro ao gerar código. Tente novamente.', 'danger')
+        flash('Erro ao gerar cÃ³digo. Tente novamente.', 'danger')
         return render_template('auth/solicitar_codigo.html')
     
-    # Imprime o código no console para facilitar testes (ambiente de desenvolvimento)
+    # Imprime o cÃ³digo no console para facilitar testes (ambiente de desenvolvimento)
     try:
         agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print("=" * 60)
-        print("CÓDIGO DE LOGIN GERADO")
+        print("CÃ“DIGO DE LOGIN GERADO")
         print(f"Data/Hora: {agora}")
-        print(f"Usuário: {usuario['nome']} <{usuario['email']}> [{usuario['tipo']}]")
-        print(f"Código: {codigo}")
+        print(f"UsuÃ¡rio: {usuario['nome']} <{usuario['email']}> [{usuario['tipo']}]")
+        print(f"CÃ³digo: {codigo}")
         print("=" * 60)
     except Exception:
         # Evita quebrar o fluxo caso o print falhe por algum motivo de encoding
         pass
 
-    # Envia o código por email (com timeout configurado)
-    sucesso_envio = enviar_codigo_acesso(email, codigo, usuario['nome'])
+    # Envia o cÃ³digo por email (com timeout configurado)
+    sucesso_envio = EmailService().enviar_codigo_acesso(email, codigo, usuario['nome'])
     
-    # Independente do sucesso do envio, vamos direcionar para a tela de validação
+    # Independente do sucesso do envio, vamos direcionar para a tela de validaÃ§Ã£o
     if sucesso_envio:
-        flash('Código de acesso enviado para seu email!', 'success')
+        flash('CÃ³digo de acesso enviado para seu email!', 'success')
         return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo']))
     else:
-        # Em modo dev, permitir seguir e informar via modal na próxima tela
+        # Em modo dev, permitir seguir e informar via modal na prÃ³xima tela
         return redirect(url_for('autenticacao.validar_codigo', email=email, tipo=usuario['tipo'], aviso_email='1' if DEBUG else '0'))
 
 
 # ============================================
-# RF02.2 - VALIDAR CÓDIGO DE ACESSO (LOGIN)
+# RF02.2 - VALIDAR CÃ“DIGO DE ACESSO (LOGIN)
 # ============================================
 
 @autenticacao_bp.route('/validar-codigo', methods=['GET', 'POST'])
 def validar_codigo():
     """
-    Tela para validar o código de acesso e fazer login
+    Tela para validar o cÃ³digo de acesso e fazer login
     
-    GET: Exibe formulário para digitar o código
-    POST: Valida o código e cria sessão do usuário
+    GET: Exibe formulÃ¡rio para digitar o cÃ³digo
+    POST: Valida o cÃ³digo e cria sessÃ£o do usuÃ¡rio
     """
     
-    # Pega o email e tipo da URL (passado pela página anterior)
+    # Pega o email e tipo da URL (passado pela pÃ¡gina anterior)
     email = request.args.get('email', '')
     tipo = request.args.get('tipo', '')
     aviso_email = request.args.get('aviso_email', '0')
     
-    # Se for GET, apenas mostra o formulário
+    # Se for GET, apenas mostra o formulÃ¡rio
     if request.method == 'GET':
         return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email=aviso_email, debug=DEBUG, passkeys_ativado=True)
     
-    # Se for POST, processa o formulário
+    # Se for POST, processa o formulÃ¡rio
     # Pega os dados digitados
     email = request.form.get('email', '').strip().lower()
     tipo = request.form.get('tipo', '').strip()
     codigo_digitado = request.form.get('codigo', '').strip()
     
-    # Validação: verifica se os campos foram preenchidos
+    # ValidaÃ§Ã£o: verifica se os campos foram preenchidos
     if not email or not codigo_digitado:
         flash('Preencha todos os campos.', 'danger')
         return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
-    # Busca o código no banco de dados (amarra email+tipo)
+    # Busca o cÃ³digo no banco de dados (amarra email+tipo)
     query_codigo = """
         SELECT ca.id, ca.usuario_id, ca.codigo, ca.data_expiracao, ca.usado,
                u.nome, u.email, u.tipo, u.ativo
@@ -256,92 +257,106 @@ def validar_codigo():
         ORDER BY ca.data_criacao DESC
         LIMIT 1
     """
-    registro_codigo = executar_query(query_codigo, (email, tipo, codigo_digitado), fetchone=True)
+    registro_codigo = Database.executar(query_codigo, (email, tipo, codigo_digitado), fetchone=True)
     if not isinstance(registro_codigo, dict):
         registro_codigo = {}
     
-    # Verifica se o código existe e está válido
+    # Verifica se o cÃ³digo existe e estÃ¡ vÃ¡lido
     if not registro_codigo or not registro_codigo.get('id'):
-        flash('Código inválido ou já utilizado.', 'danger')
+        flash('CÃ³digo invÃ¡lido ou jÃ¡ utilizado.', 'danger')
         return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
-    # Verifica se o código expirou
+    # Verifica se o cÃ³digo expirou
     data_expiracao = registro_codigo.get('data_expiracao')
     if not data_expiracao:
-        flash('Código inválido.', 'danger')
+        flash('CÃ³digo invÃ¡lido.', 'danger')
         return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     if datetime.now() > data_expiracao:
-        flash('Código expirado. Solicite um novo código.', 'danger')
+        flash('CÃ³digo expirado. Solicite um novo cÃ³digo.', 'danger')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Verifica se o usuário está ativo
+    # Verifica se o usuÃ¡rio estÃ¡ ativo
     if not registro_codigo.get('ativo'):
-        flash('Usuário inativo. Entre em contato com o administrador.', 'danger')
+        flash('UsuÃ¡rio inativo. Entre em contato com o administrador.', 'danger')
         return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
-    # Código válido! Marca como usado
+    # CÃ³digo vÃ¡lido! Marca como usado
     query_marcar_usado = "UPDATE codigos_acesso SET usado = TRUE WHERE id = %s"
     if registro_codigo.get('id'):
-        executar_query(query_marcar_usado, (registro_codigo['id'],), commit=True)
+        Database.executar(query_marcar_usado, (registro_codigo['id'],), commit=True)
     
-    # Salva os dados do usuário na sessão do Flask
+    # Salva os dados do usuÃ¡rio na sessÃ£o do Flask
     session['usuario_id'] = registro_codigo.get('usuario_id')
     session['usuario_nome'] = registro_codigo.get('nome')
     session['usuario_email'] = registro_codigo.get('email')
     session['usuario_tipo'] = registro_codigo.get('tipo')
     session['logged_in'] = True
     
-    # Log leve de sucesso de login (sem dados sensíveis)
+    # Log de sucesso de login
     try:
-        registrar_log(
+        LogService.registrar_acesso(
             usuario_id=registro_codigo.get('usuario_id'),
-            tabela='usuarios',
-            registro_id=registro_codigo.get('usuario_id'),
-            acao='UPDATE',
-            dados_antigos=None,
-            dados_novos=None,
-            descricao=f'Login realizado via código para tipo={registro_codigo.get("tipo")}'
+            acao='LOGIN',
+            tipo_autenticacao='codigo',
+            ip_usuario=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            sucesso=True,
+            descricao=f'Login realizado via cÃ³digo para tipo={registro_codigo.get("tipo")}'
         )
     except Exception:
         pass
     # Login realizado com sucesso!
     flash(f"Bem-vindo(a), {registro_codigo['nome']}!", 'success')
     
-    # Redireciona para a página inicial
+    # Redireciona para a pÃ¡gina inicial
     return redirect(url_for('home'))
 
 
 # ============================================
-# LOGOUT - ENCERRAR SESSÃO
+# LOGOUT - ENCERRAR SESSÃƒO
 # ============================================
 
 @autenticacao_bp.route('/logout')
 def logout():
     """
-    Encerra a sessão do usuário (logout)
+    Encerra a sessÃ£o do usuÃ¡rio (logout)
     """
+    # Registra o logoff antes de limpar a sessÃ£o
+    if session.get('logged_in') and session.get('usuario_id'):
+        try:
+            LogService.registrar_acesso(
+                usuario_id=session.get('usuario_id'),
+                acao='LOGOFF',
+                tipo_autenticacao=None,
+                ip_usuario=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                sucesso=True,
+                descricao='Logout realizado pelo usuÃ¡rio'
+            )
+        except Exception:
+            pass
     
-    # Limpa todos os dados da sessão
+    # Limpa todos os dados da sessÃ£o
     session.clear()
     
     # Mensagem de logout
     flash('Logout realizado com sucesso!', 'info')
     
-    # Redireciona para a página de login
+    # Redireciona para a pÃ¡gina de login
     return redirect(url_for('autenticacao.solicitar_codigo'))
 
 
 @autenticacao_bp.route('/passkeys')
 def pagina_passkeys():
-    """Página para gerenciamento e cadastro de Passkeys (requer login)."""
+    """PÃ¡gina para gerenciamento e cadastro de Passkeys (requer login)."""
     usuario = verificar_sessao()
     if not usuario:
-        flash('Faça login para acessar o cadastro de Passkey.', 'warning')
+        flash('FaÃ§a login para acessar o cadastro de Passkey.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
 
-    # Busca as passkeys existentes para o email do usuário
+    # Busca as passkeys existentes para o email do usuÃ¡rio
     q = "SELECT credential_id, data_criacao, ultimo_uso FROM webauthn_credentials WHERE email = %s AND ativo = TRUE ORDER BY data_criacao DESC"
-    passkeys = executar_query(q, (usuario['email'],), fetchall=True)
+    passkeys = Database.executar(q, (usuario['email'],), fetchall=True)
     if not isinstance(passkeys, list):
         passkeys = []
 
@@ -353,22 +368,22 @@ def pagina_passkeys():
 # ============================================
 @autenticacao_bp.route('/webauthn/registro/opcoes')
 def webauthn_registro_opcoes():
-    """Gera as opções de criação de credencial para o usuário logado."""
+    """Gera as opÃ§Ãµes de criaÃ§Ã£o de credencial para o usuÃ¡rio logado."""
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
 
     if WEBAUTHN_DEBUG:
         print('=' * 70)
-        print('DEBUG WEBAUTHN - REGISTRO OPÇÕES')
+        print('DEBUG WEBAUTHN - REGISTRO OPÃ‡Ã•ES')
         print(f'  RP_ID           : {WEBAUTHN_RP_ID}')
         print(f'  RP_NAME         : {WEBAUTHN_RP_NAME}')
         print(f'  ORIGIN          : {WEBAUTHN_ORIGIN}')
-        print(f'  Usuário         : {usuario.get("email")}')
+        print(f'  UsuÃ¡rio         : {usuario.get("email")}')
         print('=' * 70)
 
-    # ID de usuário deve ser bytes estáveis (usar email como identificador)
-    # Passkey fica vinculada ao EMAIL, não ao perfil específico
+    # ID de usuÃ¡rio deve ser bytes estÃ¡veis (usar email como identificador)
+    # Passkey fica vinculada ao EMAIL, nÃ£o ao perfil especÃ­fico
     email_usuario = (usuario.get('email') or '').strip().lower() if isinstance(usuario, dict) else ''
     if not email_usuario:
         return jsonify({'erro':'email_invalido'}), 400
@@ -376,7 +391,7 @@ def webauthn_registro_opcoes():
 
     # Recupera credenciais existentes para excluir de excludeCredentials
     q = "SELECT credential_id FROM webauthn_credentials WHERE email = %s AND ativo = TRUE"
-    creds = executar_query(q, (email_usuario,), fetchall=True)
+    creds = Database.executar(q, (email_usuario,), fetchall=True)
     if not isinstance(creds, list):
         creds = []
     exclude = [PublicKeyCredentialDescriptor(id=_decode_b64url(c['credential_id'])) for c in creds if isinstance(c, dict) and c.get('credential_id')]
@@ -394,23 +409,23 @@ def webauthn_registro_opcoes():
             ),
             attestation=AttestationConveyancePreference.NONE,
         )
-        # Armazena challenge no banco de dados com expiração
+        # Armazena challenge no banco de dados com expiraÃ§Ã£o
         challenge_b64 = _b64url(options.challenge)
-        expiracao = datetime.now() + timedelta(minutes=5) # Challenge válido por 5 minutos
-        executar_query(
+        expiracao = datetime.now() + timedelta(minutes=5) # Challenge vÃ¡lido por 5 minutos
+        Database.executar(
             "INSERT INTO webauthn_challenges (challenge, email, data_expiracao) VALUES (%s, %s, %s)",
             (challenge_b64, email_usuario, expiracao),
             commit=True
         )
         
         if WEBAUTHN_DEBUG:
-            print(f'Opções de registro geradas com sucesso!')
+            print(f'OpÃ§Ãµes de registro geradas com sucesso!')
             print(f'Challenge armazenado no banco para: {email_usuario}')
         
         return jsonify(json.loads(options_to_json(options)))
     except Exception as e:
         if WEBAUTHN_DEBUG:
-            print(f'ERRO ao gerar opções de registro: {type(e).__name__}: {e}')
+            print(f'ERRO ao gerar opÃ§Ãµes de registro: {type(e).__name__}: {e}')
             import traceback
             traceback.print_exc()
         return jsonify({'erro': 'falha_gerar_opcoes', 'detalhes': str(e)}), 500
@@ -418,7 +433,7 @@ def webauthn_registro_opcoes():
 
 @autenticacao_bp.route('/webauthn/registro', methods=['POST'])
 def webauthn_registro():
-    """Recebe resposta de criação de credencial e valida."""
+    """Recebe resposta de criaÃ§Ã£o de credencial e valida."""
     usuario = verificar_sessao()
     if not usuario:
         return jsonify({'erro': 'nao_autenticado'}), 401
@@ -431,15 +446,15 @@ def webauthn_registro():
 
     # Busca e valida o challenge no banco de dados
     q_challenge = "SELECT challenge FROM webauthn_challenges WHERE email = %s AND data_expiracao > NOW() ORDER BY data_expiracao DESC LIMIT 1"
-    challenge_rec = executar_query(q_challenge, (email_usuario,), fetchone=True)
+    challenge_rec = Database.executar(q_challenge, (email_usuario,), fetchone=True)
     
     if not challenge_rec or not challenge_rec.get('challenge'):
         return jsonify({'erro': 'challenge_expirado_ou_invalido'}), 400
     
     challenge_esperado = _decode_b64url(challenge_rec.get('challenge'))
 
-    # Limpa o challenge do banco para que não seja reutilizado
-    executar_query("DELETE FROM webauthn_challenges WHERE challenge = %s", (challenge_rec.get('challenge'),), commit=True)
+    # Limpa o challenge do banco para que nÃ£o seja reutilizado
+    Database.executar("DELETE FROM webauthn_challenges WHERE challenge = %s", (challenge_rec.get('challenge'),), commit=True)
     
     if WEBAUTHN_DEBUG:
         print('=== DEBUG REGISTRO PASSKEY ===')
@@ -451,14 +466,14 @@ def webauthn_registro():
         if 'rawId' in dados:
             print(f'rawId tipo: {type(dados["rawId"])}, valor: {dados["rawId"][:20]}...')
     
-    # Guarda e remove 'transports' se existir, pois não faz parte do RegistrationCredential
+    # Guarda e remove 'transports' se existir, pois nÃ£o faz parte do RegistrationCredential
     transports = dados.pop('transports', [])
 
-    # Converte campos base64url (strings) para bytes onde necessário
+    # Converte campos base64url (strings) para bytes onde necessÃ¡rio
     # O navegador envia tudo como strings base64url
     # A biblioteca WebAuthn espera: id=string, raw_id=bytes, response.*=bytes
     
-    # Guarda o ID original como string (necessário para o modelo)
+    # Guarda o ID original como string (necessÃ¡rio para o modelo)
     id_original = dados.get('id') or dados.get('rawId')
     
     # Processa rawId -> raw_id (deve ser bytes)
@@ -519,7 +534,7 @@ def webauthn_registro():
         )
     
     if WEBAUTHN_DEBUG:
-        print('Após conversões (registro):')
+        print('ApÃ³s conversÃµes (registro):')
         id_val = dados.get("id")
         raw_id_val = dados.get("raw_id")
         print(f'  - id: {type(id_val)} = {id_val[:30] + "..." if isinstance(id_val, str) and len(id_val) > 30 else id_val if isinstance(id_val, str) else "N/A"}')
@@ -560,24 +575,24 @@ def webauthn_registro():
             require_user_verification=True,
         )
         if WEBAUTHN_DEBUG:
-            print('Verificação bem-sucedida!')
+            print('VerificaÃ§Ã£o bem-sucedida!')
     except Exception as e:
         if WEBAUTHN_DEBUG:
-            print(f'Erro verificação registro WebAuthn: {type(e).__name__}: {e}')
+            print(f'Erro verificaÃ§Ã£o registro WebAuthn: {type(e).__name__}: {e}')
             import traceback
             traceback.print_exc()
         return jsonify({'erro': 'verificacao_falhou', 'detalhes': str(e)}), 400
 
     cred_id_b64 = _b64url(verificado.credential_id)
     pubkey_b64 = _b64url(verificado.credential_public_key)
-    # Salva no banco - vinculado ao EMAIL, não ao usuario_id específico
-    # usuario_id pode ser qualquer um dos perfis do email (usamos o atual apenas como referência)
+    # Salva no banco - vinculado ao EMAIL, nÃ£o ao usuario_id especÃ­fico
+    # usuario_id pode ser qualquer um dos perfis do email (usamos o atual apenas como referÃªncia)
     q_ins = """
         INSERT INTO webauthn_credentials (usuario_id, email, credential_id, public_key, sign_count, transports, backup_eligible, backup_state, aaguid)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
         ON CONFLICT (credential_id) DO NOTHING
     """
-    resultado = executar_query(q_ins, (
+    resultado = Database.executar(q_ins, (
         usuario['id'], email_usuario, cred_id_b64, pubkey_b64, verificado.sign_count,
         json.dumps(transports or []),
         getattr(verificado, 'backup_eligible', False),
@@ -604,14 +619,14 @@ def webauthn_anular():
     if not credencial_id:
         return jsonify({'erro': 'id_nao_fornecido'}), 400
 
-    # Desativa a credencial no banco, garantindo que pertence ao usuário logado
+    # Desativa a credencial no banco, garantindo que pertence ao usuÃ¡rio logado
     q = "UPDATE webauthn_credentials SET ativo = FALSE WHERE credential_id = %s AND email = %s"
-    resultado = executar_query(q, (credencial_id, usuario['email']), commit=True)
+    resultado = Database.executar(q, (credencial_id, usuario['email']), commit=True)
 
     if resultado > 0:
-        # Log da anulação
+        # Log da anulação (não é um login/logoff, é uma alteração)
         try:
-            registrar_log(
+            LogService.registrar(
                 usuario_id=usuario['id'],
                 tabela='webauthn_credentials',
                 registro_id=None, # O ID da tabela não é o credential_id
@@ -628,7 +643,7 @@ def webauthn_anular():
 
 
 # ============================================
-# WEBAuthn - AUTENTICAÇÃO (LOGIN)
+# WEBAuthn - AUTENTICAÃ‡ÃƒO (LOGIN)
 # ============================================
 @autenticacao_bp.route('/webauthn/login/opcoes')
 def webauthn_login_opcoes():
@@ -637,31 +652,31 @@ def webauthn_login_opcoes():
     allow = None
     usuario = None
     if email and isinstance(email, str):
-        # Busca usuário (se múltiplos tipos, pode filtrar por tipo)
+        # Busca usuÃ¡rio (se mÃºltiplos tipos, pode filtrar por tipo)
         q = "SELECT id, nome, email, tipo FROM usuarios WHERE email=%s " + ("AND tipo=%s" if tipo else "") + " LIMIT 1"
         params = (email, tipo) if tipo else (email,)
-        usuario = executar_query(q, params, fetchone=True)
+        usuario = Database.executar(q, params, fetchone=True)
         if not isinstance(usuario, dict) or not usuario:
             return jsonify({'erro':'usuario_nao_encontrado'}), 404
         # Pega credenciais registradas
         q2 = "SELECT credential_id FROM webauthn_credentials WHERE email=%s AND ativo=TRUE"
         email_lookup = usuario.get('email') if isinstance(usuario, dict) else None
-        creds = executar_query(q2, (email_lookup,), fetchall=True) if email_lookup else []
+        creds = Database.executar(q2, (email_lookup,), fetchall=True) if email_lookup else []
         if not isinstance(creds, list):
             creds = []
         if creds:
             allow = [PublicKeyCredentialDescriptor(id=_decode_b64url(c['credential_id'])) for c in creds if isinstance(c, dict) and c.get('credential_id')]
-    # allow=None permite credenciais descobríveis (resident)
+    # allow=None permite credenciais descobrÃ­veis (resident)
     options = generate_authentication_options(
         allow_credentials=allow,
         rp_id=WEBAUTHN_RP_ID,
         user_verification=UserVerificationRequirement.PREFERRED,
     )
-    # Guarda challenge na sessão (precisa ser bytes)
+    # Guarda challenge na sessÃ£o (precisa ser bytes)
     session['webauthn_challenge'] = options.challenge
     
     if WEBAUTHN_DEBUG:
-        print('=== DEBUG LOGIN OPÇÕES ===')
+        print('=== DEBUG LOGIN OPÃ‡Ã•ES ===')
         print(f'Challenge tipo: {type(options.challenge)}')
         print(f'Challenge length: {len(options.challenge) if hasattr(options.challenge, "__len__") else "N/A"}')
     
@@ -682,19 +697,19 @@ def webauthn_login():
         print('=== DEBUG LOGIN PASSKEY ===')
         print(f'Challenge esperado (tipo): {type(challenge_esperado)}')
     
-    # Tipo escolhido pode vir no corpo da requisição (quando há múltiplos perfis)
+    # Tipo escolhido pode vir no corpo da requisiÃ§Ã£o (quando hÃ¡ mÃºltiplos perfis)
     tipo_escolhido = dados.pop('tipo', None)
     
-    # Identifica credencial enviada (ANTES das conversões - precisa ser string base64url)
+    # Identifica credencial enviada (ANTES das conversÃµes - precisa ser string base64url)
     cred_id_b64 = dados.get('id') or dados.get('rawId')
     if not cred_id_b64:
         return jsonify({'erro':'credencial_sem_id'}), 400
     
-    # Converte campos base64url (strings) para bytes onde necessário
+    # Converte campos base64url (strings) para bytes onde necessÃ¡rio
     # O navegador envia tudo como strings base64url
     # A biblioteca WebAuthn espera: id=string, raw_id=bytes, response.*=bytes
     
-    # Guarda o ID original como string (necessário para o modelo)
+    # Guarda o ID original como string (necessÃ¡rio para o modelo)
     id_original = dados.get('id') or dados.get('rawId')
     
     # Processa rawId -> raw_id (deve ser bytes)
@@ -779,7 +794,7 @@ def webauthn_login():
         )
     
     if WEBAUTHN_DEBUG:
-        print('Após conversões (login):')
+        print('ApÃ³s conversÃµes (login):')
         print(f'  - id: {type(dados.get("id"))}')
         print(f'  - raw_id: {type(dados.get("raw_id"))}')
         if 'response' in dados:
@@ -791,12 +806,12 @@ def webauthn_login():
     
     # Encontra dono da credencial
     q = "SELECT wc.usuario_id as uid, wc.email, wc.public_key, wc.sign_count FROM webauthn_credentials wc WHERE wc.credential_id=%s AND wc.ativo=TRUE"
-    reg = executar_query(q, (cred_id_b64,), fetchone=True)
+    reg = Database.executar(q, (cred_id_b64,), fetchone=True)
     if not isinstance(reg, dict) or not reg:
         return jsonify({'erro':'credencial_desconhecida'}), 404
     try:
         if WEBAUTHN_DEBUG:
-            print(f'Tentando verificar autenticação com challenge tipo: {type(challenge_esperado)}')
+            print(f'Tentando verificar autenticaÃ§Ã£o com challenge tipo: {type(challenge_esperado)}')
         
         verificado = verify_authentication_response(
             credential=_load_webauthn_model(AuthenticationCredential, dados),
@@ -809,27 +824,27 @@ def webauthn_login():
         )
         
         if WEBAUTHN_DEBUG:
-            print('Verificação de login bem-sucedida!')
+            print('VerificaÃ§Ã£o de login bem-sucedida!')
     except Exception as e:
         if WEBAUTHN_DEBUG:
-            print(f'Erro verificação login WebAuthn: {type(e).__name__}: {e}')
+            print(f'Erro verificaÃ§Ã£o login WebAuthn: {type(e).__name__}: {e}')
             import traceback
             traceback.print_exc()
         return jsonify({'erro':'verificacao_falhou', 'detalhes': str(e)}), 400
     # Atualiza sign_count
-    executar_query("UPDATE webauthn_credentials SET sign_count=%s, ultimo_uso=NOW() WHERE credential_id=%s", (verificado.new_sign_count, cred_id_b64), commit=True)
-    # Cria sessão normal
+    Database.executar("UPDATE webauthn_credentials SET sign_count=%s, ultimo_uso=NOW() WHERE credential_id=%s", (verificado.new_sign_count, cred_id_b64), commit=True)
+    # Cria sessÃ£o normal
     email = reg.get('email')
-    u_lista = executar_query("SELECT id, nome, tipo FROM usuarios WHERE email=%s AND ativo=TRUE ORDER BY tipo", (email,), fetchall=True)
+    u_lista = Database.executar("SELECT id, nome, tipo FROM usuarios WHERE email=%s AND ativo=TRUE ORDER BY tipo", (email,), fetchall=True)
     if not isinstance(u_lista, list) or len(u_lista) == 0:
         return jsonify({'erro':'usuario_nao_encontrado'}), 404
     
-    # Se múltiplos tipos E nenhum tipo foi escolhido, pede para escolher
+    # Se mÃºltiplos tipos E nenhum tipo foi escolhido, pede para escolher
     if len(u_lista) > 1 and not tipo_escolhido:
         tipos_disp = [row.get('tipo') for row in u_lista if isinstance(row, dict)]
         return jsonify({'erro':'selecionar_tipo', 'tipos': tipos_disp}), 200
     
-    # Se tipo foi escolhido, busca o usuário correspondente
+    # Se tipo foi escolhido, busca o usuÃ¡rio correspondente
     if tipo_escolhido:
         u = next((row for row in u_lista if row.get('tipo') == tipo_escolhido), None)
         if not u:
@@ -841,7 +856,7 @@ def webauthn_login():
     tipo = u.get('tipo')
     nome = u.get('nome')
     
-    # Preenche sessão flask
+    # Preenche sessÃ£o flask
     session['usuario_id'] = uid
     session['usuario_nome'] = nome
     session['usuario_email'] = email
@@ -850,13 +865,13 @@ def webauthn_login():
     
     # Log do login via passkey
     try:
-        registrar_log(
+        LogService.registrar_acesso(
             usuario_id=uid,
-            tabela='usuarios',
-            registro_id=uid,
-            acao='UPDATE',
-            dados_antigos=None,
-            dados_novos=None,
+            acao='LOGIN',
+            tipo_autenticacao='passkey',
+            ip_usuario=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            sucesso=True,
             descricao=f'Login realizado via Passkey para tipo={tipo}'
         )
     except Exception:
@@ -873,20 +888,20 @@ def webauthn_tem():
     email = request.args.get('email','').strip().lower()
     if not email:
         return jsonify({'tem': False})
-    reg = executar_query("SELECT 1 FROM webauthn_credentials WHERE email=%s AND ativo=TRUE LIMIT 1", (email,), fetchone=True)
+    reg = Database.executar("SELECT 1 FROM webauthn_credentials WHERE email=%s AND ativo=TRUE LIMIT 1", (email,), fetchone=True)
     return jsonify({'tem': bool(reg)})
 
 
 # ============================================
-# WEBAuthn - DIAGNÓSTICO (apenas em DEBUG)
+# WEBAuthn - DIAGNÃ“STICO (apenas em DEBUG)
 # ============================================
 @autenticacao_bp.route('/webauthn/diagnostico')
 def webauthn_diagnostico():
-    """Endpoint de diagnóstico para verificar configuração WebAuthn (apenas em modo DEBUG)."""
+    """Endpoint de diagnÃ³stico para verificar configuraÃ§Ã£o WebAuthn (apenas em modo DEBUG)."""
     if not DEBUG:
         return jsonify({'erro': 'disponivel_apenas_em_debug'}), 403
     
-    # Pega informações do request
+    # Pega informaÃ§Ãµes do request
     host_header = request.headers.get('Host', 'N/A')
     origin_header = request.headers.get('Origin', 'N/A')
     referer_header = request.headers.get('Referer', 'N/A')
@@ -917,26 +932,26 @@ def webauthn_diagnostico():
 
 
 # ============================================
-# VERIFICAR SESSÃO (FUNÇÃO AUXILIAR)
+# VERIFICAR SESSÃƒO (FUNÃ‡ÃƒO AUXILIAR)
 # ============================================
 
 def verificar_sessao():
     """
-    Verifica se o usuário está autenticado de forma stateless, lendo da sessão.
+    Verifica se o usuÃ¡rio estÃ¡ autenticado de forma stateless, lendo da sessÃ£o.
     
     Retorna:
-        dict ou None: Dados do usuário se autenticado, None caso contrário
+        dict ou None: Dados do usuÃ¡rio se autenticado, None caso contrÃ¡rio
     """
     
-    # Verifica se a sessão contém as chaves essenciais
+    # Verifica se a sessÃ£o contÃ©m as chaves essenciais
     if not all(key in session for key in ['usuario_id', 'usuario_nome', 'usuario_email', 'usuario_tipo', 'logged_in']):
         return None
     
-    # Verifica se o marcador de login é verdadeiro
+    # Verifica se o marcador de login Ã© verdadeiro
     if not session.get('logged_in'):
         return None
     
-    # Sessão válida! Retorna os dados do usuário a partir da sessão
+    # SessÃ£o vÃ¡lida! Retorna os dados do usuÃ¡rio a partir da sessÃ£o
     return {
         'id': session.get('usuario_id'),
         'nome': session.get('usuario_nome'),
@@ -946,34 +961,35 @@ def verificar_sessao():
 
 
 # ============================================
-# VERIFICAR PERMISSÃO (FUNÇÃO AUXILIAR)
+# VERIFICAR PERMISSÃƒO (FUNÃ‡ÃƒO AUXILIAR)
 # ============================================
 
 def verificar_permissao(tipos_permitidos):
     """
-    Verifica se o usuário tem permissão para acessar uma página
+    Verifica se o usuÃ¡rio tem permissÃ£o para acessar uma pÃ¡gina
     
-    Parâmetros:
-        tipos_permitidos (list): Lista de tipos de usuário permitidos
+    ParÃ¢metros:
+        tipos_permitidos (list): Lista de tipos de usuÃ¡rio permitidos
                                  Ex: ['administrador', 'escola']
     
     Retorna:
-        dict ou None: Dados do usuário se tem permissão, None caso contrário
+        dict ou None: Dados do usuÃ¡rio se tem permissÃ£o, None caso contrÃ¡rio
     """
     
-    # Verifica se o usuário está autenticado
+    # Verifica se o usuÃ¡rio estÃ¡ autenticado
     usuario = verificar_sessao()
     if not usuario:
         return None
     
-    # Verifica se o tipo do usuário está na lista de permitidos
+    # Verifica se o tipo do usuÃ¡rio estÃ¡ na lista de permitidos
     if usuario['tipo'] not in tipos_permitidos:
         return None
     
-    # Usuário tem permissão!
+    # UsuÃ¡rio tem permissÃ£o!
     return usuario
 
 
 # ============================================
-# FIM DO MÓDULO DE AUTENTICAÇÃO
+# FIM DO MÃ“DULO DE AUTENTICAÃ‡ÃƒO
 # ============================================
+

@@ -268,6 +268,32 @@ def logs(id):
     return render_template('usuarios/logs.html', usuario=usuario, logs=logs)
 
 
+@usuarios_bp.route('/logs-acesso/<int:id>')
+def logs_acesso(id):
+    """Exibe o histórico de acessos (LOGIN/LOGOFF) de um usuário"""
+    usuario_logado = auth_service.verificar_permissao(['administrador'])
+    if not usuario_logado:
+        flash('Acesso negado. Apenas administradores podem visualizar logs de acesso.', 'danger')
+        return redirect(url_for('home'))
+    
+    usuario = Database.executar("SELECT id, nome, email FROM usuarios WHERE id = %s", (id,), fetchone=True)
+    
+    if not usuario:
+        flash('Usuário não encontrado.', 'danger')
+        return redirect(url_for('usuarios.listar'))
+    
+    query_logs = """
+        SELECT *
+        FROM logs_acesso
+        WHERE usuario_id = %s
+        ORDER BY data_acesso DESC
+        LIMIT 100
+    """
+    logs = Database.executar(query_logs, (id,), fetchall=True)
+    
+    return render_template('usuarios/logs_acesso.html', usuario=usuario, logs=logs or [])
+
+
 @usuarios_bp.route('/logs')
 def logs_sistema():
     """Exibe o histórico geral de alterações do sistema"""

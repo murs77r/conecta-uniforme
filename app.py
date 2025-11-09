@@ -18,7 +18,7 @@ from modules.fornecedores import fornecedores_bp
 from modules.produtos import produtos_bp
 from modules.pedidos import pedidos_bp
 from modules.repasses import repasses_bp
-from utils import conectar_banco
+from core.database import Database
 
 # ============================================
 # CRIAÇÃO DA APLICAÇÃO FLASK
@@ -105,7 +105,7 @@ def home():
 def banco_esta_ativo() -> bool:
     """Tenta abrir uma conexão simples e executar SELECT 1."""
     try:
-        conexao = conectar_banco()
+        conexao = Database.conectar()
         if not conexao:
             return False
         cur = None

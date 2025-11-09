@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Logs de Acesso - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-door-open"></i> Histórico de Acessos (LOGIN/LOGOFF)
+        </h2>
+        
+        {% if usuario %}
+        <div class="alert alert-info">
+            <strong>Usuário:</strong> {{ usuario.nome }} ({{ usuario.email }})
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Ação</th>
+                                <th>Tipo de Autenticação</th>
+                                <th>Status</th>
+                                <th>Endereço IP</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.data_acesso.strftime('%d/%m/%Y %H:%M:%S') if log.data_acesso else '' }}</td>
+                                <td>
+                                    {% if log.acao == 'LOGIN' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-box-arrow-in-right"></i> Login
+                                    </span>
+                                    {% elif log.acao == 'LOGOFF' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-box-arrow-left"></i> Logoff
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.tipo_autenticacao == 'codigo' %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-envelope"></i> Código por email
+                                    </span>
+                                    {% elif log.tipo_autenticacao == 'passkey' %}
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-fingerprint"></i> Passkey
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.sucesso %}
+                                    <span class="text-success">
+                                        <i class="bi bi-check-circle-fill"></i> Sucesso
+                                    </span>
+                                    {% else %}
+                                    <span class="text-warning">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Tentativa
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted font-monospace">{{ log.ip_usuario or '-' }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ log.descricao or '-' }}</small>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="bi bi-inbox"></i> Nenhum log de acesso encontrado
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr>
+
+                <a href="{{ url_for('usuarios.visualizar', id=usuario.id) if usuario else url_for('usuarios.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
