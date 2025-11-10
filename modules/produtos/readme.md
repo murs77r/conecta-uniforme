@@ -1,333 +1,139 @@
-# Módulo de Produtos
+# RF06 - Manter Cadastro de Produto
 
-============================================
-RF06 - MANTER CADASTRO DE PRODUTO
-============================================
-Este módulo é responsável por:
-- RF06.1: Listar produtos
-- RF06.2: Criar produto
-- RF06.3: Editar produto
-- RF06.4: Apagar produto
+Documento técnico do requisito funcional RF06, responsável por manter o ciclo completo de cadastro de produtos (uniformes) fornecidos às escolas homologadas. Este roteiro apresenta a visão de arquitetura, fluxos, dependências e rotinas auxiliares ligadas ao módulo de produtos.
 
-Controla o processo de controle de produtos no sistema.
+## 1. Contexto e Objetivo
+- Disponibilizar CRUD completo de produtos vinculado a fornecedores homologados.
+- Garantir que fornecedores só manipulem seus próprios itens, preservando integridade multi-tenant entre escolas.
+- Registrar toda alteração com trilha de auditoria enquanto protege rotas sensíveis via sessão Flask.
 
----
+## 2. Visão Geral do Fluxo
+1. Usuários autenticados acessam `/produtos` para listar itens disponíveis.
+2. Perfis administradores e fornecedores podem abrir `/produtos/cadastrar` para criar novos registros.
+3. Detalhes individuais são exibidos em `/produtos/detalhes/<id>` com ações de edição/exclusão.
+4. Edições ocorrem em `/produtos/editar/<id>` reutilizando o formulário preenchido.
+5. Exclusões são enviadas para `/produtos/excluir/<id>` após confirmação em modal/alerta do front-end.
 
-## 📋 Visão Geral
+## 3. Componentes Principais
+- `modules/produtos/module.py`
+  - Declara o blueprint `produtos_bp` com prefixo `/produtos`.
+  - Implementa RF06.1 (`listar`), RF06.2 (`cadastrar`), RF06.3 (`editar`) e RF06.4 (`excluir`).
+  - Rota complementar `detalhes` oferece visão expandida sem alterar dados.
+- `templates/produtos/*.html`
+  - Formulários e listagens em Bootstrap alinhados à UI global.
+- `core/repositories.ProdutoRepository`
+  - Encapsula acesso à tabela `produtos` (busca genérica, listagens especiais, vitrine).
+- `core/services.CRUDService`
+  - Aplica operações de persistência com logging automático no `LogService`.
+- `core/services.AutenticacaoService`
+  - Centraliza verificação de sessão/permissoes antes de operações críticas.
+- `core.repositories.FornecedorRepository`
+  - Resolve o `fornecedor_id` associado ao usuário logado do tipo fornecedor.
 
-O módulo de **Produtos** gerencia o catálogo de uniformes escolares disponíveis para venda na plataforma Conecta Uniforme. Fornecedores cadastram produtos vinculados a escolas específicas, criando um marketplace segmentado.
+## 4. Templates e UX
+- `templates/produtos/listar.html`
+  - Tabela responsiva com ações em grupo; botão "Novo Produto" condicionado a permissões.
+  - Script inline `confirmarExclusao` aciona POST para `/excluir/<id>`.
+- `templates/produtos/cadastrar.html`
+  - Formulário dividido em blocos, lista categorias pré-definidas e campos opcionais.
+  - Para fornecedores logados injeta `fornecedor_id` oculto, evitando seleção manual.
+- `templates/produtos/editar.html`
+  - Reutiliza estrutura do cadastro, pré-populando valores e mantendo validações HTML5.
+- `templates/produtos/detalhes.html`
+  - Painel descritivo com badges de categoria/status, botões de ação condicionais e confirmação de exclusão.
 
-### Propósito
-- Gerenciar catálogo de uniformes (camisas, calças, sapatos, etc.)
-- Vincular produtos a fornecedores e escolas
-- Controlar estoque e precificação
-- Exibir vitrine filtrada por categoria/escola
+## 5. Serviços e Camada Core
+- `AutenticacaoService.verificar_sessao` e `.verificar_permissao` validam sessão e perfil antes de expor formulários.
+- `CRUDService`
+  - `criar_com_log`, `atualizar_com_log`, `excluir_com_log` envolvem a operação de repositório, disparam `LogService.registrar` e mensagens `flash` padronizadas.
+  - `verificar_dependencias` executa checagens SQL customizadas antes de DELETE (ex.: `itens_pedido`).
+- `ProdutoRepository`
+  - Herdado de `BaseRepository`, fornece `buscar_por_id`, `listar`, `inserir`, `atualizar`, `excluir`.
+- `FornecedorRepository.buscar_por_usuario_id`
+  - Identifica fornecedoras vinculadas ao usuário autenticado para associar novos produtos.
+- `Database`
+  - Funções estáticas `executar`, `inserir`, `atualizar`, `excluir` encapsulam psycopg2, commits e rollbacks.
 
----
+## 6. Configuração Necessária (`config.py`)
+| Variável | Finalidade | Observações |
+| --- | --- | --- |
+| `DB_CONFIG` | Conexão PostgreSQL | Necessário para todas operações CRUD.
+| `ITENS_POR_PAGINA` | Paginação de listagens | Disponível para futura paginação da rota `/listar`.
+| `DEFAULT_UPLOAD_FOLDER`, `EXTENSOES_PERMITIDAS` | Upload de ativos | Permite expansão futura para anexar imagens de produtos.
+| `MENSAGENS[...]` | Mensagens padrão | Reutilizadas via `flash` pelo `CRUDService`.
 
-## 🏗️ Arquitetura
+Carregar `.env` com credenciais válidas de banco e ajustar parâmetros de upload caso o módulo venha a aceitar mídia.
 
-### Padrões Utilizados
-- **Repository Pattern**: `ProdutoRepository`, `FornecedorRepository`
-- **Service Layer**: `CRUDService`, `AutenticacaoService`, `LogService`
-- **Filter Pattern**: Múltiplos filtros na vitrine
+## 7. Modelo de Dados Relevante (`schema.sql`)
+- `produtos`
+  - FKs: `fornecedor_id` (obrigatória), `escola_id` (opcional) vinculando item ao contexto escolar.
+  - Campos chave: `nome`, `preco`, `estoque`, `ativo`, `data_cadastro`, `data_atualizacao`.
+- `fornecedores`
+  - Mantém vínculo `usuario_id` usado para restringir CRUD de fornecedores.
+- `itens_pedido`
+  - Dependência impeditiva para exclusão: registros referenciam `produto_id`.
+- Índices `idx_produtos_fornecedor` e `idx_produtos_escola` otimizam consultas filtradas.
 
-### Estrutura de Dados
-```
-Fornecedor
-    ↓ (1:N)
-Produto (categoria, tamanho, cor, preço, estoque)
-    ↓ (M:1)
-Escola (produtos específicos para cada escola)
-```
+## 8. Fluxo Detalhado RF06.1 - Listar Produtos
+1. Rotas `/produtos/` e `/produtos/listar` chamam `listar()`.
+2. `AutenticacaoService.verificar_sessao` tenta recuperar sessão; ausência não bloqueia leitura.
+3. `Database.executar("SELECT * FROM produtos ORDER BY id DESC", fetchall=True)` retorna coleção de dicionários.
+4. Template recebe `produtos`; badges exibem `categoria` e `ativo`.
+5. Botão "Novo Produto" e ações de edição/exclusão aparecem somente para administradores/fornecedores logados.
 
----
+## 9. Fluxo Detalhado RF06.2 - Criar Produto
+1. `@produtos_bp.route('/cadastrar', methods=['GET', 'POST'])` exige `verificar_permissao(['administrador', 'fornecedor'])`.
+2. GET: identifica fornecedor automaticamente quando usuário logado é fornecedor (`FornecedorRepository.buscar_por_usuario_id`).
+3. POST: coleta formulário, sanitiza com `.strip()` e normaliza preço (`replace(',', '.')`).
+4. Validação impede submissão sem `nome`, `fornecedor_id` ou `preco` (flash `danger`).
+5. `crud_service.criar_com_log(dados, usuario_logado['id'])` insere registro via `ProdutoRepository.inserir`.
+6. Em caso de sucesso: flash `success`, redireciona para `/produtos/listar`; falha retorna ao formulário com alerta.
 
-## 🔌 Endpoints (Rotas)
+## 10. Fluxo Detalhado RF06.3 - Editar Produto
+1. `editar(id)` repete guarda de permissão (`administrador`/`fornecedor`).
+2. Consulta `ProdutoRepository.buscar_por_id`; inexistência retorna flash `danger` e redireciona.
+3. GET renderiza formulário preenchido; SELECT com `selected` por comparação direta.
+4. POST monta `dados` com campos editáveis e normaliza preço.
+5. `crud_service.atualizar_com_log(id, dados, dict(produto), usuario_logado['id'])` executa UPDATE + log.
+6. Sucesso -> flash `success` e redirect listagem; erro mantém template com alerta `danger`.
 
-### 1. `GET /produtos/vitrine`
-**Descrição**: Exibe catálogo público de produtos
+## 11. Fluxo Detalhado RF06.4 - Excluir Produto
+1. Rota POST `/produtos/excluir/<id>` valida permissão e existência do produto.
+2. `crud_service.verificar_dependencias` avalia lista de bloqueios (atualmente `itens_pedido`).
+3. Existindo dependências, concatena mensagens em flash `warning` e aborta exclusão.
+4. Sem bloqueios, `crud_service.excluir_com_log(id, dict(produto), usuario_logado['id'])` executa DELETE e registra auditoria.
+5. Template de listagem/detalhes submete formulário oculto após confirmação JavaScript.
 
-**Autenticação**: Opcional (acesso público)
+## 12. Rota Auxiliar - Detalhes do Produto
+- `/produtos/detalhes/<id>` aceita GET para renderizar visão completa do item.
+- Utiliza `verificar_sessao` apenas para habilitar ações opcionais.
+- Reaproveita badges, mostra estoque e mantém botão de exclusão com confirmação inline.
 
-**Parâmetros Query**:
-```json
-{
-    "categoria": "string (opcional: Camisa, Calça, Sapato, Agasalho, Acessório)",
-    "escola": "int (opcional, ID da escola)",
-    "busca": "string (opcional, busca em nome/descrição)"
-}
-```
+## 13. Permissões e Segurança
+- Listagem e detalhes permitem visitantes autenticados ou não; ações destrutivas exigem sessão com tipo válido.
+- Fornecedores ficam restritos aos seus próprios `fornecedor_id` na criação (via lookup) e edição/exclusão só devem ser oferecidas se o produto lhes pertence (responsabilidade do front-end + regras adicionais no repositório quando necessário).
+- Dados críticos são protegidos por `session` (Flask) e mensagens `flash` informam tentativas sem permissão.
 
-**Resposta**:
-```html
-Status: 200 OK
-Template: templates/produtos/vitrine.html
-Contexto: {
-    'produtos': [{
-        'id': int,
-        'nome': str,
-        'descricao': str,
-        'categoria': str,
-        'tamanho': str,
-        'cor': str,
-        'preco': Decimal,
-        'estoque': int,
-        'imagem': str,
-        'fornecedor_nome': str,
-        'escola_nome': str,
-        'ativo': bool
-    }, ...],
-    'escolas': [{'id': int, 'nome': str}, ...],
-    'filtro_categoria': str,
-    'filtro_escola': str,
-    'filtro_busca': str
-}
-```
+## 14. Observabilidade e Auditoria
+- `CRUDService` envia todas alterações para `logs_alteracoes` (`ação`: INSERT/UPDATE/DELETE) com JSON antes/depois.
+- Mensagens `flash` facilitam monitoramento manual durante demos.
+- Dependências de exclusão evitam perda de rastreabilidade de pedidos: tentativas geram aviso explícito.
 
-**SQL Otimizado**:
-```sql
-SELECT 
-    p.id, p.nome, p.descricao, p.categoria, p.tamanho, p.cor,
-    p.preco, p.estoque, p.imagem, p.ativo,
-    f.razao_social as fornecedor_nome,
-    u_escola.nome as escola_nome
-FROM produtos p
-JOIN fornecedores f ON p.fornecedor_id = f.id
-LEFT JOIN escolas e ON p.escola_id = e.id
-LEFT JOIN usuarios u_escola ON e.usuario_id = u_escola.id
-WHERE p.ativo = TRUE
-  AND f.ativo = TRUE
-  AND (p.categoria = %s OR %s = '')
-  AND (p.escola_id = %s OR %s IS NULL)
-  AND (p.nome ILIKE %s OR p.descricao ILIKE %s OR %s = '')
-ORDER BY p.nome ASC
-```
+## 15. Testes Recomendados
+- **CRUD completo administrador**: cadastro, edição, exclusão de produto com dados válidos.
+- **Fluxo fornecedor**: login como fornecedor, cadastro automático com `fornecedor_id` próprio e tentativa de manipular item de outro fornecedor (esperado bloqueio).
+- **Validação obrigatória**: enviar formulário sem `nome` ou `preço` para checar flash de erro.
+- **Dependência de pedido**: vincular produto a `itens_pedido` e tentar excluir (deve bloquear e emitir `warning`).
+- **Permissão negada**: acessar `/produtos/cadastrar` como usuário sem tipo autorizado e validar redirect para `home` com alerta.
+- **Listagem pública**: acessar `/produtos/listar` sem login; tabela deve carregar (quando dados disponíveis) sem ações privilegiadas.
 
----
-
-### 2. `POST /produtos/cadastrar`
-**Descrição**: Cadastra novo produto no catálogo
-
-**Autenticação**: Requerida (Administrador ou Fornecedor)
-
-**Corpo (form-data)**:
-```json
-{
-    "nome": "string (obrigatório, ex: Camisa Polo Branca)",
-    "descricao": "string (opcional)",
-    "categoria": "string (obrigatório: Camisa|Calça|Sapato|Agasalho|Acessório)",
-    "tamanho": "string (obrigatório: PP|P|M|G|GG|36|38|40...)",
-    "cor": "string (obrigatório: Branco|Azul|Preto...)",
-    "preco": "decimal (obrigatório, ex: 49.90)",
-    "estoque": "int (obrigatório, >= 0)",
-    "escola_id": "int (opcional, ID da escola)",
-    "fornecedor_id": "int (obrigatório, auto-preenchido se fornecedor logado)",
-    "imagem": "string (opcional, URL ou base64)"
-}
-```
-
-**Validações**:
-1. **Preço**: Deve ser > 0
-2. **Estoque**: Deve ser >= 0
-3. **Categoria**: Deve estar na lista permitida
-4. **Fornecedor**: Deve estar ativo
-5. **Escola**: Se informada, deve estar ativa
-
-**Lógica de Cadastro**:
-```python
-# 1. Se usuário é fornecedor, usa seu próprio fornecedor_id
-if usuario_logado['tipo'] == 'fornecedor':
-    fornecedor = FornecedorRepository().buscar_por_usuario_id(
-        usuario_logado['id']
-    )
-    dados['fornecedor_id'] = fornecedor['id']
-
-# 2. Valida campos obrigatórios
-if not dados['nome'] or not dados['fornecedor_id'] or not dados['preco']:
-    flash('Preencha campos obrigatórios', 'danger')
-    return redirect(...)
-
-# 3. Insere produto com log automático
-produto_id = CRUDService.criar_com_log(
-    dados, usuario_logado['id']
-)
-```
-
-**Resposta de Sucesso**:
-```json
-Status: 302 Redirect
-Location: /produtos/vitrine
-Flash: "Produto cadastrado com sucesso"
-Log: INSERT em produtos + INSERT em logs_sistema
-```
+## 16. Checklist de Implantação
+1. Aplicar `schema.sql` garantindo existência de tabelas `produtos`, `fornecedores`, `itens_pedido` e índices.
+2. Configurar `.env` com DSN válido de PostgreSQL e ajustar variáveis de upload se houver mídia associada.
+3. Realizar smoke test dos cenários descritos na seção 15.
+4. Validar logs em `logs_alteracoes` após operações de insert/update/delete.
+5. Monitorar estoque inicial e status `ativo` para evitar exibição inadvertida em vitrine/vendas.
 
 ---
 
-### 3. `POST /produtos/editar/<int:id>`
-**Descrição**: Edita produto existente
-
-**Autenticação**: Requerida (Administrador ou Fornecedor proprietário)
-
-**Corpo (form-data)**:
-```json
-{
-    "nome": "string",
-    "preco": "decimal",
-    "estoque": "int"
-}
-```
-
-**Campos Editáveis**:
-- ✅ Nome, descrição
-- ✅ Preço, estoque
-- ✅ Tamanho, cor
-- ❌ Fornecedor (imutável)
-- ❌ Categoria (imutável, recadastrar se necessário)
-
-**Verificação de Propriedade** (Fornecedor):
-```python
-if usuario_logado['tipo'] == 'fornecedor':
-    fornecedor = FornecedorRepository().buscar_por_usuario_id(
-        usuario_logado['id']
-    )
-    if produto['fornecedor_id'] != fornecedor['id']:
-        flash('Acesso negado', 'danger')
-        return redirect(...)
-```
-
-**Resposta**:
-```json
-Status: 302 Redirect
-Location: /produtos/vitrine
-Flash: "Produto atualizado com sucesso"
-Log: UPDATE em produtos
-```
-
----
-
-### 4. `POST /produtos/excluir/<int:id>`
-**Descrição**: Desativa produto (soft delete)
-
-**Autenticação**: Requerida (Administrador ou Fornecedor proprietário)
-
-**Verificação de Dependência**:
-```python
-bloqueios = CRUDService.verificar_dependencias(id, [
-    {
-        'tabela': 'itens_pedido',
-        'campo': 'produto_id',
-        'mensagem': 'itens de pedido'
-    }
-])
-
-if bloqueios:
-    flash('Não é possível excluir: produto possui itens de pedido', 'warning')
-    return redirect(...)
-```
-
-**Comportamento**:
-- Define `ativo = false`
-- Produto não aparece mais na vitrine
-- Pedidos antigos são preservados
-- Estoque mantido para histórico
-
-**Resposta**:
-```json
-Status: 302 Redirect
-Location: /produtos/vitrine
-Flash: "Produto desativado com sucesso"
-```
-
----
-
-## 📊 Modelos de Dados
-
-### Produto (Dataclass)
-```python
-@dataclass
-class Produto:
-    id: Optional[int] = None
-    fornecedor_id: int = 0
-    escola_id: Optional[int] = None
-    nome: str = ''
-    descricao: str = ''
-    categoria: str = ''  # Camisa, Calça, Sapato, Agasalho, Acessório
-    tamanho: str = ''
-    cor: str = ''
-    preco: Decimal = Decimal('0.00')
-    estoque: int = 0
-    imagem: str = ''
-    ativo: bool = True
-```
-
-### Tabela `produtos` (PostgreSQL)
-```sql
-CREATE TABLE produtos (
-    id SERIAL PRIMARY KEY,
-    fornecedor_id INT NOT NULL REFERENCES fornecedores(id),
-    escola_id INT REFERENCES escolas(id),
-    nome VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    categoria VARCHAR(50) NOT NULL 
-        CHECK (categoria IN ('Camisa', 'Calça', 'Sapato', 'Agasalho', 'Acessório')),
-    tamanho VARCHAR(10),
-    cor VARCHAR(50),
-    preco DECIMAL(10,2) NOT NULL CHECK (preco > 0),
-    estoque INT DEFAULT 0 CHECK (estoque >= 0),
-    imagem TEXT,
-    ativo BOOLEAN DEFAULT TRUE
-);
-
-CREATE INDEX idx_produtos_fornecedor ON produtos(fornecedor_id);
-CREATE INDEX idx_produtos_escola ON produtos(escola_id);
-CREATE INDEX idx_produtos_categoria ON produtos(categoria);
-CREATE INDEX idx_produtos_ativo ON produtos(ativo);
-```
-
----
-
-## 🔐 Autenticação e Autorização
-
-### Matriz de Permissões
-
-| Rota | Administrador | Fornecedor (Próprio) | Fornecedor (Outro) | Escola | Responsável |
-|------|---------------|----------------------|--------------------|--------|-------------|
-| `/produtos/vitrine` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `/produtos/cadastrar` | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `/produtos/editar/:id` | ✅ | ✅ (próprio) | ❌ | ❌ | ❌ |
-| `/produtos/excluir/:id` | ✅ | ✅ (próprio) | ❌ | ❌ | ❌ |
-
----
-
-## 📝 Regras de Negócio
-
-### 1. Categorias de Produtos
-```python
-CATEGORIAS_PERMITIDAS = [
-    'Camisa',      # Camisas polo, regatas, camisetas
-    'Calça',       # Calças, bermudas, shorts
-    'Sapato',      # Calçados em geral
-    'Agasalho',    # Moletons, jaquetas
-    'Acessório'    # Meias, cintos, gravatas, etc.
-]
-```
-
-### 2. Tamanhos Padrão
-- **Roupas**: PP, P, M, G, GG, XG, XXG
-- **Calçados**: 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45
-
-### 3. Controle de Estoque
-- Estoque decrementado ao finalizar pedido
-- Estoque liberado se pedido for cancelado
-- Produtos com estoque = 0 ainda aparecem na vitrine (com aviso)
-- Estoque negativo não é permitido (constraint)
-
-### 4. Precificação
-- Preço definido pelo fornecedor
-- Preço congelado no momento da adição ao carrinho
-
-### 5. Vinculação Escola-Produto
-- `escola_id` é opcional (NULL = produto genérico)
-- Produtos vinculados aparecem destacados para alunos da escola
-- Filtragem por escola na vitrine
+Para futuras extensões (imagens, padronização de preços, integrações com estoque externo), planeje uso das configurações de upload, inclusão de validações adicionais no `CRUDService` ou criação de serviços específicos para sincronização.

@@ -15,7 +15,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import ProdutoRepository, FornecedorRepository
 from core.services import AutenticacaoService, CRUDService
 from core.database import Database
-from core.pagination import paginate_query
 
 # ============================================
 # CONFIGURAÇÃO DO BLUEPRINT
@@ -39,64 +38,23 @@ crud_service = CRUDService(produto_repo, 'Produto')
 @produtos_bp.route('/listar')
 def listar():
     """
-    Lista todos os produtos cadastrados no sistema com paginação e filtros básicos.
-    
-    Filtros disponíveis:
-    - busca: Busca por nome ou descrição do produto
-    - ativo: Filtra por status (ativo/inativo)
-    
-    Funcionalidades:
-    - Paginação de 20 itens por página
-    - Filtros de busca textual
-    - Filtro por status (ativo/inativo)
-    - Ordenação por ID descendente (mais recentes primeiro)
+    Lista todos os produtos cadastrados no sistema.
     
     Returns:
         Renderiza template produtos/listar.html com:
-        - produtos: Lista de produtos da página atual
-        - paginacao: Objeto de paginação
-        - filtro_busca: Valor do filtro de busca aplicado
-        - filtro_ativo: Valor do filtro de status aplicado
+        - produtos: Lista de todos os produtos
     """
     # Verifica se há usuário logado (opcional para listagem)
     usuario_logado = auth_service.verificar_sessao()
     
-    # Captura filtros básicos da URL
-    busca = request.args.get('busca', '').strip()
-    ativo = request.args.get('ativo', '')
-    
     # Monta query SQL base
-    query = "SELECT * FROM produtos WHERE 1=1"
-    parametros = []
-    
-    # Aplica filtro de busca textual (nome ou descrição)
-    if busca:
-        query += " AND (nome LIKE ? OR descricao LIKE ?)"
-        parametros.extend([f'%{busca}%', f'%{busca}%'])
-    
-    # Aplica filtro de status
-    if ativo:
-        query += " AND ativo = ?"
-        parametros.append(ativo == 'true')
-    
-    # Define ordenação padrão
-    query += " ORDER BY id DESC"
-    
-    # Aplica paginação
-    pagina = request.args.get('pagina', 1, type=int)
-    query_paginada, params_paginados, paginacao = paginate_query(
-        query, tuple(parametros), pagina, per_page=20
-    )
+    query = "SELECT * FROM produtos ORDER BY id DESC"
     
     # Executa query e obtém resultados
-    produtos = Database.executar(query_paginada, params_paginados, fetchall=True) or []
+    produtos = Database.executar(query, fetchall=True) or []
     
     # Renderiza template com dados
-    return render_template('produtos/listar.html', 
-                         produtos=produtos,
-                         paginacao=paginacao,
-                         filtro_busca=busca,
-                         filtro_ativo=ativo)
+    return render_template('produtos/listar.html', produtos=produtos)
 
 
 # ============================================

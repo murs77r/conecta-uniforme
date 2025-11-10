@@ -1,507 +1,156 @@
-# Módulo de Escolas
-
-============================================
-RF03 - MANTER CADASTRO DE ESCOLA
-============================================
-Este módulo é responsável por:
-- RF03.1: Listar escolas
-- RF03.2: Criar escola
-- RF03.3: Visualizar escola
-- RF03.4: Editar escola
-- RF03.5: Apagar escola
-
-Controla o processo de cadastro e gestão de escolas no sistema.
-
----
-
-## 📋 Visão Geral
-
-O módulo de **Escolas** gerencia instituições de ensino homologadas e seus gestores escolares no sistema Conecta Uniforme. Este módulo é fundamental para conectar escolas, fornecedores e responsáveis na plataforma, permitindo homologação de fornecedores e gestão de relacionamentos entre entidades.
-
-### Propósito
-- Cadastrar e gerenciar escolas homologadas
-- Gerenciar gestores escolares vinculados às escolas
-- Controlar homologação de fornecedores por escola
-- Visualizar informações detalhadas das instituições
-- Manter integridade referencial entre escolas e usuários
-
-
-
----
-
-## 🏗️ Arquitetura
-
-### Padrões de Design Utilizados
-- **Repository Pattern**: `EscolaRepository` e `GestorEscolarRepository`
-- **Service Layer**: `CRUDService`, `ValidacaoService`, `AutenticacaoService`
-- **Aggregate Root**: Escola como entidade principal com agregados (gestores, fornecedores homologados)
-- **Blueprint Pattern**: Separação de rotas por contexto (escolas, gestores, homologação)
-
-### Camadas da Aplicação
-```
-┌─────────────────────────────────────┐
-│  Apresentação (module.py)           │
-│  - Blueprints de rotas              │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Serviços (core/services.py)        │
-│  - CRUDService                      │
-│  - ValidacaoService                 │
-│  - AutenticacaoService              │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Repositórios (core/repositories)   │
-│  - EscolaRepository                 │
-│  - GestorEscolarRepository          │
-│  - FornecedorRepository             │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Database (core/database.py)        │
-└─────────────────────────────────────┘
-```
-
-### Diagrama de Relacionamentos
-```
-┌──────────────┐
-│   Usuario    │
-└──────┬───────┘
-       │ 1
-       │
-       │ N
-┌──────┴────────────────┐
-│  GestorEscolar        │
-│  - usuario_id (FK)    │
-│  - escola_id (FK)     │
-└──────┬────────────────┘
-       │ N
-       │
-       │ 1
-┌──────┴───────┐       N:M      ┌─────────────────┐
-│   Escola     │◄────────────────┤ Homologacao     │
-│              │                 │ - escola_id     │
-└──────────────┘                 │ - fornecedor_id │
-                                 └─────────────────┘
-```
-
----
-
-## 🔌 Endpoints (Rotas)
-
-### ESCOLAS
-
-#### 1. `GET /escolas/listar`
-**Descrição**: Lista todas as escolas homologadas com filtros
-
-**Autenticação**: Requerida (Administrador ou Escola)
-
-**Parâmetros Query String**:
-
-```typescript---
-
-{
-
-    busca?: string,            // Busca parcial em nome/razão social/CNPJ## 🔌 Endpoints (Rotas)
-
-    ativo?: 'true'|'false'|'', // Filtra por status
-
-    estado?: string,           // Filtra por UF### ESCOLAS
-
-    cidade?: string,           // Busca parcial em cidade
-
-    page?: number,             // Paginação (default: 1)#### 1. `GET /escolas/listar`
-
-    per_page?: number          // Itens por página (default: 20)**Descrição**: Lista todas as escolas homologadas com filtros
-
-}
-
-```**Autenticação**: Requerida (Administrador ou Escola)
-
-
-
-**Resposta**:**Parâmetros Query String**:
-
-```html```typescript
-
-Status: 200 OK{
-
-Template: templates/escolas/listar.html    filtro_nome?: string,      // Busca parcial em nome/razão social
-
-Contexto: {    filtro_cnpj?: string,      // Busca exata em CNPJ
-
-    'escolas': List[Escola],    filtro_cidade?: string,    // Busca parcial em cidade
-
-    'pagination': Pagination,    filtro_ativa?: 'true'|'false'|'',  // Filtra por status
-
-    'estatisticas': dict,    pagina?: number,           // Paginação (default: 1)
-
-    'estados': List[dict]    por_pagina?: number        // Itens por página (default: 20)
-
-}}
-
-``````
-
-
-
----**Resposta**:
-
-```html
-
-### 2. `POST /escolas/cadastrar`Status: 200 OK
-
-**Descrição**: Cadastra uma nova escola no sistemaTemplate: templates/escolas/listar.html
-
-Contexto: {
-
-**Autenticação**: Requerida (Administrador)    'escolas': List[Escola],
-
-    'total': int,
-
-**Corpo da Requisição** (multipart/form-data):    'pagina': int,
-
-```json    'por_pagina': int,
-
-{    'filtros': dict
-
-    "nome": "string (obrigatório, max 200)",}
-
-    "email": "string (obrigatório, único para tipo escola)",```
-
-    "telefone": "string (opcional)",
-
-    "cnpj": "string (obrigatório, 14 dígitos, único)",---
-
-    "razao_social": "string (obrigatório, max 200)",
-
-    "endereco": "string (obrigatório)",#### 2. `POST /escolas/cadastrar`
-
-    "cidade": "string (obrigatório, max 100)",**Descrição**: Processa cadastro de nova escola
-
-    "estado": "string (obrigatório, 2 letras)",
-
-    "cep": "string (obrigatório, formato 99999-999)"**Corpo da Requisição** (multipart/form-data):
-
-}```json
-
-```{
-
-    "nome_escola": "string (obrigatório, max 255)",
-
-**Validações**:    "razao_social": "string (obrigatório, max 255)",
-
-1. **CNPJ**: 14 dígitos, dígitos verificadores válidos, unicidade    "cnpj": "string (obrigatório, 14 dígitos, único)",
-
-2. **Email**: RFC 5322, único para tipo 'escola'    "endereco": "string (obrigatório)",
-
-3. **CEP**: Formato 99999-999    "cidade": "string (obrigatório)",
-
-4. **Estado**: Sigla UF válida (2 letras)    "estado": "string (obrigatório, 2 letras)",
-
-    "cep": "string (obrigatório, formato 99999-999)",
-
-**Resposta de Sucesso**:    "telefone": "string (obrigatório)",
-
-```json    "email_contato": "string (obrigatório)",
-
-Status: 302 Redirect    "ativa": "boolean (opcional, default: true)"
-
-Location: /escolas/listar}
-
-Flash: "Escola cadastrada com sucesso"```
-
-```
-
-**Validações**:
-
----1. **CNPJ**: 14 dígitos, dígitos verificadores, unicidade
-
-2. **Email**: RFC 5322, domínio válido
-
-### 3. `GET /escolas/visualizar/<int:id>`3. **CEP**: Formato 99999-999
-
-**Descrição**: Visualiza detalhes completos de uma escola4. **Estado**: Sigla UF válida
-
-
-
-**Autenticação**: Requerida**Resposta de Sucesso**:
-
-```json
-
-**Resposta**:Status: 302 Redirect
-
-```htmlLocation: /escolas/listar
-
-Status: 200 OKFlash: "Escola cadastrada com sucesso"
-
-Template: templates/escolas/visualizar.html```
-
-Contexto: {
-
-    'escola': Escola,---
-
-    'gestores': List[GestorEscolar],
-
-    'fornecedores': List[FornecedorHomologado]#### 3. `GET /escolas/visualizar/<int:id>`
-
-}**Descrição**: Visualiza detalhes completos de uma escola
-
-```
-
-**Resposta**:
-
----```html
-
-Status: 200 OK
-
-### 4. `GET/POST /escolas/editar/<int:id>`Template: templates/escolas/visualizar.html
-
-**Descrição**: Edita dados de uma escola existenteContexto: {
-
-    'escola': Escola,
-
-**Autenticação**: Requerida (Administrador ou Escola proprietária)    'gestores': List[GestorEscolar],
-
-    'fornecedores_homologados': List[Fornecedor],
-
-**Permissões**:    'total_pedidos': int
-
-- Administrador: pode editar qualquer escola e alterar status}
-
-- Escola: pode editar apenas seus próprios dados, não pode alterar status```
-
-
-
-------
-
-
-
-### 5. `POST /escolas/excluir/<int:id>`### GESTORES ESCOLARES
-
-**Descrição**: Exclui uma escola do sistema
-
-#### 4. `POST /escolas/<int:escola_id>/gestores/adicionar`
-
-**Autenticação**: Requerida (Administrador)**Descrição**: Vincula usuário tipo 'Escola' como gestor
-
-
-
-**Validações de Dependência**:**Corpo da Requisição**:
-
-- Verifica se há fornecedores homologados```json
-
-- Verifica se há produtos vinculados{
-
-- Verifica se há pedidos vinculados    "usuario_id": "int (FK em usuarios)",
-
-    "cargo": "string (ex: Diretor, Coordenador)"
-
-Se houver dependências, sugere inativação ao invés de exclusão.}
-
-```
-
----
-
-**Validações**:
-
-### 6. `GET/POST /escolas/homologar/<int:escola_id>`- Usuário deve ser tipo 'Escola'
-
-**Descrição**: Homologa um fornecedor para vender à escola- Não pode já ser gestor da mesma escola
-
-- Escola deve estar ativa
-
-**Autenticação**: Requerida (Administrador)
-
----
-
-**Comportamento**:
-
-- Cria registro em `homologacao_fornecedores`### HOMOLOGAÇÃO DE FORNECEDORES
-
-- Reativa se já existir mas estiver inativo
-
-- Define `data_homologacao` automática#### 5. `POST /escolas/<int:escola_id>/homologar/<int:fornecedor_id>`
-
-**Descrição**: Homologa fornecedor para vender à escola
-
----
-
-**Comportamento**:
-
-### 7. `POST /escolas/homologacao/<int:escola_id>/<int:fornecedor_id>/status`- Cria registro em `homologacao_fornecedores`
-
-**Descrição**: Ativa/Inativa uma homologação existente (toggle)- Reativa se já existir mas inativo
-
-- Define `data_homologacao` automática
-
-**Autenticação**: Requerida (Administrador)
-
-**Resposta**:
-
----```json
-
-Status: 302 Redirect
-
-## 📊 Modelos de DadosFlash: "Fornecedor homologado com sucesso"
-
-```
-
-### Tabela `escolas` (PostgreSQL)
-
-```sql---
-
-CREATE TABLE escolas (
-
-    id SERIAL PRIMARY KEY,## 📊 Modelos de Dados
-
-    usuario_id INTEGER NOT NULL UNIQUE REFERENCES usuarios(id),
-
-    cnpj VARCHAR(18) UNIQUE,### Escola (Dataclass)
-
-    razao_social VARCHAR(200),```python
-
-    endereco TEXT,@dataclass
-
-    cidade VARCHAR(100),class Escola:
-
-    estado VARCHAR(2),    id: Optional[int] = None
-
-    cep VARCHAR(10),    nome_escola: str = ''
-
-    ativo BOOLEAN DEFAULT TRUE,    razao_social: str = ''
-
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP    cnpj: str = ''
-
-);    endereco: str = ''
-
-```    cidade: str = ''
-
-    estado: str = ''
-
----    cep: str = ''
-
-    telefone: str = ''
-
-## 🔐 Autenticação e Autorização    email_contato: str = ''
-
-    data_homologacao: Optional[datetime] = None
-
-### Matriz de Permissões    ativa: bool = True
-
-```
-
-| Rota | Administrador | Escola (Própria) | Fornecedor | Responsável |
-
-|------|---------------|------------------|------------|-------------|### Tabela `escolas` (PostgreSQL)
-
-| `/escolas/listar` | ✅ | ✅ | ✅ | ✅ |```sql
-
-| `/escolas/cadastrar` | ✅ | ❌ | ❌ | ❌ |CREATE TABLE escolas (
-
-| `/escolas/visualizar/:id` | ✅ | ✅ | ✅ | ✅ |    id SERIAL PRIMARY KEY,
-
-| `/escolas/editar/:id` | ✅ | ✅ (própria) | ❌ | ❌ |    nome_escola VARCHAR(255) NOT NULL,
-
-| `/escolas/excluir/:id` | ✅ | ❌ | ❌ | ❌ |    razao_social VARCHAR(255) NOT NULL,
-
-| `/escolas/homologar/:id` | ✅ | ❌ | ❌ | ❌ |    cnpj VARCHAR(14) UNIQUE NOT NULL,
-
-    endereco TEXT NOT NULL,
-
----    cidade VARCHAR(100) NOT NULL,
-
-    estado VARCHAR(2) NOT NULL,
-
-## 📝 Regras de Negócio    cep VARCHAR(9) NOT NULL,
-
-    telefone VARCHAR(20) NOT NULL,
-
-### 1. Cadastro de Escolas    email_contato VARCHAR(255) NOT NULL,
-
-- Apenas Administradores podem cadastrar escolas    data_homologacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-- CNPJ deve ser válido e único    ativa BOOLEAN DEFAULT TRUE
-
-- Email deve ser único para o tipo 'escola');
-
-- Cada escola é vinculada a um usuário do tipo 'escola'```
-
-
-
-### 2. Homologação de Fornecedores---
-
-- Apenas Administradores podem homologar fornecedores
-
-- Uma escola pode ter múltiplos fornecedores homologados## 🔐 Autenticação e Autorização
-
-- Um fornecedor pode ser homologado por múltiplas escolas
-
-- Homologação pode ser ativada/desativada### Matriz de Permissões
-
-
-
-### 3. Exclusão| Rota | Administrador | Escola (Própria) | Fornecedor | Responsável |
-
-- Soft delete: `ativo = false` (preferencial)|------|---------------|------------------|------------|-------------|
-
-- Hard delete: apenas se não houver dependências| `/escolas/listar` | ✅ | ✅ | ❌ | ❌ |
-
-- Dependências verificadas: fornecedores homologados, produtos, pedidos| `/escolas/cadastrar` | ✅ | ❌ | ❌ | ❌ |
-
-| `/escolas/visualizar/:id` | ✅ | ✅ | ❌ | ❌ |
-
-### 4. Edição| `/escolas/editar/:id` | ✅ | ❌ | ❌ | ❌ |
-
-- Administrador: pode editar qualquer campo, incluindo status| `/escolas/:id/homologar` | ✅ | ✅ | ❌ | ❌ |
-
-- Escola: pode editar apenas seus próprios dados, exceto status
-
----
-
----
-
-## 📝 Regras de Negócio
-
-## 🔗 Relacionamentos com Outros Módulos
-
-### 1. Homologação de Escolas
-
-- **Gestores**: Uma escola pode ter múltiplos gestores (ver módulo `gestores`)- Apenas Administradores cadastram escolas
-
-- **Fornecedores**: Relacionamento N:M via `homologacao_fornecedores`- CNPJ deve ser válido e único
-
-- **Produtos**: Produtos são vinculados a escolas específicas- `data_homologacao` automática no cadastro
-
-- **Pedidos**: Pedidos são realizados no contexto de uma escola
-
-### 2. Gestores Escolares
-
----- Um usuário pode gerir múltiplas escolas
-
-- Uma escola pode ter múltiplos gestores
-
-## 📦 Dependências- Mínimo de 1 gestor ativo por escola
-
-- Apenas tipo 'Escola' pode ser gestor
-
-- `core.repositories.EscolaRepository`
-
-- `core.repositories.UsuarioRepository`### 3. Homologação de Fornecedores
-
-- `core.repositories.GestorEscolarRepository`- Gestores decidem fornecedores autorizados
-
-- `core.services.AutenticacaoService`- Homologação pode ser ativada/desativada
-
-- `core.services.CRUDService`- Responsáveis só veem produtos homologados
-
+# RF03 - Manter Cadastro de Escola
+
+Documento tecnico de apresentacao do requisito funcional RF03 (Gerenciar Escolas). Este roteiro cobre os componentes, fluxos, validacoes e pontos de auditoria que suportam o ciclo completo de vida da entidade Escola dentro do Conecta Uniforme.
+
+## 1. Contexto e Objetivo
+- Permitir que administradores cadastrem novas escolas e gerenciem suas informacoes institucionais.
+- Oferecer autogestao parcial para usuarios do tipo `escola`, permitindo atualizacao dos proprios dados.
+- Garantir rastreabilidade de alteracoes e bloqueio seguro de exclusoes quando ha dependencias relacionadas (produtos, pedidos, homologacoes).
+
+## 2. Visao Geral do Fluxo
+1. Usuario autenticado acessa `/escolas/listar` para visualizar o catalogo de escolas.
+2. Administradores podem abrir `/escolas/cadastrar` e registrar novos logins e dados institucionais.
+3. Ao salvar, gestores opcionais sao vinculados e exibidos em `/escolas/detalhes/<id>`.
+4. Administradores ou a propria escola acessam `/escolas/editar/<id>` para atualizar dados e gestores.
+5. Exclusao somente e permitida quando nao existem registros dependentes; caso contrario, e exibido alerta orientando inativacao.
+
+## 3. Componentes Principais
+- `modules/escolas/module.py`
+  - Blueprint `escolas_bp` com prefixo `/escolas`.
+  - Funcoes alinhadas a RF03.1 (listar), RF03.2 (cadastrar), RF03.3 (detalhes), RF03.4 (editar), RF03.5 (excluir).
+  - Helper `_processar_gestores` para mapear campos dinamicos do formulario e inserir gestores vinculados.
+- `modules/escolas/__init__.py`
+  - Expone `escolas_bp` para registro central.
+- `app.py`
+  - Registra o blueprint (RF03) e injeta `usuario_logado` em todos os templates, permitindo controles de exibicao de botoes e restricao de acoes no frontend.
+
+## 4. Templates e UX
+- `templates/escolas/listar.html`
+  - Tabela responsiva com botoes de acao condicionados ao tipo de usuario.
+  - Usa `usuario_logado` para exibir `Nova Escola` apenas para administradores.
+- `templates/escolas/cadastrar.html`
+  - Formulario dividido em sessoes (dados de acesso, dados institucionais, gestores).
+  - Script inline adiciona/remova cards de gestores dinamicamente com campos obrigatorios de nome.
+- `templates/escolas/editar.html`
+  - Reaproveita estrutura de cadastro com dados pre-populados.
+  - Checkbox `ativo` so aparece para administradores.
+- `templates/escolas/detalhes.html`
+  - Exibe resumo da escola e tabela de gestores.
+  - Botoes de navegacao para editar e voltar.
+- `static/js/base.js`
+  - Converte mensagens `flash` em modais, reforcando feedback imediato de sucesso ou erro em todas as rotas.
+
+## 5. Servicos e Camada Core
+- `core.services.AutenticacaoService`
+  - `verificar_sessao` protege listagem e detalhes para qualquer usuario autenticado.
+  - `verificar_permissao` garante que somente administradores criem/excluam e que escolas editem apenas o proprio cadastro.
+- `core.services.CRUDService`
+  - `criar_com_log`, `atualizar_com_log`, `excluir_com_log` padronizam mensagens e registram auditoria via `LogService`.
+  - `verificar_dependencias` consulta tabelas relacionadas antes de excluir.
 - `core.services.ValidacaoService`
+  - `validar_cnpj`, `validar_cep`, `validar_telefone` evitam dados inconsistentes.
+- `core.repositories.EscolaRepository`
+  - `buscar_com_usuario` e `listar_com_filtros` trazem uniao com dados do usuario vinculados (nome, email, ativo).
+- `core.repositories.UsuarioRepository`
+  - `buscar_por_email_tipo` impede duplicidade de login por email/tipo.
+- `core.repositories.GestorEscolarRepository`
+  - `listar_por_escola`, `inserir`, `excluir_por_escola` mantem contatos vinculados.
+- `core.database.Database`
+  - Executa queries SQL e aplica commits atomicos, garantindo rollback em caso de erro.
 
-- `core.services.LogService`### 4. Exclusão Lógica
+## 6. Configuracao Necessaria (`config.py`)
+| Variavel | Finalidade | Default |
+| --- | --- | --- |
+| `SECRET_KEY` | Assina cookies de sessao usados pelas verificacoes do modulo | `"chave-super-secreta"` |
+| `DB_CONFIG` | Parametros de conexao PostgreSQL para `Database` | `localhost:5432` etc. |
+| `DEBUG` | Habilita mensagens flash detalhadas e logs verbose | `True` |
 
-- `core.database.Database`- Soft delete: `ativa = false`
+> Em ambiente de apresentacao, confirme que os dados de `DB_CONFIG` e `SECRET_KEY` estao parametrizados via `.env` para permitir autenticacao e operacoes CRUD sem ajustes de codigo.
 
-- `core.pagination`- Gestores vinculados são desativados
+## 7. Modelo de Dados Relevante (`schema.sql`)
+- `usuarios`
+  - Campo `tipo` com valor `escola` diferencia perfis e suporta regra UNIQUE `(email, tipo)`.
+- `escolas`
+  - `usuario_id` (UNIQUE) referencia o login, `cnpj` com constraint de unicidade.
+  - Atributos de endereco e atributo `ativo` para controle de disponibilidade.
+- `gestores_escolares`
+  - FK `escola_id` com `ON DELETE CASCADE`, permitindo limpeza automatica quando escola e excluida.
+- `homologacao_fornecedores`, `produtos`, `pedidos`
+  - Dependencias consultadas antes da exclusao via `verificar_dependencias`.
+- `logs_alteracoes`
+  - Recebe registros de INSERT/UPDATE/DELETE disparados por `CRUDService`.
 
-- Histórico preservado
+## 8. Fluxo Detalhado RF03.1 - Listar Escolas
+1. Rotas `/` e `/listar` (GET) chamam `listar`.
+2. `AutenticacaoService.verificar_sessao` garante que apenas usuarios autenticados avancem.
+3. Query manual em `Database.executar` utiliza JOIN com `usuarios` para trazer nome/email/telefone.
+4. Template recebe lista de dicionarios; botoes de acao variam conforme `usuario_logado.tipo`.
 
+## 9. Fluxo Detalhado RF03.2 - Cadastrar Escola
+1. `verificar_permissao(['administrador'])` bloqueia usuarios nao administradores.
+2. GET retorna formulario com scripts JS para gestao de gestores.
+3. POST coleta campos de usuario (login) e escola, aplicando `.strip()` e normalizacao de email.
+4. Valida obrigatorios (nome, email, cnpj, razao_social) e formato do CNPJ.
+5. `UsuarioRepository.buscar_por_email_tipo` evita cadastrar email duplicado para perfil escola.
+6. Usuario e criado via `usuario_repo.inserir`; ID e usado como FK em `escolas`.
+7. `CRUDService.criar_com_log` grava escola e registra auditoria (log + flash de sucesso).
+8. `_processar_gestores` percorre campos `gestores[...]` e chama `gestor_repo.inserir` para cada contato valido.
+9. Redireciona para `/escolas/listar` e exibe mensagem de confirmacao.
+
+## 10. Fluxo Detalhado RF03.3 - Visualizar Escola
+1. `verificar_sessao` assegura acesso autenticado.
+2. `escola_repo.buscar_com_usuario` retorna dicionario com dados da escola e usuario.
+3. `gestor_repo.listar_por_escola` traz contatos associados ordenados por nome.
+4. Template apresenta informacoes em `dl` e tabela responsiva, exibindo status ativo/inativo.
+
+## 11. Fluxo Detalhado RF03.4 - Editar Escola
+1. Permissao checa `administrador` ou `escola`.
+2. Caso tipo `escola`, valida se `usuario_logado['id']` coincide com `escola['usuario_id']`, impedindo edicao cruzada.
+3. GET popula formulario com dados correntes e lista gestores atuais (renderizada via script dinamico; dados sao reinseridos manualmente pelo usuario no prototipo atual).
+4. POST executa validacao de telefone e CEP quando preenchidos usando `ValidacaoService`.
+5. Apenas administradores podem alternar `ativo`; valor propaga para `usuarios` e `escolas`.
+6. Campos obrigatorios sao reconfirmados antes da persistencia.
+7. `usuario_repo.atualizar` salva dados do login; `crud_service.atualizar_com_log` grava alteracoes de escola com dif `dados_antigos`.
+8. `gestor_repo.excluir_por_escola` limpa contatos, e `_processar_gestores` reinsere lista enviada.
+9. Mensagens flash indicam sucesso e rota volta para listagem.
+
+## 12. Fluxo Detalhado RF03.5 - Excluir Escola
+1. Somente administradores passam em `verificar_permissao(['administrador'])`.
+2. `escola_repo.buscar_por_id` verifica existencia.
+3. `crud_service.verificar_dependencias` monta lista de bloqueios (homologacoes, produtos, pedidos) e gera mensagens descritivas.
+4. Se houver dependencias, `flash` informativo orienta inativacao como alternativa.
+5. Sem bloqueios, `crud_service.excluir_com_log` executa delete, registra auditoria e retorna sucesso.
+
+## 13. Tratamento de Erros e Regras de Negocio
+- Validacao de campos obrigatorios com feedback imediato via `flash`.
+- CNPJ obrigatorio e validado contra repeticao de digitos para evitar cadastros artificiais.
+- Emails sao normalizados para minusculas, evitando duplicidade por variacao de case.
+- Gestores sem nome sao descartados silenciosamente no helper `_processar_gestores`.
+- Gestores usam `ON DELETE CASCADE`, evitando registros orfaos quando escola e excluida.
+- Permissao garante que perfis escola nao consigam manipular dados de terceiros.
+
+## 14. Observabilidade e Auditoria
+- `flash` + modais (via `base.js`) evidenciam sucesso/erros ao usuario final.
+- `CRUDService` registra eventos de cadastro, atualizacao e exclusao em `logs_alteracoes` com descricao contextual.
+- `print` e mensagens de erro do `Database` ajudam diagnostico durante demonstracoes em modo `DEBUG`.
+- Dependencias bloqueadas exibem mensagens concatenadas (ex.: produtos vinculados) facilitando identificar pendencias antes de excluir.
+
+## 15. Testes Recomendados
+- **Cadastro feliz**: criar escola completa com dois gestores e validar aparicao na lista e detalhes.
+- **CNPJ invalido**: informar CNPJ com menos de 14 digitos e verificar mensagem de erro.
+- **Email duplicado**: reutilizar email de escola existente e garantir bloqueio.
+- **Edicao por administrador**: alternar flag `ativo`, atualizar CEP invalido e confirmar validacao.
+- **Edicao por perfil escola**: autenticar como escola, tentar editar outra escola e assegurar bloqueio.
+- **Exclusao com dependencias**: vincular produtos ou pedidos e garantir que exclusao e barrada com mensagem adequada.
+- **Exclusao sem dependencias**: remover escola recem-cadastrada (sem vinculos) e validar registro em `logs_alteracoes`.
+
+## 16. Checklist de Implantacao
+1. Aplicar `schema.sql`, assegurando tabelas `escolas` e `gestores_escolares` com constraints atualizadas.
+2. Confirmar que usuarios administradores estao presentes para executar rotinas de cadastro.
+3. Verificar conectividade com banco via `/health/db` antes de demonstrar o modulo.
+4. Testar fluxos descritos na secao 15 em ambiente de staging, incluindo tentativas de exclusao com e sem dependencia.
+5. Manter monitoramento de `logs_alteracoes` para auditoria das operacoes de cadastro de escola.
+
+---
+
+Para evolucoes futuras (ex.: upload de documentos de homologacao, anexos de logotipo, filtros avanzados na listagem), considere integrar `UploadService`, persistencia de arquivos em storage dedicado e expansao de filtros em `EscolaRepository.listar_com_filtros`.

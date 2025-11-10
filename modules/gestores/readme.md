@@ -1,345 +1,136 @@
-# Módulo de Gestores Escolares
+# RF04 - Gestores Escolares
 
-============================================
-RF04 - MANTER CADASTRO DE GESTOR ESCOLAR
-============================================
-Este módulo é responsável por:
-- RF04.1: Listar gestores escolares
-- RF04.2: Criar gestor escolar
-- RF04.3: Editar gestor escolar
-- RF04.4: Apagar gestor escolar
+Documento tecnico de apresentacao do requisito funcional RF04 (Manter Cadastro de Gestor Escolar). Este roteiro descreve componentes, fluxos, dependencias e rotinas de suporte que viabilizam o CRUD de gestores associados a cada escola cadastrada.
 
-Controla o processo de gestão de gestores escolares no sistema.
+## 1. Contexto e Objetivo
+- Permitir que administradores ou escolas mantenham varios gestores vinculados a uma mesma unidade.
+- Registrar informacoes de contato (email, telefone) e dados opcionais (CPF, tipo de gestor) para facilitar comunicacao e auditoria.
+- Garantir que apenas o dono da escola ou administradores possam consultar e alterar gestores.
 
----
+## 2. Visao Geral do Fluxo
+1. Usuario autenticado navega para `/gestores/escola/<id>` a partir da tela da escola.
+2. Sistema valida sessao, confirma existencia da escola e checa autorizacao (tipo administrador ou escola proprietaria).
+3. Listagem apresenta todos os gestores da escola, com acoes de detalhes, edicao e exclusao.
+4. Acao "Novo Gestor" redireciona para formulario `/gestores/escola/<id>/cadastrar` com validacoes de servidor.
+5. Edicoes utilizam `/gestores/editar/<id>` e carregam dados atuais do gestor antes de persistir alteracoes.
+6. Exclusoes executam POST em `/gestores/excluir/<id>` com confirmacao no front-end e registro em log.
 
-## 📋 Visão Geral
+## 3. Componentes Principais
+- `modules/gestores/module.py`
+  - Blueprint `gestores_bp` com prefixo `/gestores` concentrando todas as rotas RF04.
+  - Reuso central de `AutenticacaoService` para validar sessao em cada endpoint.
+  - Instancias de `GestorEscolarRepository` e `EscolaRepository` para isolar acesso ao banco.
+  - Rotas implementam os subitens RF04.1 (listar), RF04.2 (cadastrar), RF04.3 (editar) e RF04.4 (excluir), alem da rota complementar de detalhes.
+- `modules/escolas/module.py`
+  - Navegacao primária: botoes e links acionam as rotas de gestores a partir das paginas de escola.
+- `app.py`
+  - Registra `gestores_bp` durante a inicializacao da aplicacao Flask, disponibilizando o modulo para toda a aplicacao.
 
-O módulo de **Gestores Escolares** gerencia os contatos e responsáveis administrativos das escolas cadastradas no sistema Conecta Uniforme. Cada escola pode ter múltiplos gestores (diretores, coordenadores, financeiros, etc.).
+## 4. Templates e UX
+- `templates/gestores/listar.html`
+  - Renderiza tabela responsiva com botoes para detalhes, edicao e exclusao.
+  - Traz cabecalho com nome da escola e atalho "Novo Gestor".
+- `templates/gestores/cadastrar.html`
+  - Formulario Clean com campos opcionais e obrigatorios, utilizando placeholders para orientar preenchimento.
+  - Botoes de voltar e confirmar mantem consistencia com demais modulos.
+- `templates/gestores/editar.html`
+  - Preenche campos com dados atuais permitindo ajustes pontuais.
+- `templates/gestores/detalhes.html`
+  - Exibe painel com informacoes completas do gestor e dados resumidos da escola vinculada.
+- `static/js/base.js`
+  - Converte mensagens `flash` em modais padronizados, garantindo feedback uniforme para erros e sucessos.
 
-### Propósito
-- Cadastrar e gerenciar gestores escolares
-- Vincular múltiplos gestores a uma escola
-- Manter informações de contato dos responsáveis
-- Facilitar comunicação com as escolas
-
----
-
-## 🏗️ Arquitetura
-
-### Padrões de Design Utilizados
-- **Repository Pattern**: `GestorEscolarRepository`
-- **Service Layer**: `ValidacaoService`, `AutenticacaoService`, `LogService`
-- **Blueprint Pattern**: Separação de rotas por contexto
-
-### Camadas da Aplicação
-```
-┌─────────────────────────────────────┐
-│  Apresentação (module.py)           │
-│  - Blueprints de rotas              │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Serviços (core/services.py)        │
-│  - ValidacaoService                 │
-│  - AutenticacaoService              │
-│  - LogService                       │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Repositórios (core/repositories)   │
-│  - GestorEscolarRepository          │
-│  - EscolaRepository                 │
-└──────────────┬──────────────────────┘
-               ↓
-┌─────────────────────────────────────┐
-│  Database (core/database.py)        │
-└─────────────────────────────────────┘
-```
-
-### Diagrama de Relacionamentos
-```
-┌──────────────┐
-│   Escola     │
-└──────┬───────┘
-       │ 1
-       │
-       │ N
-┌──────┴────────────────┐
-│  GestorEscolar        │
-│  - escola_id (FK)     │
-│  - nome               │
-│  - email              │
-│  - telefone           │
-│  - cpf                │
-│  - tipo_gestor        │
-└───────────────────────┘
-```
-
----
-
-## 🔌 Endpoints (Rotas)
-
-### 1. `GET /gestores/escola/<int:escola_id>/listar`
-**Descrição**: Lista todos os gestores de uma escola específica
-
-**Autenticação**: Requerida (Administrador ou Escola proprietária)
-
-**Parâmetros de Rota**:
-- `escola_id`: ID da escola
-
-**Resposta**:
-```html
-Status: 200 OK
-Template: templates/gestores/listar.html
-Contexto: {
-    'escola': Escola,
-    'gestores': List[GestorEscolar]
-}
-```
-
-**Permissões**:
-- Administrador: pode visualizar gestores de qualquer escola
-- Escola: pode visualizar apenas gestores da própria escola
-
----
-
-### 2. `GET/POST /gestores/escola/<int:escola_id>/cadastrar`
-**Descrição**: Cadastra um novo gestor escolar para uma escola
-
-**Autenticação**: Requerida (Administrador ou Escola proprietária)
-
-**Corpo da Requisição** (POST - multipart/form-data):
-```json
-{
-    "nome": "string (obrigatório, max 200)",
-    "email": "string (opcional, validação de formato)",
-    "telefone": "string (opcional, validação de formato)",
-    "cpf": "string (opcional, validação de formato e dígitos)",
-    "tipo_gestor": "string (opcional, ex: diretor, coordenador, financeiro)"
-}
-```
-
-**Validações**:
-1. **Nome**: Obrigatório, não pode ser vazio
-2. **Telefone**: Se fornecido, deve estar no formato válido
-3. **CPF**: Se fornecido, deve ser válido (11 dígitos + verificadores)
-4. **Email**: Se fornecido, deve estar em formato válido
-
-**Resposta de Sucesso**:
-```json
-Status: 302 Redirect
-Location: /gestores/escola/{escola_id}/listar
-Flash: "Gestor cadastrado com sucesso!"
-```
-
----
-
-### 3. `GET/POST /gestores/editar/<int:id>`
-**Descrição**: Edita um gestor escolar existente
-
-**Autenticação**: Requerida (Administrador ou Escola proprietária)
-
-**Parâmetros de Rota**:
-- `id`: ID do gestor
-
-**Permissões**:
-- Administrador: pode editar qualquer gestor
-- Escola: pode editar apenas gestores da própria escola
-
-**Resposta de Sucesso**:
-```json
-Status: 302 Redirect
-Location: /gestores/escola/{escola_id}/listar
-Flash: "Gestor atualizado com sucesso!"
-```
-
----
-
-### 4. `POST /gestores/excluir/<int:id>`
-**Descrição**: Exclui um gestor escolar
-
-**Autenticação**: Requerida (Administrador ou Escola proprietária)
-
-**Parâmetros de Rota**:
-- `id`: ID do gestor
-
-**Permissões**:
-- Administrador: pode excluir qualquer gestor
-- Escola: pode excluir apenas gestores da própria escola
-
-**Resposta de Sucesso**:
-```json
-Status: 302 Redirect
-Location: /gestores/escola/{escola_id}/listar
-Flash: "Gestor excluído com sucesso!"
-```
-
----
-
-### 5. `GET /gestores/meus-gestores`
-**Descrição**: Atalho para a escola visualizar seus próprios gestores
-
-**Autenticação**: Requerida (Tipo: Escola)
-
-**Comportamento**:
-- Busca a escola do usuário logado
-- Redireciona para `/gestores/escola/{escola_id}/listar`
-
-**Resposta**:
-```json
-Status: 302 Redirect
-Location: /gestores/escola/{escola_id}/listar
-```
-
----
-
-## 📊 Modelos de Dados
-
-### Tabela `gestores_escolares` (PostgreSQL)
-```sql
-CREATE TABLE gestores_escolares (
-    id SERIAL PRIMARY KEY,
-    escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
-    nome VARCHAR(200) NOT NULL,
-    email VARCHAR(200),
-    telefone VARCHAR(20),
-    cpf VARCHAR(14),
-    tipo_gestor VARCHAR(50), -- ex: diretor, coordenador, financeiro
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_gestores_escola ON gestores_escolares(escola_id);
-```
-
-### Campos
-- **id**: Identificador único do gestor
-- **escola_id**: Referência à escola (FK com CASCADE DELETE)
-- **nome**: Nome completo do gestor (obrigatório)
-- **email**: E-mail de contato (opcional)
-- **telefone**: Telefone de contato (opcional)
-- **cpf**: CPF do gestor (opcional)
-- **tipo_gestor**: Tipo/cargo do gestor (opcional)
-- **data_cadastro**: Data de criação do registro
-
----
-
-## 🔐 Autenticação e Autorização
-
-### Matriz de Permissões
-
-| Rota | Administrador | Escola (Própria) | Fornecedor | Responsável |
-|------|---------------|------------------|------------|-------------|
-| `/gestores/escola/:id/listar` | ✅ | ✅ (própria) | ❌ | ❌ |
-| `/gestores/escola/:id/cadastrar` | ✅ | ✅ (própria) | ❌ | ❌ |
-| `/gestores/editar/:id` | ✅ | ✅ (própria) | ❌ | ❌ |
-| `/gestores/excluir/:id` | ✅ | ✅ (própria) | ❌ | ❌ |
-| `/gestores/meus-gestores` | ❌ | ✅ | ❌ | ❌ |
-
----
-
-## 📝 Regras de Negócio
-
-### 1. Cadastro de Gestores
-- Apenas Administradores e a Escola proprietária podem cadastrar gestores
-- Nome é obrigatório
-- Email, telefone, CPF e tipo_gestor são opcionais
-- Múltiplos gestores podem ser cadastrados para a mesma escola
-
-### 2. Edição de Gestores
-- Apenas Administradores e a Escola proprietária podem editar
-- Escola só pode editar gestores da própria escola
-- Validações são aplicadas em campos fornecidos
-
-### 3. Exclusão de Gestores
-- Apenas Administradores e a Escola proprietária podem excluir
-- Exclusão é em cascata (se a escola for excluída, gestores são removidos automaticamente)
-- Não há verificação de dependências (gestores são dados auxiliares)
-
-### 4. Visualização
-- Administradores podem ver gestores de todas as escolas
-- Escolas podem ver apenas seus próprios gestores
-- Gestores são exibidos na tela de visualização de escola
-
-### 5. Tipos de Gestores
-Exemplos comuns de tipos:
-- `diretor`: Diretor(a) da escola
-- `coordenador`: Coordenador(a) pedagógico(a)
-- `financeiro`: Responsável financeiro
-- `secretario`: Secretário(a) escolar
-- Pode ser qualquer string livre
-
----
-
-## 🔗 Relacionamentos com Outros Módulos
-
-- **Escolas**: Cada gestor pertence a uma única escola (relacionamento N:1)
-- **Usuários**: Gestores são dados de contato, não são usuários do sistema
-
----
-
-## 📦 Dependências
-
-- `core.repositories.GestorEscolarRepository`
-- `core.repositories.EscolaRepository`
+## 5. Servicos e Camada Core
 - `core.services.AutenticacaoService`
+  - `verificar_sessao` retorna usuario logado para proteger cada rota.
 - `core.services.ValidacaoService`
+  - `validar_telefone` e `validar_cpf` garantem formato basico antes de gravar.
 - `core.services.LogService`
+  - Persistencia em `logs_alteracoes` para INSERT, UPDATE e DELETE, com descricao especifica do evento.
+- `core.repositories.GestorEscolarRepository`
+  - Encapsula CRUD na tabela `gestores_escolares`, incluindo `listar_por_escola`.
+- `core.repositories.EscolaRepository`
+  - `buscar_com_usuario` retorna metadados da escola e do usuario proprietario para validacao de permissao.
 - `core.database.Database`
+  - Gerencia conexoes PostgreSQL, execucao de queries com commits explicitos e tratamento de excecoes.
+
+## 6. Configuracao Necessaria (`config.py`)
+| Variavel | Finalidade | Observacao |
+| --- | --- | --- |
+| `SECRET_KEY` | Assina cookies de sessao usados por `AutenticacaoService` | Obrigatorio para manter sessao valida |
+| `DB_CONFIG` | Parametros de conexao PostgreSQL para `Database` | Deve apontar para instancia com tabela `gestores_escolares` aplicada |
+| `DEBUG` | Controla exibicao de mensagens detalhadas e comportamento de flash | Em desenvolvimento facilita diagnostico de validacoes |
+
+## 7. Modelo de Dados Relevante (`schema.sql`)
+- `gestores_escolares`
+  - Campos: `id`, `escola_id`, `nome`, `email`, `telefone`, `cpf`, `tipo_gestor`, `data_cadastro`.
+  - `escola_id` referencia `escolas(id)` com `ON DELETE CASCADE`, herdando exclusoes de escola.
+  - Indice `idx_gestores_escola` acelera listagens por escola.
+- `logs_alteracoes`
+  - Recebe registros de auditoria para inserir, atualizar e excluir gestores.
+
+## 8. Fluxo Detalhado RF04.1 - Listar Gestores
+1. Recebe `escola_id` pela rota `/gestores/escola/<int:escola_id>` (ou alias `/listar`).
+2. Executa `auth_service.verificar_sessao`; sessao invalida redireciona para `/auth/solicitar-codigo`.
+3. `escola_repo.buscar_com_usuario` valida existencia e recupera dono da escola.
+4. Permissao: permite acesso apenas a administradores ou usuarios do tipo escola proprietaria.
+5. `gestor_repo.listar_por_escola` retorna dados ordenados pelo nome.
+6. Template `gestores/listar.html` recebe `escola` e `gestores`, exibindo botoes de acao condicionados ao resultado.
+
+## 9. Fluxo Detalhado RF04.2 - Cadastrar Gestor
+1. GET `/gestores/escola/<id>/cadastrar` reaproveita as validacoes basicas e renderiza formulario vazio.
+2. POST coleta campos via `request.form`, normaliza espacos e converte email para minusculas.
+3. Nome obrigatorio; ausencia gera `flash` `danger` e re-renderizacao do formulario com contexto da escola.
+4. `ValidacaoService.validar_telefone` e `validar_cpf` garantem formatos basicos (campos sao opcionais, mas se preenchidos precisam ser validos).
+5. `gestor_repo.inserir` grava registro; ID retornado aciona `LogService.registrar` (acao `INSERT`).
+6. Mensagem `success` confirma criacao e redireciona para `/gestores/escola/<id>/listar`.
+
+## 10. Fluxos Detalhados RF04.3 e RF04.4 - Editar e Excluir Gestor
+- **RF04.3 - Editar Gestor**
+  1. GET `/gestores/editar/<id>` valida sessao, busca gestor e escola vinculada.
+  2. Permissao mantem mesma regra: administrador ou escola proprietaria.
+  3. Dados atuais sao enviados ao template `gestores/editar.html` (campanha `escola_nome`, `escola_id`).
+  4. POST aplica mesmas validacoes de nome, telefone e CPF.
+  5. `gestor_repo.atualizar` persiste mudancas; sucesso gera `LogService.registrar` com `dados_antigos` e `dados_novos`.
+  6. Redireciona para listagem da escola com mensagem `success`.
+- **RF04.4 - Excluir Gestor**
+  1. POST `/gestores/excluir/<id>` apenas apos confirmacao no frontend.
+  2. Valida sessao, existente do gestor e escola proprietaria.
+  3. `gestor_repo.excluir` remove registro; `LogService.registrar` grava acao `DELETE` com dados antigos para rastreabilidade.
+  4. Usuario e redirecionado para listagem da escola com mensagem de sucesso.
+
+## 11. Permissoes Complementares e Rota de Detalhes
+- Rota `/gestores/detalhes/<id>` reusa mesmos guardas de sessao e permissao antes de expor informacoes sensiveis.
+- Apenas administradores e escolas controladoras conseguem visualizar detalhes completos.
+- Detalhes agregam `escola` e `gestor` para facilitar consultas e acoes subsequentes (editar ou excluir) com botoes contextuais.
+
+## 12. Tratamento de Erros e Seguranca
+- Todas as rotas verificam autenticacao antes de qualquer acesso ao banco.
+- Falta de permissao aciona `flash('Acesso negado.', 'danger')` e redireciona para `home` ou listagem apropriada.
+- Dados opcionais sao saneados (trim, lower) e validados para evitar gravacao inconsistente.
+- Exclusoes dependem de confirmacao HTML `onsubmit` evitando acoes acidentais.
+- `redirect` apos operacoes POST evita reenvio de formulario (Post/Redirect/Get).
+
+## 13. Observabilidade e Auditoria
+- `LogService` grava todas as alteracoes (INSERT/UPDATE/DELETE) em `logs_alteracoes` com JSON serializado de dados.
+- Mensagens `flash` informam resultado ao usuario e sao exibidas como modais via `static/js/base.js`.
+- Acompanhar evolucao via `templates/logs/logs.html` (modulo de logs) durante apresentacoes ou auditorias.
+
+## 14. Testes Recomendados
+- **Listagem autorizada**: acessar `/gestores/escola/<id>` como administrador e como escola proprietaria; verificar exibicao correta.
+- **Bloqueio de permissao**: tentar acessar listagem como fornecedor ou escola nao proprietaria; deve redirecionar com aviso de acesso negado.
+- **Cadastro valido**: criar gestor com dados completos e confirmar registro no banco e log de alteracao.
+- **Cadastro invalido**: enviar formulario sem nome ou com CPF/telefone invalido; validar mensagens e permanencia na pagina.
+- **Edicao**: alterar apenas telefone ou tipo e garantir que log registre `dados_antigos` x `dados_novos`.
+- **Exclusao**: remover gestor e confirmar cascateamento de permissao e registro de log.
+
+## 15. Checklist de Implantacao
+1. Aplicar `schema.sql` garantindo existencia de `gestores_escolares`, indices e `logs_alteracoes`.
+2. Configurar `.env` com `SECRET_KEY`, `DB_CONFIG` e demais variaveis utilizadas pelo app.
+3. Realizar smoke test dos fluxos (listar, cadastrar, editar, excluir) em usuario administrador e escola proprietaria.
+4. Validar visibilidade dos registros em `logs_alteracoes` e monitorar mensagens flash no frontend.
+5. Repassar roteiro de apresentacao destacando links de navegacao a partir de `escolas/detalhes`.
 
 ---
 
-## 🔄 Logs e Auditoria
-
-Todas as operações de gestores são registradas na tabela `logs_alteracoes`:
-
-- **INSERT**: Cadastro de novo gestor
-- **UPDATE**: Atualização de dados do gestor
-- **DELETE**: Exclusão de gestor
-
-Campos registrados:
-- `usuario_id`: Quem realizou a operação
-- `tabela`: 'gestores_escolares'
-- `registro_id`: ID do gestor
-- `acao`: 'INSERT', 'UPDATE' ou 'DELETE'
-- `dados_antigos`: Estado anterior (UPDATE/DELETE)
-- `dados_novos`: Estado novo (INSERT/UPDATE)
-- `descricao`: Descrição da operação
-
----
-
-## 💡 Casos de Uso
-
-### Caso de Uso 1: Escola Cadastra Gestor
-1. Escola faz login no sistema
-2. Acessa "Meus Gestores" no menu
-3. Clica em "Cadastrar Novo Gestor"
-4. Preenche dados: nome, email, telefone, tipo (diretor)
-5. Sistema valida e salva
-6. Gestor aparece na listagem
-
-### Caso de Uso 2: Administrador Visualiza Gestores
-1. Admin faz login
-2. Acessa listagem de escolas
-3. Clica em "Visualizar" em uma escola
-4. Vê lista de gestores cadastrados
-5. Pode editar ou excluir gestores
-
-### Caso de Uso 3: Atualização de Contato
-1. Escola acessa seus gestores
-2. Clica em "Editar" no gestor desejado
-3. Atualiza telefone ou email
-4. Sistema registra alteração no log
-5. Dados atualizados ficam disponíveis
-
----
-
-## 🚀 Melhorias Futuras
-
-1. **Validação de Email Único**: Adicionar validação para evitar emails duplicados
-2. **Validação de CPF Único**: Garantir que um CPF não seja usado por múltiplos gestores
-3. **Notificações**: Enviar email ao gestor quando cadastrado
-4. **Hierarquia**: Implementar hierarquia de gestores (gestor principal, secundário)
-5. **Permissões Granulares**: Permitir que gestores tenham diferentes níveis de acesso
-6. **Histórico de Gestores**: Manter histórico de gestores antigos (soft delete)
-7. **Upload de Documentos**: Permitir anexar documentos ao gestor
+Expansoes futuras podem incluir busca textual de gestores, anexos de documentos ou notificacoes automaticas; avaliar impacto em `GestorEscolarRepository` e em novos campos na tabela `gestores_escolares` antes de evoluir o requisito.

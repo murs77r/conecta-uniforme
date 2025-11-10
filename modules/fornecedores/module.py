@@ -12,7 +12,6 @@ Este módulo é responsável pelo CRUD básico de fornecedores:
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import FornecedorRepository, UsuarioRepository
 from core.services import AutenticacaoService, CRUDService, ValidacaoService
-from core.pagination import paginate_query
 from core.database import Database
 
 # Blueprint
@@ -33,7 +32,7 @@ validacao = ValidacaoService()
 @fornecedores_bp.route('/listar')
 def listar():
     """
-    RF05.1 - Listar fornecedores com paginação e filtros básicos
+    RF05.1 - Listar fornecedores
     """
     # Verificar autenticação
     usuario_logado = auth_service.verificar_sessao()
@@ -41,50 +40,18 @@ def listar():
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Parâmetros de paginação
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
-    # Filtros básicos
-    busca = request.args.get('busca', '').strip()
-    filtro_ativo = request.args.get('ativo', '')
-    
     # Query base - JOIN simples com usuários
     query = """
         SELECT f.*, u.nome, u.email, u.telefone
         FROM fornecedores f
         JOIN usuarios u ON f.usuario_id = u.id
-        WHERE 1=1
+        ORDER BY u.nome
     """
-    params = []
-    
-    # Aplicar filtro de busca (nome ou razão social)
-    if busca:
-        query += " AND (u.nome ILIKE %s OR f.razao_social ILIKE %s OR f.cnpj ILIKE %s)"
-        busca_like = f"%{busca}%"
-        params.extend([busca_like, busca_like, busca_like])
-    
-    # Aplicar filtro de status
-    if filtro_ativo:
-        query += " AND f.ativo = %s"
-        params.append(filtro_ativo == 'true')
-    
-    # Ordenação
-    query += " ORDER BY u.nome"
-    
-    # Paginar resultados
-    paginated_query, paginated_params, pagination = paginate_query(
-        query, tuple(params), page, per_page
-    )
     
     # Executar query
-    fornecedores = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    fornecedores = Database.executar(query, fetchall=True) or []
     
-    return render_template('fornecedores/listar.html', 
-                         fornecedores=fornecedores,
-                         pagination=pagination,
-                         filtro_busca=busca,
-                         filtro_ativo=filtro_ativo)
+    return render_template('fornecedores/listar.html', fornecedores=fornecedores)
 
 
 # ============================================

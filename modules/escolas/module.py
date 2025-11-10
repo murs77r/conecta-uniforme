@@ -16,7 +16,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import EscolaRepository, UsuarioRepository, GestorEscolarRepository
 from core.services import AutenticacaoService, CRUDService, ValidacaoService
 from core.database import Database
-from core.pagination import paginate_query
 
 # Blueprint e Serviços
 escolas_bp = Blueprint('escolas', __name__, url_prefix='/escolas')
@@ -35,57 +34,25 @@ validacao = ValidacaoService()
 @escolas_bp.route('/')
 @escolas_bp.route('/listar')
 def listar():
-    """Lista todas as escolas cadastradas com paginação e filtros básicos"""
+    """Lista todas as escolas cadastradas"""
     # Verifica se o usuário está logado
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Parâmetros de paginação
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
-    # Filtros básicos
-    filtro_busca = request.args.get('busca', '')
-    filtro_ativo = request.args.get('ativo', '')
-    
     # Monta query base com JOIN para trazer dados do usuário
     query = """
         SELECT e.*, u.nome, u.email, u.telefone
         FROM escolas e
         JOIN usuarios u ON e.usuario_id = u.id
-        WHERE 1=1
+        ORDER BY u.nome
     """
-    params = []
-    
-    # Aplica filtro de busca (nome, razão social ou CNPJ)
-    if filtro_busca:
-        query += """ AND (u.nome ILIKE %s OR e.razao_social ILIKE %s OR e.cnpj ILIKE %s)"""
-        busca = f"%{filtro_busca}%"
-        params.extend([busca, busca, busca])
-    
-    # Aplica filtro de status (ativo/inativo)
-    if filtro_ativo:
-        query += " AND e.ativo = %s"
-        params.append(filtro_ativo == 'true')
-    
-    # Ordena por nome
-    query += " ORDER BY u.nome"
-    
-    # Aplica paginação
-    paginated_query, paginated_params, pagination = paginate_query(
-        query, tuple(params), page, per_page
-    )
     
     # Executa query e retorna resultados
-    escolas = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    escolas = Database.executar(query, fetchall=True) or []
     
-    return render_template('escolas/listar.html', 
-                         escolas=escolas,
-                         pagination=pagination,
-                         filtro_busca=filtro_busca,
-                         filtro_ativo=filtro_ativo)
+    return render_template('escolas/listar.html', escolas=escolas)
 
 
 # ============================================

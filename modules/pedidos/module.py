@@ -1,12 +1,12 @@
 """
 ============================================
-RF08 - MANTER CADASTRO DE PEDIDO
+RF07 - MANTER CADASTRO DE PEDIDO
 ============================================
 Este módulo é responsável por:
-- RF08.1: Criar pedido
-- RF08.2: Apagar pedido
-- RF08.3: Editar pedido
-- RF08.4: Consultar pedidos
+- RF07.1: Criar pedido
+- RF07.2: Apagar pedido
+- RF07.3: Editar pedido
+- RF07.4: Consultar pedidos
 
 Controla o processo de controle de pedidos no sistema.
 """
@@ -15,7 +15,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from core.repositories import PedidoRepository, ResponsavelRepository
 from core.services import AutenticacaoService, LogService
 from core.database import Database
-from core.pagination import paginate_query, Pagination
 
 # Blueprint e Serviços
 pedidos_bp = Blueprint('pedidos', __name__, url_prefix='/pedidos')
@@ -25,33 +24,17 @@ auth_service = AutenticacaoService()
 
 
 # ============================================
-# RF08.4 - CONSULTAR PEDIDOS
+# RF07.4 - CONSULTAR PEDIDOS
 # ============================================
 
 @pedidos_bp.route('/')
 @pedidos_bp.route('/listar')
 def listar():
-    """Lista pedidos com paginação e filtros"""
+    """Lista pedidos"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    # Parâmetros de paginação
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
-    # Filtros
-    filtros = {
-        'status': request.args.get('status', ''),
-        'responsavel_id': request.args.get('responsavel_id', ''),
-        'escola_id': request.args.get('escola_id', ''),
-        'fornecedor_id': request.args.get('fornecedor_id', ''),
-        'data_inicio': request.args.get('data_inicio', ''),
-        'data_fim': request.args.get('data_fim', ''),
-        'valor_min': request.args.get('valor_min', ''),
-        'valor_max': request.args.get('valor_max', '')
-    }
     
     # Base query
     query = """
@@ -77,68 +60,19 @@ def listar():
             params.append(responsavel['id'])
         else:
             pedidos = []
-            pagination = Pagination(page=1, per_page=per_page, total=0)
-            return render_template('pedidos/listar.html',
-                                 pedidos=pedidos,
-                                 pagination=pagination,
-                                 filtros=filtros)
-    
-    # Aplicar filtros
-    if filtros['status']:
-        query += " AND p.status = %s"
-        params.append(filtros['status'])
-    
-    if filtros['responsavel_id']:
-        query += " AND p.responsavel_id = %s"
-        params.append(int(filtros['responsavel_id']))
-    
-    if filtros['escola_id']:
-        query += " AND p.escola_id = %s"
-        params.append(int(filtros['escola_id']))
-    
-    if filtros['fornecedor_id']:
-        query += """ AND EXISTS (
-            SELECT 1 FROM itens_pedido ip
-            JOIN produtos prod ON ip.produto_id = prod.id
-            WHERE ip.pedido_id = p.id AND prod.fornecedor_id = %s
-        )"""
-        params.append(int(filtros['fornecedor_id']))
-    
-    if filtros['data_inicio']:
-        query += " AND p.data_pedido >= %s"
-        params.append(filtros['data_inicio'])
-    
-    if filtros['data_fim']:
-        query += " AND p.data_pedido <= %s"
-        params.append(filtros['data_fim'])
-    
-    if filtros['valor_min']:
-        query += " AND p.valor_total >= %s"
-        params.append(float(filtros['valor_min']))
-    
-    if filtros['valor_max']:
-        query += " AND p.valor_total <= %s"
-        params.append(float(filtros['valor_max']))
+            return render_template('pedidos/listar.html', pedidos=pedidos)
     
     # Ordenação
     query += " ORDER BY p.data_pedido DESC"
     
-    # Paginar
-    paginated_query, paginated_params, pagination = paginate_query(
-        query, tuple(params), page, per_page
-    )
-    
     # Executar query
-    pedidos = Database.executar(paginated_query, paginated_params, fetchall=True) or []
+    pedidos = Database.executar(query, tuple(params) if params else None, fetchall=True) or []
     
-    return render_template('pedidos/listar.html',
-                         pedidos=pedidos,
-                         pagination=pagination,
-                         filtros=filtros)
+    return render_template('pedidos/listar.html', pedidos=pedidos)
 
 
 # ============================================
-# RF08.1 - CRIAR PEDIDO
+# RF07.1 - CRIAR PEDIDO
 # ============================================
 
 @pedidos_bp.route('/criar', methods=['GET', 'POST'])
@@ -170,7 +104,7 @@ def criar():
 
 
 # ============================================
-# RF08.3 - EDITAR PEDIDO
+# RF07.3 - EDITAR PEDIDO
 # ============================================
 
 @pedidos_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -207,7 +141,7 @@ def editar(id):
 
 
 # ============================================
-# RF08.2 - APAGAR PEDIDO
+# RF07.2 - APAGAR PEDIDO
 # ============================================
 
 @pedidos_bp.route('/apagar/<int:id>', methods=['POST'])
@@ -229,7 +163,7 @@ def apagar(id):
 
 
 # ============================================
-# RF08.4 - CONSULTAR DETALHES DO PEDIDO
+# RF07.4 - CONSULTAR DETALHES DO PEDIDO
 # ============================================
 
 @pedidos_bp.route('/detalhes/<int:id>')

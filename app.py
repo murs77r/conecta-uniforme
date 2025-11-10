@@ -55,7 +55,7 @@ app.register_blueprint(fornecedores_bp)
 # RF06 - Gerenciar Produtos
 app.register_blueprint(produtos_bp)
 
-# RF08 - Gerenciar Pedidos
+# RF07 - Gerenciar Pedidos
 app.register_blueprint(pedidos_bp)
 
 
