@@ -1,0 +1,30 @@
+@startuml
+' RF04 - Gerenciamento de Gestores Escolares
+
+left to right direction
+
+skinparam actorStyle awesome
+
+title RF04 - Gerenciamento de Gestores Escolares
+
+actor Administrador
+actor Escola
+
+rectangle "Módulo de Gestores Escolares" {
+    usecase "Cadastrar\nGestor" as UC04_1
+    usecase "Listar\nGestores" as UC04_2
+    usecase "Editar\nGestor" as UC04_3
+    usecase "Excluir\nGestor" as UC04_4
+}
+
+Administrador --> UC04_1
+Administrador --> UC04_2
+Administrador --> UC04_3
+Administrador --> UC04_4
+
+Escola --> UC04_1
+Escola --> UC04_2
+Escola --> UC04_3
+Escola --> UC04_4
+
+@enduml

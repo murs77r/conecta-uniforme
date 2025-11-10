@@ -1,0 +1,30 @@
+@startuml
+' RF07 - Gerenciamento de Pedidos
+
+left to right direction
+
+skinparam actorStyle awesome
+
+title RF07 - Gerenciamento de Pedidos
+
+actor Administrador
+actor Responsável
+
+rectangle "Módulo de Pedidos" {
+    usecase "Criar\nPedido" as UC07_1
+    usecase "Listar\nPedidos" as UC07_2
+    usecase "Editar\nPedido" as UC07_3
+    usecase "Excluir\nPedido" as UC07_4
+}
+
+Administrador --> UC07_1
+Administrador --> UC07_2
+Administrador --> UC07_3
+Administrador --> UC07_4
+
+Responsável --> UC07_1
+Responsável --> UC07_2
+Responsável --> UC07_3
+Responsável --> UC07_4
+
+@enduml

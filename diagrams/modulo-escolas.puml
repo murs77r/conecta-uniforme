@@ -1,0 +1,28 @@
+@startuml
+' RF03 - Gerenciamento de Escolas
+
+left to right direction
+
+skinparam actorStyle awesome
+
+title RF03 - Gerenciamento de Escolas
+
+actor Administrador
+actor Escola
+
+rectangle "Módulo de Escolas" {
+    usecase "Cadastrar\nEscola" as UC03_1
+    usecase "Listar\nEscolas" as UC03_2
+    usecase "Editar\nEscola" as UC03_3
+    usecase "Excluir\nEscola" as UC03_4
+}
+
+Administrador --> UC03_1
+Administrador --> UC03_2
+Administrador --> UC03_3
+Administrador --> UC03_4
+
+Escola --> UC03_2
+Escola --> UC03_3
+
+@enduml

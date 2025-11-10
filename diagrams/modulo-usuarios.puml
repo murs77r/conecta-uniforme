@@ -1,0 +1,26 @@
+@startuml
+' RF01 - Gerenciamento de Usuários
+
+left to right direction
+
+skinparam actorStyle awesome
+
+title RF01 - Gerenciamento de Usuários
+
+actor Administrador
+
+rectangle "Módulo de Usuários" {
+    usecase "Cadastrar\nUsuário" as UC01_1
+    usecase "Listar\nUsuários" as UC01_2
+    usecase "Editar\nUsuário" as UC01_3
+    usecase "Excluir\nUsuário" as UC01_4
+    usecase "Visualizar Logs" as UC01_5
+}
+
+Administrador --> UC01_1
+Administrador --> UC01_2
+Administrador --> UC01_3
+Administrador --> UC01_4
+Administrador --> UC01_5
+
+@enduml

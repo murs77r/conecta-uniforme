@@ -1,0 +1,49 @@
+@startuml
+' Diagrama Geral de Casos de Uso - Conecta Uniforme
+
+left to right direction
+
+skinparam actorStyle awesome
+
+actor Visitante
+actor Administrador
+actor Escola
+actor Fornecedor
+actor Responsável
+
+rectangle "Sistema Conecta Uniforme" {
+    usecase "Autenticar no\nSistema" as UC02
+    usecase "Gerenciar\nUsuários" as UC01
+    usecase "Gerenciar\nEscolas" as UC03
+    usecase "Gerenciar\nGestores Escolares" as UC04
+    usecase "Gerenciar\nFornecedores" as UC05
+    usecase "Gerenciar\nProdutos" as UC06
+    usecase "Gerenciar\nPedidos" as UC07
+}
+
+Visitante --> UC02
+Visitante --> UC06
+
+Administrador --> UC01
+Administrador --> UC03
+Administrador --> UC04
+Administrador --> UC05
+Administrador --> UC06
+Administrador --> UC07
+
+Escola --> UC03
+Escola --> UC04
+
+Fornecedor --> UC05
+Fornecedor --> UC06
+
+Responsável --> UC07
+
+UC01 ..> UC02 : <<include>>
+UC03 ..> UC02 : <<include>>
+UC04 ..> UC02 : <<include>>
+UC05 ..> UC02 : <<include>>
+UC06 ..> UC02 : <<include>>
+UC07 ..> UC02 : <<include>>
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+' RF06 - Gerenciamento de Produtos
+
+left to right direction
+
+skinparam actorStyle awesome
+
+title RF06 - Gerenciamento de Produtos
+
+actor Visitante
+actor Administrador
+actor Fornecedor
+
+rectangle "Módulo de Produtos" {
+    usecase "Visualizar\nCatálogo" as UC06_1
+    usecase "Cadastrar\nProduto" as UC06_2
+    usecase "Editar\nProduto" as UC06_3
+    usecase "Excluir\nProduto" as UC06_4
+}
+
+Visitante --> UC06_1
+
+Administrador --> UC06_1
+Administrador --> UC06_2
+Administrador --> UC06_3
+Administrador --> UC06_4
+
+Fornecedor --> UC06_1
+Fornecedor --> UC06_2
+Fornecedor --> UC06_3
+Fornecedor --> UC06_4
+
+@enduml
