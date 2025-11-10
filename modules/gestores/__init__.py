@@ -2,7 +2,7 @@
 ============================================
 MÓDULO: GESTORES ESCOLARES
 ============================================
-RF04 - MANTER CADASTRO DE GESTOR ESCOLA
+RF04 - MANTER CADASTRO DE GESTOR ESCOLAR
 
 Exporta o blueprint de gestores para uso na aplicação principal.
 """

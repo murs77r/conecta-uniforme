@@ -1,13 +1,13 @@
 # Módulo de Pedidos
 
 ============================================
-RF07 - MANTER CADASTRO DE PEDIDO
+RF08 - MANTER CADASTRO DE PEDIDO
 ============================================
 Este módulo é responsável por:
-- RF07.1: Criar pedido
-- RF07.2: Apagar pedido
-- RF07.3: Editar pedido
-- RF07.4: Consultar pedido
+- RF08.1: Criar pedido
+- RF08.2: Apagar pedido
+- RF08.3: Editar pedido
+- RF08.4: Consultar pedidos
 
 Controla o processo de controle de pedidos no sistema.
 

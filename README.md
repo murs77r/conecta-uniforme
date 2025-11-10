@@ -23,24 +23,28 @@ O **Conecta Uniforme** é uma plataforma de e-commerce (marketplace) que conecta
 - Código válido por 24 horas
 - Sessões seguras
 
-### RF03 - Gerenciar Produtos e Vitrine
-- Cadastro de produtos (uniformes)
-- Vitrine com filtros automáticos (escola, categoria, fornecedor)
-- Controle de estoque
-- Categorias: Camisa, Calça, Short, Calçado, Acessório
-
-### RF04 - Gerenciar Escolas
+### RF03 - Gerenciar Escolas
 - CRUD completo de escolas
 - Gestão de fornecedores homologados
 - Validação de CNPJ
 - Gestores escolares
+
+### RF04 - Gerenciar Gestores Escolares
+- CRUD completo de gestores escolares
+- Vinculação com escolas
 
 ### RF05 - Gerenciar Fornecedores
 - CRUD completo de fornecedores
 - Vinculação com escolas (homologação)
 - Validação de CNPJ
 
-### RF06 - Gerenciar Pedidos
+### RF06 - Gerenciar Produtos
+- Cadastro de produtos (uniformes)
+- Vitrine com filtros automáticos (escola, categoria, fornecedor)
+- Controle de estoque
+- Categorias: Camisa, Calça, Short, Calçado, Acessório
+
+### RF08 - Gerenciar Pedidos
 - Carrinho de compras
 - Finalização de pedidos
 - Histórico de compras

@@ -75,84 +75,67 @@
 </div>
 {% endif %}
 
-<!-- Itens do Pedido Agrupados por Fornecedor -->
+<!-- Itens do Pedido -->
 <div class="card">
     <div class="card-header">
         <i class="bi bi-box-seam"></i> Itens do Pedido
     </div>
     <div class="card-body">
-        {% if itens_por_fornecedor %}
-            {% for fornecedor_id, grupo in itens_por_fornecedor.items() %}
-            <div class="mb-4">
-                <h5 class="border-bottom pb-2 mb-3">
-                    <i class="bi bi-truck"></i> {{ grupo.fornecedor_nome }}
-                    {% if grupo.fornecedor_razao_social %}
-                    <small class="text-muted">({{ grupo.fornecedor_razao_social }})</small>
-                    {% endif %}
-                    <span class="float-end text-success">Subtotal: R$ {{ "%.2f"|format(grupo.subtotal) }}</span>
-                </h5>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th class="text-center">Quantidade</th>
-                                <th class="text-end">Preço Unit.</th>
-                                <th class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in grupo.itens %}
-                            <tr>
-                                <td>
-                                    <strong>{{ item.produto_nome }}</strong>
-                                    {% if item.produto_descricao %}
-                                    <br><small class="text-muted">{{ item.produto_descricao }}</small>
-                                    {% endif %}
-                                </td>
-                                <td class="text-center">{{ item.quantidade }}</td>
-                                <td class="text-end">R$ {{ "%.2f"|format(item.preco_unitario) }}</td>
-                                <td class="text-end"><strong>R$ {{ "%.2f"|format(item.subtotal) }}</strong></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endfor %}
+        {% if itens %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-center">Quantidade</th>
+                        <th class="text-end">Preço Unit.</th>
+                        <th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.produto_nome }}</strong>
+                            {% if item.produto_descricao %}
+                            <br><small class="text-muted">{{ item.produto_descricao }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ item.quantidade }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(item.preco_unitario) }}</td>
+                        <td class="text-end"><strong>R$ {{ "%.2f"|format(item.subtotal) }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Total Geral:</th>
+                        <th class="text-end text-success">R$ {{ "%.2f"|format(pedido.valor_total) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
         {% else %}
         <p class="text-center text-muted">Nenhum item encontrado neste pedido.</p>
         {% endif %}
-        
-        <!-- Total Geral -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="alert alert-success mb-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Total Geral do Pedido:</h5>
-                        <h4 class="mb-0">R$ {{ "%.2f"|format(pedido.valor_total) }}</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
 <!-- Ações -->
-{% if pedido.status not in ['cancelado', 'entregue'] %}
 <div class="card mt-4">
     <div class="card-header">
         <i class="bi bi-gear"></i> Ações
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('pedidos.cancelar', id=pedido.id) }}" style="display:inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Confirma o cancelamento deste pedido?')">
-                <i class="bi bi-x-circle"></i> Cancelar Pedido
+        <a href="{{ url_for('pedidos.editar', id=pedido.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar Pedido
+        </a>
+        <form method="POST" action="{{ url_for('pedidos.apagar', id=pedido.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Confirma a exclusão deste pedido?')">
+                <i class="bi bi-trash"></i> Apagar Pedido
             </button>
         </form>
     </div>
 </div>
-{% endif %}
 
 {% endblock %}

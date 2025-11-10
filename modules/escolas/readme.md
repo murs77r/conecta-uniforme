@@ -1,168 +1,101 @@
-# Módulo de Escolas# Módulo de Escolas
+# Módulo de Escolas
+
+============================================
+RF03 - MANTER CADASTRO DE ESCOLA
+============================================
+Este módulo é responsável por:
+- RF03.1: Listar escolas
+- RF03.2: Criar escola
+- RF03.3: Visualizar escola
+- RF03.4: Editar escola
+- RF03.5: Apagar escola
+
+Controla o processo de cadastro e gestão de escolas no sistema.
+
+---
+
+## 📋 Visão Geral
+
+O módulo de **Escolas** gerencia instituições de ensino homologadas e seus gestores escolares no sistema Conecta Uniforme. Este módulo é fundamental para conectar escolas, fornecedores e responsáveis na plataforma, permitindo homologação de fornecedores e gestão de relacionamentos entre entidades.
+
+### Propósito
+- Cadastrar e gerenciar escolas homologadas
+- Gerenciar gestores escolares vinculados às escolas
+- Controlar homologação de fornecedores por escola
+- Visualizar informações detalhadas das instituições
+- Manter integridade referencial entre escolas e usuários
 
 
 
-========================================================================================
+---
 
-RF03 - MANTER CADASTRO DE ESCOLARF03 - MANTER CADASTRO DE ESCOLA
+## 🏗️ Arquitetura
 
-========================================================================================
-
-Este módulo é responsável por:Este módulo é responsável por:
-
-- RF03.1: Criar escola- RF03.1: Criar escola
-
-- RF03.2: Apagar escola- RF03.2: Apagar escola
-
-- RF03.3: Editar escola- RF03.3: Editar escola
-
-- RF03.4: Consultar escola- RF03.4: Consultar escola
-
-
-
-Controla o processo de cadastro e gestão de escolas no sistema.Controla o processo de controle de escolas no sistema.
-
-
-
-------
-
-
-
-## 📋 Visão Geral## 📋 Visão Geral
-
-
-
-O módulo de **Escolas** gerencia instituições de ensino cadastradas no sistema Conecta Uniforme. Este módulo é fundamental para conectar escolas com fornecedores homologados e responsáveis na plataforma.O módulo de **Escolas** gerencia instituições de ensino homologadas e seus gestores escolares no sistema Conecta Uniforme. Este módulo é fundamental para conectar escolas, fornecedores e responsáveis na plataforma, permitindo homologação de fornecedores e gestão de relacionamentos entre entidades.
-
-
-
-### Propósito### Propósito
-
-- Cadastrar e gerenciar escolas- Cadastrar e gerenciar escolas homologadas
-
-- Controlar homologação de fornecedores por escola- Gerenciar gestores escolares vinculados às escolas
-
-- Visualizar informações detalhadas das instituições- Controlar homologação de fornecedores por escola
-
-- Manter integridade referencial entre escolas e usuários- Manter integridade referencial entre escolas e usuários
-
-
-
-------
-
-
-
-## 🏗️ Arquitetura## 🏗️ Arquitetura
-
-
-
-### Padrões de Design Utilizados### Padrões de Design Utilizados
-
-- **Repository Pattern**: `EscolaRepository`- **Repository Pattern**: `EscolaRepository` e `GestorEscolarRepository`
-
-- **Service Layer**: `CRUDService`, `ValidacaoService`, `AutenticacaoService`- **Service Layer**: `CRUDService`, `ValidacaoService`, `AutenticacaoService`
-
-- **Blueprint Pattern**: Separação de rotas por contexto- **Aggregate Root**: Escola como entidade principal com agregados (gestores, fornecedores homologados)
-
+### Padrões de Design Utilizados
+- **Repository Pattern**: `EscolaRepository` e `GestorEscolarRepository`
+- **Service Layer**: `CRUDService`, `ValidacaoService`, `AutenticacaoService`
+- **Aggregate Root**: Escola como entidade principal com agregados (gestores, fornecedores homologados)
 - **Blueprint Pattern**: Separação de rotas por contexto (escolas, gestores, homologação)
 
 ### Camadas da Aplicação
-
-```### Camadas da Aplicação
-
-┌─────────────────────────────────────┐```
-
-│  Apresentação (module.py)           │┌─────────────────────────────────────┐
-
-│  - Blueprints de rotas              ││  Apresentação (module.py)           │
-
-└──────────────┬──────────────────────┘│  - Blueprints de rotas              │
-
-               ↓└──────────────┬──────────────────────┘
-
-┌─────────────────────────────────────┐               ↓
-
-│  Serviços (core/services.py)        │┌─────────────────────────────────────┐
-
-│  - CRUDService                      ││  Serviços (core/services.py)        │
-
-│  - ValidacaoService                 ││  - CRUDService                      │
-
-│  - AutenticacaoService              ││  - ValidacaoService                 │
-
-└──────────────┬──────────────────────┘│  - AutenticacaoService              │
-
-               ↓└──────────────┬──────────────────────┘
-
-┌─────────────────────────────────────┐               ↓
-
-│  Repositórios (core/repositories)   │┌─────────────────────────────────────┐
-
-│  - EscolaRepository                 ││  Repositórios (core/repositories)   │
-
-│  - UsuarioRepository                ││  - EscolaRepository                 │
-
-└──────────────┬──────────────────────┘│  - GestorEscolarRepository          │
-
-               ↓│  - FornecedorRepository             │
-
-┌─────────────────────────────────────┐└──────────────┬──────────────────────┘
-
-│  Database (core/database.py)        │               ↓
-
-└─────────────────────────────────────┘┌─────────────────────────────────────┐
-
-```│  Database (core/database.py)        │
-
+```
+┌─────────────────────────────────────┐
+│  Apresentação (module.py)           │
+│  - Blueprints de rotas              │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  Serviços (core/services.py)        │
+│  - CRUDService                      │
+│  - ValidacaoService                 │
+│  - AutenticacaoService              │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  Repositórios (core/repositories)   │
+│  - EscolaRepository                 │
+│  - GestorEscolarRepository          │
+│  - FornecedorRepository             │
+└──────────────┬──────────────────────┘
+               ↓
+┌─────────────────────────────────────┐
+│  Database (core/database.py)        │
 └─────────────────────────────────────┘
-
-### Diagrama de Relacionamentos```
-
 ```
 
-┌──────────────┐### Diagrama de Relacionamentos
-
-│   Usuario    │```
-
-└──────┬───────┘┌──────────────┐
-
-       │ 1│   Usuario    │
-
-       │└──────┬───────┘
-
-       │ 1       │ 1
-
-┌──────┴───────┐       N:M      ┌─────────────────┐       │
-
-│   Escola     │◄────────────────┤ Homologacao     │       │ N
-
-│              │                 │ - escola_id     │┌──────┴────────────────┐
-
-└──────────────┘                 │ - fornecedor_id ││  GestorEscolar        │
-
-                                 └─────────────────┘│  - usuario_id (FK)    │
-
-```│  - escola_id (FK)     │
-
-└──────┬────────────────┘
-
----       │ N
-
+### Diagrama de Relacionamentos
+```
+┌──────────────┐
+│   Usuario    │
+└──────┬───────┘
+       │ 1
        │
-
-## 🔌 Endpoints (Rotas)       │ 1
-
+       │ N
+┌──────┴────────────────┐
+│  GestorEscolar        │
+│  - usuario_id (FK)    │
+│  - escola_id (FK)     │
+└──────┬────────────────┘
+       │ N
+       │
+       │ 1
 ┌──────┴───────┐       N:M      ┌─────────────────┐
-
-### 1. `GET /escolas/listar`│   Escola     │◄────────────────┤ Homologacao     │
-
-**Descrição**: Lista todas as escolas cadastradas com filtros e paginação│              │                 │ - escola_id     │
-
+│   Escola     │◄────────────────┤ Homologacao     │
+│              │                 │ - escola_id     │
 └──────────────┘                 │ - fornecedor_id │
-
-**Autenticação**: Requerida (Todos os tipos de usuário autenticados)                                 └─────────────────┘
-
+                                 └─────────────────┘
 ```
+
+---
+
+## 🔌 Endpoints (Rotas)
+
+### ESCOLAS
+
+#### 1. `GET /escolas/listar`
+**Descrição**: Lista todas as escolas homologadas com filtros
+
+**Autenticação**: Requerida (Administrador ou Escola)
 
 **Parâmetros Query String**:
 

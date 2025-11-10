@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Escola - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-building"></i> Detalhes da Escola</h2>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+              </a>
+              <a href="{{ url_for('escolas.listar') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+              </a>
+            </div>
+        </div>
+        
+        <!-- Informações da Escola -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Informações Gerais</h5>
+                <dl class="row">
+                    <dt class="col-sm-3">Nome:</dt>
+                    <dd class="col-sm-9">{{ escola.nome }}</dd>
+                    
+                    <dt class="col-sm-3">Razão Social:</dt>
+                    <dd class="col-sm-9">{{ escola.razao_social }}</dd>
+                    
+                    <dt class="col-sm-3">CNPJ:</dt>
+                    <dd class="col-sm-9">{{ escola.cnpj }}</dd>
+                    
+                    <dt class="col-sm-3">Email:</dt>
+                    <dd class="col-sm-9">{{ escola.email }}</dd>
+                    
+                    <dt class="col-sm-3">Telefone:</dt>
+                    <dd class="col-sm-9">{{ escola.telefone or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Endereço:</dt>
+                    <dd class="col-sm-9">{{ escola.endereco or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Cidade/UF:</dt>
+                    <dd class="col-sm-9">{{ escola.cidade }}/{{ escola.estado }}</dd>
+                    
+                    <dt class="col-sm-3">CEP:</dt>
+                    <dd class="col-sm-9">{{ escola.cep or '-' }}</dd>
+                    
+                    <dt class="col-sm-3">Status:</dt>
+                    <dd class="col-sm-9">
+                        {% if escola.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Gestores Escolares -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Gestores Escolares</h5>
+                {% if gestores and gestores|length > 0 %}
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>CPF</th>
+                        <th>Tipo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for g in gestores %}
+                      <tr>
+                        <td>{{ g.nome }}</td>
+                        <td>{{ g.email or '-' }}</td>
+                        <td>{{ g.telefone or '-' }}</td>
+                        <td>{{ g.cpf or '-' }}</td>
+                        <td>{{ g.tipo_gestor or '-' }}</td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Nenhum gestor cadastrado.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

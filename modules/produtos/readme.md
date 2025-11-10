@@ -4,10 +4,10 @@
 RF06 - MANTER CADASTRO DE PRODUTO
 ============================================
 Este módulo é responsável por:
-- RF06.1: Criar produto
-- RF06.2: Apagar produto
+- RF06.1: Listar produtos
+- RF06.2: Criar produto
 - RF06.3: Editar produto
-- RF06.4: Consultar produto
+- RF06.4: Apagar produto
 
 Controla o processo de controle de produtos no sistema.
 

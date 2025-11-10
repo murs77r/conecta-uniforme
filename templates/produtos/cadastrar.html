@@ -34,22 +34,13 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="tamanho" class="form-label">Tamanho</label>
                             <input type="text" class="form-control" id="tamanho" name="tamanho" placeholder="P, M, G, etc">
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="cor" class="form-label">Cor</label>
                             <input type="text" class="form-control" id="cor" name="cor">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="escola_id" class="form-label">Escola</label>
-                            <select class="form-select" id="escola_id" name="escola_id">
-                                <option value="">Geral</option>
-                                {% for escola in escolas %}
-                                <option value="{{ escola.id }}">{{ escola.nome }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
                     </div>
                     
@@ -64,8 +55,12 @@
                         </div>
                     </div>
                     
+                    {% if fornecedor_id %}
+                    <input type="hidden" name="fornecedor_id" value="{{ fornecedor_id }}">
+                    {% endif %}
+                    
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('produtos.listar') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
                         <button type="submit" class="btn btn-success">

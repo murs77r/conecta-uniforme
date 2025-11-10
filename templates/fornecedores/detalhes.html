@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Fornecedor - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <!-- Cabeçalho -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-truck"></i> Detalhes do Fornecedor</h2>
+            <div>
+                <a href="{{ url_for('fornecedores.editar', id=fornecedor.id) }}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+                <a href="{{ url_for('fornecedores.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <!-- Status do Fornecedor -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">{{ fornecedor.nome }}</h4>
+                        <p class="text-muted mb-0">{{ fornecedor.razao_social }}</p>
+                    </div>
+                    <div>
+                        {% if fornecedor.ativo %}
+                        <span class="badge bg-success fs-6">
+                            <i class="bi bi-check-circle"></i> Ativo
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger fs-6">
+                            <i class="bi bi-x-circle"></i> Inativo
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Dados da Empresa -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-building"></i> Dados da Empresa
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;"><strong>CNPJ:</strong></td>
+                                    <td>{{ fornecedor.cnpj }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Razão Social:</strong></td>
+                                    <td>{{ fornecedor.razao_social }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Nome Fantasia:</strong></td>
+                                    <td>{{ fornecedor.nome }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados de Contato -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-telephone"></i> Dados de Contato
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;"><strong>Email:</strong></td>
+                                    <td>
+                                        <a href="mailto:{{ fornecedor.email }}">{{ fornecedor.email }}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Telefone:</strong></td>
+                                    <td>
+                                        {% if fornecedor.telefone %}
+                                        <a href="tel:{{ fornecedor.telefone }}">{{ fornecedor.telefone }}</a>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Endereço -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-geo-alt"></i> Endereço
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;"><strong>Endereço:</strong></td>
+                                    <td>{{ fornecedor.endereco or '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Cidade:</strong></td>
+                                    <td>{{ fornecedor.cidade or '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Estado:</strong></td>
+                                    <td>{{ fornecedor.estado or '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>CEP:</strong></td>
+                                    <td>{{ fornecedor.cep or '-' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações Adicionais -->
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-info-circle"></i> Informações Adicionais
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;"><strong>ID do Fornecedor:</strong></td>
+                                    <td>#{{ fornecedor.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Produtos Cadastrados:</strong></td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ total_produtos }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Data de Cadastro:</strong></td>
+                                    <td>
+                                        {% if fornecedor.data_criacao %}
+                                        {{ fornecedor.data_criacao.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><strong>Última Atualização:</strong></td>
+                                    <td>
+                                        {% if fornecedor.data_atualizacao %}
+                                        {{ fornecedor.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ações -->
+        {% if usuario_logado.tipo == 'administrador' %}
+        <div class="card border-danger mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i> Zona de Perigo
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    <strong>Excluir fornecedor:</strong> Esta ação é irreversível. 
+                    Você só pode excluir se não houver produtos vinculados a este fornecedor.
+                </p>
+                <form method="POST" action="{{ url_for('fornecedores.excluir', id=fornecedor.id) }}" style="display:inline;">
+                    <button type="submit" 
+                            class="btn btn-danger" 
+                            onclick="return confirm('ATENÇÃO: Tem certeza que deseja excluir este fornecedor?\n\nEsta ação não pode ser desfeita!')">
+                        <i class="bi bi-trash"></i> Excluir Fornecedor
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

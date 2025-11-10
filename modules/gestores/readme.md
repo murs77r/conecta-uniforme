@@ -1,13 +1,13 @@
 # Módulo de Gestores Escolares
 
 ============================================
-RF04 - MANTER CADASTRO DE GESTOR ESCOLA
+RF04 - MANTER CADASTRO DE GESTOR ESCOLAR
 ============================================
 Este módulo é responsável por:
-- RF04.1: Criar gestor escolar
-- RF04.2: Apagar gestor escolar
+- RF04.1: Listar gestores escolares
+- RF04.2: Criar gestor escolar
 - RF04.3: Editar gestor escolar
-- RF04.4: Consultar gestor escolar
+- RF04.4: Apagar gestor escolar
 
 Controla o processo de gestão de gestores escolares no sistema.
 

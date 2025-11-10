@@ -5,13 +5,15 @@
 {% block content %}
 <div class="row">
   <div class="col-md-10 offset-md-1">
+    <!-- Cabeçalho com botão de novo gestor -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="mb-0"><i class="bi bi-people"></i> Gestores - {{ escola.escola_nome }}</h2>
+      <h2 class="mb-0"><i class="bi bi-people"></i> Gestores - {{ escola.nome }}</h2>
       <a href="{{ url_for('gestores.cadastrar', escola_id=escola.id) }}" class="btn btn-primary">
         <i class="bi bi-person-plus"></i> Novo Gestor
       </a>
     </div>
 
+    <!-- Tabela de gestores -->
     <div class="card">
       <div class="card-body">
         {% if gestores %}
@@ -34,11 +36,17 @@
                 <td>{{ g.telefone or '-' }}</td>
                 <td>{{ g.tipo_gestor or '-' }}</td>
                 <td class="text-end">
-                  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestores.editar', id=g.id) }}">
+                  <!-- Botão Ver Detalhes -->
+                  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('gestores.detalhes', id=g.id) }}" title="Ver Detalhes">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <!-- Botão Editar -->
+                  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestores.editar', id=g.id) }}" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  <form method="POST" action="{{ url_for('gestores.excluir', id=g.id) }}" class="d-inline" onsubmit="return confirm('Excluir este gestor?');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <!-- Botão Excluir -->
+                  <form method="POST" action="{{ url_for('gestores.excluir', id=g.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este gestor?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
                       <i class="bi bi-trash"></i>
                     </button>
                   </form>
@@ -49,14 +57,15 @@
           </table>
         </div>
         {% else %}
-        <p class="text-muted mb-0">Nenhum gestor cadastrado.</p>
+        <p class="text-muted mb-0">Nenhum gestor cadastrado para esta escola.</p>
         {% endif %}
       </div>
     </div>
 
+    <!-- Botão voltar -->
     <div class="mt-3">
-      <a href="{{ url_for('escolas.visualizar', id=escola.id) }}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Voltar
+      <a href="{{ url_for('escolas.detalhes', id=escola.id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar para Escola
       </a>
     </div>
   </div>

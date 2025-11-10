@@ -4,10 +4,10 @@
 RF05 - MANTER CADASTRO DE FORNECEDOR
 ============================================
 Este módulo é responsável por:
-- RF05.1: Criar fornecedor
-- RF05.2: Apagar fornecedor
+- RF05.1: Listar fornecedores
+- RF05.2: Criar fornecedor
 - RF05.3: Editar fornecedor
-- RF05.4: Consultar fornecedor
+- RF05.4: Apagar fornecedor
 
 Controla o processo de controle de fornecedores no sistema.
 

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Produto - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-box-seam"></i> Detalhes do Produto</h2>
+            {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
+            <a href="{{ url_for('produtos.editar', id=produto.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>ID:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.id }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Nome:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.nome }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Descrição:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.descricao if produto.descricao else '-' }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Categoria:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {% if produto.categoria %}
+                        <span class="badge bg-secondary">{{ produto.categoria }}</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Tamanho:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.tamanho if produto.tamanho else '-' }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Cor:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.cor if produto.cor else '-' }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Preço:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <h4 class="text-primary mb-0">R$ {{ "%.2f"|format(produto.preco) }}</h4>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Estoque:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {{ produto.estoque }} unidades
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        {% if produto.ativo %}
+                        <span class="badge bg-success">Ativo</span>
+                        {% else %}
+                        <span class="badge bg-danger">Inativo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('produtos.listar') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    
+                    {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
+                    <button type="button" class="btn btn-danger" 
+                            onclick="confirmarExclusao({{ produto.id }}, '{{ produto.nome }}')">
+                        <i class="bi bi-trash"></i> Excluir
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form oculto para exclusão -->
+<form id="formExcluir" method="POST" style="display: none;">
+</form>
+
+<script>
+function confirmarExclusao(id, nome) {
+    if (confirm('Deseja realmente excluir o produto "' + nome + '"?')) {
+        var form = document.getElementById('formExcluir');
+        form.action = '/produtos/excluir/' + id;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

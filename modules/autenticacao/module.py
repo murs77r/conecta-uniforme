@@ -3,8 +3,8 @@
 RF02 - GERENCIAR AUTENTICAÇÃO E ACESSO
 ============================================
 Este módulo é responsável por:
-- RF02.1: Solicitar código de Acesso
-- RF02.2: Validar Código de Acesso
+- RF02.1: Solicitar código de acesso
+- RF02.2: Validar código de acesso
 
 Controla o processo de autenticação e autorização de usuários, garantindo segurança no acesso ao sistema.
 """

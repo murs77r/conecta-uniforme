@@ -12,46 +12,18 @@
     {% endif %}
 </div>
 
-<!-- Estatísticas -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card border-primary">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Total de Escolas</h6>
-                <h3 class="card-title text-primary">{{ estatisticas.total }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-success">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Escolas Ativas</h6>
-                <h3 class="card-title text-success">{{ estatisticas.ativos }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-danger">
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">Escolas Inativas</h6>
-                <h3 class="card-title text-danger">{{ estatisticas.inativos }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Filtros -->
+<!-- Filtros Básicos -->
 <div class="card mb-4">
     <div class="card-header">
         <i class="bi bi-funnel"></i> Filtros
     </div>
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <label class="form-label">Buscar</label>
                 <input type="text" name="busca" class="form-control" placeholder="Nome, razão social ou CNPJ" value="{{ filtro_busca }}">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="form-label">Status</label>
                 <select name="ativo" class="form-select">
                     <option value="">Todos</option>
@@ -60,28 +32,14 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Estado</label>
-                <select name="estado" class="form-select">
-                    <option value="">Todos</option>
-                    {% for e in estados %}
-                    <option value="{{ e.estado }}" {% if filtro_estado == e.estado %}selected{% endif %}>{{ e.estado }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Cidade</label>
-                <input type="text" name="cidade" class="form-control" placeholder="Cidade" value="{{ filtro_cidade }}">
-            </div>
-            <div class="col-md-2">
                 <label class="form-label">Por Página</label>
                 <select name="per_page" class="form-select">
                     <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10</option>
                     <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20</option>
                     <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50</option>
-                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100</option>
                 </select>
             </div>
-            <div class="col-md-6 d-flex align-items-end">
+            <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="bi bi-search"></i> Filtrar
                 </button>
@@ -93,7 +51,7 @@
     </div>
 </div>
 
-<!-- Lista -->
+<!-- Lista de Escolas -->
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
@@ -105,7 +63,7 @@
                         <th>CNPJ</th>
                         <th>Cidade/UF</th>
                         <th>Status</th>
-                        <th>Ações</th>
+                        <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -122,17 +80,17 @@
                             <span class="badge bg-danger">Inativo</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <a href="{{ url_for('escolas.visualizar', id=escola.id) }}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye"></i>
+                        <td class="text-end">
+                            <a href="{{ url_for('escolas.detalhes', id=escola.id) }}" class="btn btn-sm btn-info" title="Ver detalhes">
+                                <i class="bi bi-eye"></i> Ver
                             </a>
-                            <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-sm btn-warning">
-                                <i class="bi bi-pencil"></i>
+                            <a href="{{ url_for('escolas.editar', id=escola.id) }}" class="btn btn-sm btn-warning" title="Editar">
+                                <i class="bi bi-pencil"></i> Editar
                             </a>
                             {% if usuario_logado.tipo == 'administrador' %}
                             <form method="POST" action="{{ url_for('escolas.excluir', id=escola.id) }}" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Confirma exclusão?')">
-                                    <i class="bi bi-trash"></i>
+                                <button type="submit" class="btn btn-sm btn-danger" title="Apagar" onclick="return confirm('Confirma a exclusão desta escola?')">
+                                    <i class="bi bi-trash"></i> Apagar
                                 </button>
                             </form>
                             {% endif %}
@@ -152,7 +110,7 @@
         <nav aria-label="Navegação de páginas" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.prev_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) if pagination.has_prev else '#' }}">
+                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.prev_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo) if pagination.has_prev else '#' }}">
                         Anterior
                     </a>
                 </li>
@@ -160,7 +118,7 @@
                 {% for page_num in pagination.iter_pages() %}
                     {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('escolas.listar', page=page_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) }}">
+                            <a class="page-link" href="{{ url_for('escolas.listar', page=page_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo) }}">
                                 {{ page_num }}
                             </a>
                         </li>
@@ -172,7 +130,7 @@
                 {% endfor %}
                 
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.next_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo, estado=filtro_estado, cidade=filtro_cidade) if pagination.has_next else '#' }}">
+                    <a class="page-link" href="{{ url_for('escolas.listar', page=pagination.next_num, per_page=request.args.get('per_page', 20), busca=filtro_busca, ativo=filtro_ativo) if pagination.has_next else '#' }}">
                         Próxima
                     </a>
                 </li>

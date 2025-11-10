@@ -4,10 +4,11 @@
 RF01 - MANTER CADASTRO DE USUÁRIO
 ============================================
 Este módulo é responsável por:
-- RF01.1: Criar usuário
-- RF01.2: Apagar usuário
-- RF01.3: Editar Usuário
-- RF01.4: Consultar Usuário
+- RF01.1: Cadastrar usuário
+- RF01.2: Consultar usuários
+- RF01.3: Editar usuário
+- RF01.4: Excluir usuário
+- RF01.5: Visualizar logs de alterações
 
 Controla o processo de controle de usuários no sistema.
 

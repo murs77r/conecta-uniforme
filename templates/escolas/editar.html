@@ -10,6 +10,7 @@
         <div class="card">
             <div class="card-body">
                 <form method="POST">
+                    <!-- Dados de Acesso (Login) -->
                     <h5 class="mb-3">Dados de Acesso</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -25,7 +26,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="telefone" class="form-label">Telefone</label>
-                            <input type="text" class="form-control" id="telefone" name="telefone" value="{{ escola.telefone or '' }}">
+                            <input type="text" class="form-control" id="telefone" name="telefone" value="{{ escola.telefone or '' }}" placeholder="(00) 00000-0000">
                         </div>
                         {% if usuario_logado.tipo == 'administrador' %}
                         <div class="col-md-6 mb-3">
@@ -39,11 +40,12 @@
                     
                     <hr class="my-4">
                     
+                    <!-- Dados da Instituição -->
                     <h5 class="mb-3">Dados da Instituição</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="cnpj" class="form-label">CNPJ *</label>
-                            <input type="text" class="form-control" id="cnpj" name="cnpj" value="{{ escola.cnpj }}" required>
+                            <input type="text" class="form-control" id="cnpj" name="cnpj" value="{{ escola.cnpj }}" required placeholder="00.000.000/0000-00">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="razao_social" class="form-label">Razão Social *</label>
@@ -53,7 +55,7 @@
                     
                     <div class="mb-3">
                         <label for="endereco" class="form-label">Endereço</label>
-                        <input type="text" class="form-control" id="endereco" name="endereco" value="{{ escola.endereco or '' }}">
+                        <input type="text" class="form-control" id="endereco" name="endereco" value="{{ escola.endereco or '' }}" placeholder="Rua, número, complemento">
                     </div>
                     
                     <div class="row">
@@ -63,28 +65,31 @@
                         </div>
                         <div class="col-md-2 mb-3">
                             <label for="estado" class="form-label">UF</label>
-                            <input type="text" class="form-control" id="estado" name="estado" value="{{ escola.estado or '' }}" maxlength="2">
+                            <input type="text" class="form-control" id="estado" name="estado" value="{{ escola.estado or '' }}" maxlength="2" placeholder="SP">
                         </div>
                         <div class="col-md-5 mb-3">
                             <label for="cep" class="form-label">CEP</label>
-                            <input type="text" class="form-control" id="cep" name="cep" value="{{ escola.cep or '' }}">
+                            <input type="text" class="form-control" id="cep" name="cep" value="{{ escola.cep or '' }}" placeholder="00000-000">
                         </div>
                     </div>
 
                     <hr class="my-4">
+                    
+                    <!-- Gestores Escolares (Opcional) -->
                     <h5 class="mb-3">Gestores Escolares</h5>
-                    <p class="text-muted">Gerencie os gestores responsáveis.</p>
+                    <p class="text-muted">Gerencie os gestores responsáveis pela escola.</p>
                     <div id="gestoresLista" class="vstack gap-3"></div>
                     <button type="button" class="btn btn-outline-primary mt-2" id="addGestor">
                         <i class="bi bi-person-plus"></i> Adicionar Gestor
                     </button>
                     
+                    <!-- Botões de Ação -->
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{{ url_for('escolas.listar') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Voltar
+                            <i class="bi bi-arrow-left"></i> Cancelar
                         </a>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle"></i> Salvar
+                            <i class="bi bi-check-circle"></i> Salvar Alterações
                         </button>
                     </div>
                 </form>
@@ -96,10 +101,13 @@
 
 {% block scripts %}
 <script>
+// Script para adicionar/remover gestores dinamicamente
 (function(){
   const lista = document.getElementById('gestoresLista');
   const btn = document.getElementById('addGestor');
   let idx = 0;
+  
+  // Template de card de gestor
   function gestorCard(i){
     return `
     <div class="card border" data-idx="${i}">
@@ -119,13 +127,13 @@
           </div>
           <div class="col-md-4">
             <label class="form-label">CPF</label>
-            <input type="text" class="form-control" name="gestores[${i}][cpf]" id="cpf">
+            <input type="text" class="form-control" name="gestores[${i}][cpf]">
           </div>
           <div class="col-md-4">
             <label class="form-label">Tipo de Gestor</label>
             <input type="text" class="form-control" name="gestores[${i}][tipo_gestor]" placeholder="Diretor, Coordenador, Financeiro...">
           </div>
-          <div class="col-md-12 text-end">
+          <div class="col-md-4 text-end">
             <button type="button" class="btn btn-outline-danger btn-sm remover">
               <i class="bi bi-trash"></i> Remover
             </button>
@@ -134,9 +142,13 @@
       </div>
     </div>`;
   }
+  
+  // Adicionar novo gestor
   btn.addEventListener('click', function(){
     lista.insertAdjacentHTML('beforeend', gestorCard(idx++));
   });
+  
+  // Remover gestor
   lista.addEventListener('click', function(e){
     if(e.target.closest('.remover')){
       e.target.closest('.card').remove();

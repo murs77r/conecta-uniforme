@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Pedido #{{ pedido.id }} - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-pencil"></i> Editar Pedido #{{ pedido.id }}</h2>
+    <a href="{{ url_for('pedidos.listar') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="pendente" {% if pedido.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                        <option value="pago" {% if pedido.status == 'pago' %}selected{% endif %}>Pago</option>
+                        <option value="enviado" {% if pedido.status == 'enviado' %}selected{% endif %}>Enviado</option>
+                        <option value="entregue" {% if pedido.status == 'entregue' %}selected{% endif %}>Entregue</option>
+                        <option value="cancelado" {% if pedido.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="valor_total" class="form-label">Valor Total</label>
+                    <input type="number" class="form-control" id="valor_total" name="valor_total" step="0.01" value="{{ pedido.valor_total }}" required>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>Informações do Pedido:</strong><br>
+                Responsável ID: {{ pedido.responsavel_id }}<br>
+                Escola ID: {{ pedido.escola_id or 'N/A' }}<br>
+                Data: {{ pedido.data_pedido.strftime('%d/%m/%Y %H:%M') if pedido.data_pedido else 'N/A' }}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('pedidos.listar') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-check-circle"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Produtos - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-box-seam"></i> Produtos</h2>
+    {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
+    <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Produto
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros Básicos -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="busca" class="form-control" 
+                       placeholder="Nome ou descrição" value="{{ filtro_busca }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="ativo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="true" {% if filtro_ativo == 'true' %}selected{% endif %}>Ativo</option>
+                    <option value="false" {% if filtro_ativo == 'false' %}selected{% endif %}>Inativo</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <a href="{{ url_for('produtos.listar') }}" class="btn btn-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Produtos -->
+<div class="card">
+    <div class="card-body">
+        {% if produtos %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Preço</th>
+                        <th>Estoque</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr>
+                        <td>{{ produto.id }}</td>
+                        <td>{{ produto.nome }}</td>
+                        <td>
+                            {% if produto.categoria %}
+                            <span class="badge bg-secondary">{{ produto.categoria }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>R$ {{ "%.2f"|format(produto.preco) }}</td>
+                        <td>{{ produto.estoque }}</td>
+                        <td>
+                            {% if produto.ativo %}
+                            <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('produtos.detalhes', id=produto.id) }}" 
+                                   class="btn btn-info" title="Ver Detalhes">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
+                                <a href="{{ url_for('produtos.editar', id=produto.id) }}" 
+                                   class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger" 
+                                        onclick="confirmarExclusao({{ produto.id }}, '{{ produto.nome }}')" 
+                                        title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        {% if paginacao.pages > 1 %}
+        <nav aria-label="Navegação de página">
+            <ul class="pagination justify-content-center mt-3">
+                <li class="page-item {% if not paginacao.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="?pagina={{ paginacao.prev_num }}&busca={{ filtro_busca }}&ativo={{ filtro_ativo }}">
+                        Anterior
+                    </a>
+                </li>
+                
+                {% for page_num in paginacao.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == paginacao.page %}active{% endif %}">
+                            <a class="page-link" href="?pagina={{ page_num }}&busca={{ filtro_busca }}&ativo={{ filtro_ativo }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not paginacao.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="?pagina={{ paginacao.next_num }}&busca={{ filtro_busca }}&ativo={{ filtro_ativo }}">
+                        Próxima
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> Nenhum produto encontrado.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<form id="formExcluir" method="POST" style="display: none;">
+    <input type="hidden" name="id" id="idExcluir">
+</form>
+
+<script>
+function confirmarExclusao(id, nome) {
+    if (confirm('Deseja realmente excluir o produto "' + nome + '"?')) {
+        var form = document.getElementById('formExcluir');
+        form.action = '/produtos/excluir/' + id;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
