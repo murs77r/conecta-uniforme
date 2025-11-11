@@ -8,21 +8,48 @@ skinparam actorStyle awesome
 title RF03 - Gerenciamento de Escolas
 
 actor Administrador
+
 actor Escola
+
+actor Fornecedor
+
+actor Responsável
 
 rectangle "Módulo de Escolas" {
     usecase "Cadastrar\nEscola" as UC03_1
     usecase "Listar\nEscolas" as UC03_2
-    usecase "Editar\nEscola" as UC03_3
-    usecase "Excluir\nEscola" as UC03_4
+    usecase "Visualizar\nDetalhes" as UC03_3
+    usecase "Editar\nEscola" as UC03_4
+    usecase "Excluir\nEscola" as UC03_5
 }
 
+' Administrador - controle total
 Administrador --> UC03_1
 Administrador --> UC03_2
 Administrador --> UC03_3
 Administrador --> UC03_4
+Administrador --> UC03_5
 
+' Escola - autogestão
 Escola --> UC03_2
 Escola --> UC03_3
+Escola --> UC03_4
+note on link
+  Apenas seus próprios dados
+end note
+
+' Fornecedor - visualiza para homologação
+Fornecedor --> UC03_2
+
+' Responsável - visualiza para pedidos
+Responsável --> UC03_2
+
+note right of UC03_5
+  Bloqueada se houver:
+  - Fornecedores homologados (RF05)
+  - Produtos vinculados (RF06)
+  - Pedidos realizados (RF07)
+  - Gestores cadastrados (RF04)
+end note
 
 @enduml

@@ -5,10 +5,13 @@ left to right direction
 
 skinparam actorStyle awesome
 
-title RF02 - Autenticação e Acesso
+title Diagrama de Caso de Uso\nRF02 - Autenticação e Acesso
 
 actor Visitante
+
 actor "Usuário\nAutenticado" as Usuario
+
+actor "Servidor SMTP" as SMTP <<external>>
 
 rectangle "Módulo de Autenticação" {
     usecase "Solicitar Código\nde Acesso" as UC02_1
@@ -16,9 +19,23 @@ rectangle "Módulo de Autenticação" {
     usecase "Realizar Logout" as UC02_3
 }
 
+' Visitante
 Visitante --> UC02_1
+note right on link
+  Usuários com múltiplos perfis
+  precisam selecionar um perfil
+  antes de solicitar o código
+end note
 Visitante --> UC02_2
 
+' Usuário Autenticado
 Usuario --> UC02_3
+
+' SMTP - sistema externo
+UC02_1 --> SMTP : <<envia email>>
+note on link
+  Envia código de acesso
+  por e-mail
+end note
 
 @enduml

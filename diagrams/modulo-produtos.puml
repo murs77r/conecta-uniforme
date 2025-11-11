@@ -8,26 +8,54 @@ skinparam actorStyle awesome
 title RF06 - Gerenciamento de Produtos
 
 actor Visitante
+
 actor Administrador
+
 actor Fornecedor
+
+actor Escola
+
+actor Responsável
 
 rectangle "Módulo de Produtos" {
     usecase "Visualizar\nCatálogo" as UC06_1
     usecase "Cadastrar\nProduto" as UC06_2
-    usecase "Editar\nProduto" as UC06_3
-    usecase "Excluir\nProduto" as UC06_4
+    usecase "Visualizar\nDetalhes" as UC06_3
+    usecase "Editar\nProduto" as UC06_4
+    usecase "Excluir\nProduto" as UC06_5
 }
 
+' Visitante - visualização pública
 Visitante --> UC06_1
 
+' Administrador - controle total
 Administrador --> UC06_1
 Administrador --> UC06_2
 Administrador --> UC06_3
 Administrador --> UC06_4
+Administrador --> UC06_5
 
+' Fornecedor - gerencia seus produtos
 Fornecedor --> UC06_1
 Fornecedor --> UC06_2
 Fornecedor --> UC06_3
 Fornecedor --> UC06_4
+Fornecedor --> UC06_5
+note on link
+  Apenas produtos próprios
+end note
+
+' Escola - visualiza catálogo
+Escola --> UC06_1
+Escola --> UC06_3
+
+' Responsável - visualiza para pedidos
+Responsável --> UC06_1
+Responsável --> UC06_3
+
+note right of UC06_5
+  Bloqueada se houver:
+  - Itens em pedidos (RF07)
+end note
 
 @enduml

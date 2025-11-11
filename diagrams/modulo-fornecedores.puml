@@ -8,21 +8,41 @@ skinparam actorStyle awesome
 title RF05 - Gerenciamento de Fornecedores
 
 actor Administrador
+
 actor Fornecedor
+
+actor Escola
 
 rectangle "Módulo de Fornecedores" {
     usecase "Cadastrar\nFornecedor" as UC05_1
     usecase "Listar\nFornecedores" as UC05_2
-    usecase "Editar\nFornecedor" as UC05_3
-    usecase "Excluir\nFornecedor" as UC05_4
+    usecase "Visualizar\nDetalhes" as UC05_3
+    usecase "Editar\nFornecedor" as UC05_4
+    usecase "Excluir\nFornecedor" as UC05_5
 }
 
+' Administrador - controle total
 Administrador --> UC05_1
 Administrador --> UC05_2
 Administrador --> UC05_3
 Administrador --> UC05_4
+Administrador --> UC05_5
 
+' Fornecedor - autogestão
 Fornecedor --> UC05_2
 Fornecedor --> UC05_3
+Fornecedor --> UC05_4
+note on link
+  Apenas seus próprios dados
+end note
+
+' Escola - visualiza para homologação
+Escola --> UC05_2
+
+note right of UC05_5
+  Bloqueada se houver:
+  - Homologações com escolas (RF03)
+  - Produtos cadastrados (RF06)
+end note
 
 @enduml

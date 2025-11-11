@@ -9,18 +9,40 @@ title RF01 - Gerenciamento de Usuários
 
 actor Administrador
 
+actor Usuário
+
 rectangle "Módulo de Usuários" {
     usecase "Cadastrar\nUsuário" as UC01_1
     usecase "Listar\nUsuários" as UC01_2
-    usecase "Editar\nUsuário" as UC01_3
-    usecase "Excluir\nUsuário" as UC01_4
-    usecase "Visualizar Logs" as UC01_5
+    usecase "Visualizar\nDetalhes" as UC01_3
+    usecase "Editar\nUsuário" as UC01_4
+    usecase "Excluir\nUsuário" as UC01_5
+    usecase "Visualizar\nLogs" as UC01_6
+    usecase "Visualizar\nPróprios Dados" as UC01_7
+    usecase "Editar\nPróprios Dados" as UC01_8
 }
 
+' Administrador - controle total
 Administrador --> UC01_1
 Administrador --> UC01_2
 Administrador --> UC01_3
 Administrador --> UC01_4
 Administrador --> UC01_5
+Administrador --> UC01_6
+
+' Usuário - autogestão limitada
+Usuário --> UC01_7
+Usuário --> UC01_8
+Usuário --> UC01_6
+note on link
+  Visualiza apenas próprios logs
+end note
+
+note right of UC01_5
+  Bloqueada se houver:
+  - Escolas vinculadas (RF03)
+  - Fornecedores vinculados (RF05)
+  - Pedidos realizados (RF07)
+end note
 
 @enduml
