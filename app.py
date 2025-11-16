@@ -168,7 +168,8 @@ def favicon():
     Evita logs de erro 404 repetidos em navegadores que buscam /favicon.ico
     automaticamente na raiz do domínio.
     """
-    return redirect(url_for('static', filename='favicon.svg'))
+    # Serve o favicon presente na pasta static (PNG por padrão neste projeto)
+    return redirect(url_for('static', filename='favicon.png'))
 
 
 # ============================================

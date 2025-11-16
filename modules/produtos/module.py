@@ -316,3 +316,29 @@ def detalhes(id):
     # Renderiza template de detalhes
     return render_template('produtos/detalhes.html', produto=produto)
 
+
+# ============================================
+# ROTA: VITRINE PÚBLICA DE PRODUTOS
+# ============================================
+@produtos_bp.route('/vitrine')
+def vitrine():
+    """
+    Rota pública que lista produtos ativos disponíveis na vitrine.
+
+    Aceita parâmetros de query string para filtro:
+    - categoria
+    - escola
+    - busca (nome do produto)
+    """
+    usuario_logado = auth_service.verificar_sessao()
+
+    filtros = {
+        'categoria': request.args.get('categoria'),
+        'escola': request.args.get('escola'),
+        'busca': request.args.get('busca')
+    }
+
+    produtos = produto_repo.listar_vitrine(filtros)
+
+    return render_template('produtos/vitrine.html', produtos=produtos, usuario_logado=usuario_logado)
+

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Vitrine - Conecta Uniforme{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shop"></i> Vitrine</h2>
+    <form class="d-flex" method="GET" action="{{ url_for('produtos.vitrine') }}">
+        <input name="busca" class="form-control form-control-sm me-2" type="search" placeholder="Buscar produto" aria-label="Buscar" value="{{ request.args.get('busca', '') }}">
+        <select name="categoria" class="form-select form-select-sm me-2">
+            <option value="">Todas</option>
+            <option value="Camisa" {% if request.args.get('categoria') == 'Camisa' %}selected{% endif %}>Camisa</option>
+            <option value="Calça" {% if request.args.get('categoria') == 'Calça' %}selected{% endif %}>Calça</option>
+            <option value="Bermuda" {% if request.args.get('categoria') == 'Bermuda' %}selected{% endif %}>Bermuda</option>
+            <option value="Saia" {% if request.args.get('categoria') == 'Saia' %}selected{% endif %}>Saia</option>
+            <option value="Agasalho" {% if request.args.get('categoria') == 'Agasalho' %}selected{% endif %}>Agasalho</option>
+        </select>
+        <button class="btn btn-outline-primary btn-sm" type="submit">Filtrar</button>
+    </form>
+</div>
+
+{% if produtos %}
+<div class="row">
+    {% for produto in produtos %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ produto.nome }}</h5>
+                <p class="card-text flex-grow-1">{{ produto.descricao if produto.descricao else '-' }}</p>
+                <p class="mb-1"><strong>Fornecedor:</strong> {{ produto.fornecedor_nome }}</p>
+                <p class="mb-3">
+                    <span class="badge bg-secondary">{{ produto.categoria if produto.categoria else '-' }}</span>
+                    {% if not produto.ativo %}
+                    <span class="badge bg-danger">Inativo</span>
+                    {% endif %}
+                </p>
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold text-primary">R$ {{ "%.2f"|format(produto.preco) }}</span>
+                    </div>
+                    <div class="btn-group">
+                        <a href="{{ url_for('produtos.detalhes', id=produto.id) }}" class="btn btn-sm btn-outline-info">Detalhes</a>
+                        <a href="{{ url_for('produtos.detalhes', id=produto.id) }}" class="btn btn-sm btn-primary">Comprar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="bi bi-info-circle"></i> Nenhum produto disponível na vitrine.
+    {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
+    <div class="mt-3">
+        <a href="{{ url_for('produtos.cadastrar') }}" class="btn btn-primary">Cadastrar Produto</a>
+    </div>
+    {% endif %}
+    
+</div>
+{% endif %}
+{% endblock %}
