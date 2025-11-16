@@ -189,3 +189,32 @@ class Database:
         """
         query = f"SELECT * FROM {tabela} WHERE id = %s"
         return Database.executar(query, (id,), fetchone=True)
+
+    @staticmethod
+    def transaction(func):
+        """
+        Executa operações com uma transação única usando a mesma conexão.
+        `func` é uma função que recebe um cursor e pode executar múltiplas SQLs.
+        Retorna o resultado de `func` (ou None em caso de erro).
+        """
+        conexao = None
+        cursor = None
+        try:
+            conexao = Database.conectar()
+            if not conexao:
+                return None
+            cursor = conexao.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            conexao.autocommit = False
+            result = func(cursor)
+            conexao.commit()
+            return result
+        except Exception as e:
+            print(f"Erro em transação: {e}")
+            if conexao:
+                conexao.rollback()
+            return None
+        finally:
+            if cursor:
+                cursor.close()
+            if conexao:
+                conexao.close()

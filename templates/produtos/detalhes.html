@@ -106,10 +106,21 @@
                 </div>
                 
                 <div class="d-flex justify-content-between mt-4">
-                    <a href="{{ url_for('produtos.listar') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('produtos.vitrine') }}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Voltar
                     </a>
                     
+                    {# Botão Comprar: visível apenas para responsáveis autenticados #}
+                    {% if usuario_logado and usuario_logado.tipo == 'responsavel' %}
+                    <form method="POST" action="{{ url_for('pedidos.adicionar_item') }}" style="display:inline;" class="d-flex align-items-center">
+                        <input type="hidden" name="produto_id" value="{{ produto.id }}">
+                        <input type="number" name="quantidade" min="1" value="1" class="form-control form-control-sm me-2" style="width:95px;">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-cart-plus"></i> Comprar
+                        </button>
+                    </form>
+                    {% endif %}
+
                     {% if usuario_logado and usuario_logado.tipo in ['administrador', 'fornecedor'] %}
                     <button type="button" class="btn btn-danger" 
                             onclick="confirmarExclusao({{ produto.id }}, '{{ produto.nome }}')">

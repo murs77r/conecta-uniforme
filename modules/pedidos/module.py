@@ -20,60 +20,11 @@ from core.database import Database
 pedidos_bp = Blueprint('pedidos', __name__, url_prefix='/pedidos')
 pedido_repo = PedidoRepository()
 responsavel_repo = ResponsavelRepository()
-auth_service = AutenticacaoService()
-
-
-# ============================================
-# RF07.4 - CONSULTAR PEDIDOS
-# ============================================
-
-@pedidos_bp.route('/')
-@pedidos_bp.route('/listar')
-def listar():
-    """Lista pedidos"""
-    usuario_logado = auth_service.verificar_sessao()
-    if not usuario_logado:
-        flash('Faça login para continuar.', 'warning')
-        return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    # Base query
-    query = """
-        SELECT p.*, 
-               r.usuario_id, 
-               u.nome as responsavel_nome,
-               e.id as escola_id,
-               e_usr.nome as escola_nome
-        FROM pedidos p
-        JOIN responsaveis r ON p.responsavel_id = r.id
-        JOIN usuarios u ON r.usuario_id = u.id
-        LEFT JOIN escolas e ON p.escola_id = e.id
-        LEFT JOIN usuarios e_usr ON e.usuario_id = e_usr.id
-        WHERE p.status != 'carrinho'
-    """
-    params = []
-    
-    # Se for responsável, mostra apenas seus pedidos
-    if usuario_logado['tipo'] == 'responsavel':
-        responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
-        if responsavel:
-            query += " AND p.responsavel_id = %s"
-            params.append(responsavel['id'])
-        else:
-            pedidos = []
-            return render_template('pedidos/listar.html', pedidos=pedidos)
-    
-    # Ordenação
-    query += " ORDER BY p.data_pedido DESC"
-    
-    # Executar query
-    pedidos = Database.executar(query, tuple(params) if params else None, fetchall=True) or []
-    
-    return render_template('pedidos/listar.html', pedidos=pedidos)
-
 
 # ============================================
 # RF07.1 - CRIAR PEDIDO
 # ============================================
+auth_service = AutenticacaoService()
 
 @pedidos_bp.route('/criar', methods=['GET', 'POST'])
 def criar():
@@ -82,15 +33,11 @@ def criar():
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
-    
-    # ==================================================================
-    # CORREÇÃO DE SEGURANÇA: Apenas administradores podem criar pedidos
-    # manualmente por esta rota.
-    # ==================================================================
+
     if usuario_logado['tipo'] != 'administrador':
         flash('Acesso negado. Apenas administradores podem criar pedidos manualmente.', 'danger')
         return redirect(url_for('home'))
-    
+
     if request.method == 'POST':
         dados = {
             'responsavel_id': request.form.get('responsavel_id'),
@@ -98,7 +45,7 @@ def criar():
             'status': request.form.get('status', 'pendente'),
             'valor_total': request.form.get('valor_total', 0)
         }
-        
+
         pedido_id = Database.inserir('pedidos', dados)
         if pedido_id:
             LogService.registrar(usuario_logado['id'], 'pedidos', pedido_id, 'INSERT', descricao='Pedido criado')
@@ -106,7 +53,7 @@ def criar():
             return redirect(url_for('pedidos.listar'))
         else:
             flash('Erro ao criar pedido.', 'danger')
-    
+
     # GET - Exibe formulário
     return render_template('pedidos/criar.html')
 
@@ -187,6 +134,95 @@ def finalizar(id):
         flash('Erro ao finalizar pedido.', 'danger')
 
     return redirect(url_for('pedidos.listar'))
+
+
+@pedidos_bp.route('/adicionar_item', methods=['POST'])
+def adicionar_item():
+    """Adiciona um produto ao carrinho do responsável logado.
+
+    Fluxo:
+    - Verifica sessão e tipo: apenas 'responsavel' pode adicionar itens ao carrinho
+    - Valida existencia do produto, estoque e status ativo
+    - Encontra ou cria um pedido com status 'carrinho' para o responsavel
+    - Se o item já existe no carrinho: atualiza quantidade e subtotal
+    - Caso contrário: insere novo item
+    - Atualiza o valor_total do pedido
+    """
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    if usuario_logado['tipo'] != 'responsavel':
+        flash('Apenas responsáveis podem adicionar itens ao carrinho.', 'danger')
+        return redirect(url_for('home'))
+
+    produto_id = request.form.get('produto_id')
+    quantidade = int(request.form.get('quantidade', 1))
+
+    # Valida produto
+    produto = Database.executar('SELECT * FROM produtos WHERE id = %s', (produto_id,), fetchone=True)
+    if not produto:
+        flash('Produto não encontrado.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+
+    if not produto.get('ativo'):
+        flash('Produto inativo.', 'warning')
+        return redirect(url_for('produtos.vitrine'))
+
+    if produto.get('estoque', 0) < quantidade:
+        flash('Quantidade solicitada maior que o estoque disponível.', 'warning')
+        return redirect(url_for('produtos.vitrine'))
+
+    responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+    if not responsavel:
+        flash('Responsável não encontrado.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+
+
+    preco_unitario = float(produto['preco'])
+
+    # Realiza todas as operações em uma transação atômica:
+    def operacoes_cart(cursor):
+        # Busca carrinho existente
+        cursor.execute("SELECT id FROM pedidos WHERE responsavel_id = %s AND status = 'carrinho' ORDER BY data_pedido DESC LIMIT 1", (responsavel['id'],))
+        carrinho_row = cursor.fetchone()
+        if carrinho_row and carrinho_row.get('id'):
+            pedido_id_local = carrinho_row['id']
+        else:
+            # Cria novo pedido
+            cursor.execute("INSERT INTO pedidos (responsavel_id, escola_id, status, valor_total) VALUES (%s,%s,%s,%s) RETURNING id",
+                           (responsavel['id'], produto.get('escola_id'), 'carrinho', 0))
+            pedido_id_local = cursor.fetchone()['id']
+
+        # Verifica se item já existe
+        cursor.execute("SELECT * FROM itens_pedido WHERE pedido_id = %s AND produto_id = %s", (pedido_id_local, produto_id))
+        item_existente_local = cursor.fetchone()
+
+        if item_existente_local:
+            nova_quantidade_local = int(item_existente_local['quantidade']) + quantidade
+            novo_subtotal_local = round(preco_unitario * nova_quantidade_local, 2)
+            cursor.execute("UPDATE itens_pedido SET quantidade = %s, subtotal = %s WHERE id = %s",
+                           (nova_quantidade_local, novo_subtotal_local, item_existente_local['id']))
+        else:
+            novo_subtotal_local = round(preco_unitario * quantidade, 2)
+            cursor.execute("INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario, subtotal) VALUES (%s,%s,%s,%s,%s)",
+                           (pedido_id_local, produto_id, quantidade, preco_unitario, novo_subtotal_local))
+
+        # Atualiza valor_total do pedido
+        cursor.execute("SELECT COALESCE(SUM(subtotal),0) as total FROM itens_pedido WHERE pedido_id = %s", (pedido_id_local,))
+        total_row_local = cursor.fetchone()
+        total_local = float(total_row_local.get('total', 0)) if total_row_local and isinstance(total_row_local, dict) else 0
+        cursor.execute("UPDATE pedidos SET valor_total = %s, data_atualizacao = CURRENT_TIMESTAMP WHERE id = %s", (total_local, pedido_id_local))
+        return pedido_id_local
+
+    pedido_id = Database.transaction(operacoes_cart)
+    if not pedido_id:
+        flash('Erro ao criar/atualizar carrinho.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+    return redirect(url_for('pedidos.ver_carrinho'))
+
+    return redirect(url_for('pedidos.ver_carrinho'))
 
 
 # ============================================
@@ -297,14 +333,13 @@ def apagar(id):
     if total_itens > 0:
         # Administradores podem apagar pedidos com itens (remove itens primeiro)
         if usuario_logado['tipo'] == 'administrador':
-            # Tenta apagar os itens do pedido primeiro
-            delete_itens = Database.executar("DELETE FROM itens_pedido WHERE pedido_id = %s", (id,), commit=True)
-            if delete_itens is None:
-                flash('Erro ao apagar itens do pedido.', 'danger')
-                return redirect(url_for('pedidos.listar'))
-            # Prossegue para apagar o pedido
-            query = "DELETE FROM pedidos WHERE id = %s"
-            if Database.executar(query, (id,), commit=True):
+            # Tenta apagar os itens do pedido e em seguida o pedido dentro de uma transação
+            def operacao_apagar(cursor):
+                cursor.execute("DELETE FROM itens_pedido WHERE pedido_id = %s", (id,))
+                cursor.execute("DELETE FROM pedidos WHERE id = %s", (id,))
+                return True
+
+            if Database.transaction(operacao_apagar):
                 LogService.registrar(usuario_logado['id'], 'pedidos', id, 'DELETE', descricao='Pedido apagado (com itens)')
                 flash('Pedido apagado com sucesso (itens removidos)!', 'success')
             else:
@@ -382,3 +417,194 @@ def detalhes(id):
     itens = Database.executar(query_itens, (id,), fetchall=True) or []
     
     return render_template('pedidos/detalhes.html', pedido=pedido, itens=itens)
+
+
+# ============================================
+# COMPLEMENTAR/OPCIONAL - Gerenciar itens do carrinho
+# ============================================
+
+def adicionar_item_complementar():
+    """Complementar: Adiciona um produto ao carrinho do responsável logado."""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    if usuario_logado['tipo'] != 'responsavel':
+        flash('Apenas responsáveis podem adicionar itens ao carrinho.', 'danger')
+        return redirect(url_for('home'))
+
+    produto_id = request.form.get('produto_id')
+    quantidade = int(request.form.get('quantidade', 1))
+
+    # Valida produto
+    produto = Database.executar('SELECT * FROM produtos WHERE id = %s', (produto_id,), fetchone=True)
+    if not produto:
+        flash('Produto não encontrado.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+
+    if not produto.get('ativo'):
+        flash('Produto inativo.', 'warning')
+        return redirect(url_for('produtos.vitrine'))
+
+    if produto.get('estoque', 0) < quantidade:
+        flash('Quantidade solicitada maior que o estoque disponível.', 'warning')
+        return redirect(url_for('produtos.vitrine'))
+
+    responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+    if not responsavel:
+        flash('Responsável não encontrado.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+
+    preco_unitario = float(produto['preco'])
+
+    def operacoes_cart(cursor):
+        # Busca carrinho existente
+        cursor.execute("SELECT id FROM pedidos WHERE responsavel_id = %s AND status = 'carrinho' ORDER BY data_pedido DESC LIMIT 1", (responsavel['id'],))
+        carrinho_row = cursor.fetchone()
+        if carrinho_row and carrinho_row.get('id'):
+            pedido_id_local = carrinho_row['id']
+        else:
+            # Cria novo pedido
+            cursor.execute("INSERT INTO pedidos (responsavel_id, escola_id, status, valor_total) VALUES (%s,%s,%s,%s) RETURNING id",
+                           (responsavel['id'], produto.get('escola_id'), 'carrinho', 0))
+            pedido_id_local = cursor.fetchone()['id']
+
+        # Verifica se item já existe
+        cursor.execute("SELECT * FROM itens_pedido WHERE pedido_id = %s AND produto_id = %s", (pedido_id_local, produto_id))
+        item_existente_local = cursor.fetchone()
+
+        if item_existente_local:
+            nova_quantidade_local = int(item_existente_local['quantidade']) + quantidade
+            novo_subtotal_local = round(preco_unitario * nova_quantidade_local, 2)
+            cursor.execute("UPDATE itens_pedido SET quantidade = %s, subtotal = %s WHERE id = %s",
+                           (nova_quantidade_local, novo_subtotal_local, item_existente_local['id']))
+        else:
+            novo_subtotal_local = round(preco_unitario * quantidade, 2)
+            cursor.execute("INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario, subtotal) VALUES (%s,%s,%s,%s,%s)",
+                           (pedido_id_local, produto_id, quantidade, preco_unitario, novo_subtotal_local))
+
+        # Atualiza valor_total do pedido
+        cursor.execute("SELECT COALESCE(SUM(subtotal),0) as total FROM itens_pedido WHERE pedido_id = %s", (pedido_id_local,))
+        total_row_local = cursor.fetchone()
+        total_local = float(total_row_local.get('total', 0)) if total_row_local and isinstance(total_row_local, dict) else 0
+        cursor.execute("UPDATE pedidos SET valor_total = %s, data_atualizacao = CURRENT_TIMESTAMP WHERE id = %s", (total_local, pedido_id_local))
+        return pedido_id_local
+
+    pedido_id = Database.transaction(operacoes_cart)
+    if not pedido_id:
+        flash('Erro ao criar/atualizar carrinho.', 'danger')
+        return redirect(url_for('produtos.vitrine'))
+    return redirect(url_for('pedidos.ver_carrinho'))
+
+@pedidos_bp.route('/atualizar_item', methods=['POST'])
+def atualizar_item():
+    """Complementar: Atualiza quantidade de um item no carrinho"""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    item_id = request.form.get('item_id')
+    quantidade = int(request.form.get('quantidade', 1))
+
+    if quantidade <= 0:
+        flash('Quantidade inválida.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    # Valida item
+    item = Database.executar('SELECT * FROM itens_pedido WHERE id = %s', (item_id,), fetchone=True)
+    if not item:
+        flash('Item não encontrado.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    pedido = Database.executar('SELECT * FROM pedidos WHERE id = %s', (item['pedido_id'],), fetchone=True)
+    if not pedido:
+        flash('Pedido não encontrado.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    # Permissão: apenas admin ou dono do pedido
+    if usuario_logado['tipo'] != 'administrador':
+        if usuario_logado['tipo'] != 'responsavel':
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.ver_carrinho'))
+        responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+        if not responsavel or pedido['responsavel_id'] != responsavel['id']:
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.ver_carrinho'))
+
+    # Valida produto estoque atual
+    produto = Database.executar('SELECT * FROM produtos WHERE id = %s', (item['produto_id'],), fetchone=True)
+    if not produto:
+        flash('Produto não encontrado.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+    if produto.get('estoque', 0) < quantidade:
+        flash('Quantidade maior que estoque disponível.', 'warning')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    preco_unitario = float(item['preco_unitario'])
+    novo_subtotal = round(preco_unitario * quantidade, 2)
+
+    def operacao_update(cursor):
+        cursor.execute('UPDATE itens_pedido SET quantidade = %s, subtotal = %s WHERE id = %s', (quantidade, novo_subtotal, item_id))
+        # Recalcula total
+        cursor.execute('SELECT COALESCE(SUM(subtotal),0) as total FROM itens_pedido WHERE pedido_id = %s', (item['pedido_id'],))
+        total_row = cursor.fetchone()
+        total = float(total_row.get('total', 0)) if total_row and isinstance(total_row, dict) else 0
+        cursor.execute('UPDATE pedidos SET valor_total = %s, data_atualizacao = CURRENT_TIMESTAMP WHERE id = %s', (total, item['pedido_id']))
+        return True
+
+    if Database.transaction(operacao_update):
+        flash('Item atualizado com sucesso!', 'success')
+    else:
+        flash('Erro ao atualizar item.', 'danger')
+
+    return redirect(url_for('pedidos.ver_carrinho'))
+
+
+@pedidos_bp.route('/remover_item', methods=['POST'])
+def remover_item():
+    """Complementar: Remove um item do carrinho"""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    item_id = request.form.get('item_id')
+
+    # Valida item
+    item = Database.executar('SELECT * FROM itens_pedido WHERE id = %s', (item_id,), fetchone=True)
+    if not item:
+        flash('Item não encontrado.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    pedido = Database.executar('SELECT * FROM pedidos WHERE id = %s', (item['pedido_id'],), fetchone=True)
+    if not pedido:
+        flash('Pedido não encontrado.', 'danger')
+        return redirect(url_for('pedidos.ver_carrinho'))
+
+    # Permissão: apenas admin ou dono do pedido
+    if usuario_logado['tipo'] != 'administrador':
+        if usuario_logado['tipo'] != 'responsavel':
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.ver_carrinho'))
+        responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+        if not responsavel or pedido['responsavel_id'] != responsavel['id']:
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.ver_carrinho'))
+
+    def operacao_remover(cursor):
+        cursor.execute('DELETE FROM itens_pedido WHERE id = %s', (item_id,))
+        # Recalcula total
+        cursor.execute('SELECT COALESCE(SUM(subtotal),0) as total FROM itens_pedido WHERE pedido_id = %s', (item['pedido_id'],))
+        total_row = cursor.fetchone()
+        total = float(total_row.get('total', 0)) if total_row and isinstance(total_row, dict) else 0
+        cursor.execute('UPDATE pedidos SET valor_total = %s, data_atualizacao = CURRENT_TIMESTAMP WHERE id = %s', (total, item['pedido_id']))
+        return True
+
+    if Database.transaction(operacao_remover):
+        flash('Item removido com sucesso!', 'success')
+    else:
+        flash('Erro ao remover item.', 'danger')
+
+    return redirect(url_for('pedidos.ver_carrinho'))

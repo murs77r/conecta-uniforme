@@ -22,7 +22,17 @@
                     {% for item in itens %}
                     <tr>
                         <td>{{ item.produto_nome }}</td>
-                        <td>{{ item.quantidade }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('pedidos.atualizar_item') }}" class="d-inline-flex">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <input type="number" name="quantidade" min="1" value="{{ item.quantidade }}" class="form-control form-control-sm me-2" style="width:80px;">
+                                <button type="submit" class="btn btn-sm btn-outline-primary me-2">Atualizar</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('pedidos.remover_item') }}" class="d-inline">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                            </form>
+                        </td>
                         <td>R$ {{ "%.2f"|format(item.preco_unitario) }}</td>
                         <td>R$ {{ "%.2f"|format(item.subtotal) }}</td>
                     </tr>

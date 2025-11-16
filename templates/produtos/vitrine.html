@@ -40,7 +40,15 @@
                     </div>
                     <div class="btn-group">
                         <a href="{{ url_for('produtos.detalhes', id=produto.id) }}" class="btn btn-sm btn-outline-info">Detalhes</a>
-                        <a href="{{ url_for('produtos.detalhes', id=produto.id) }}" class="btn btn-sm btn-primary">Comprar</a>
+                        {% if usuario_logado and usuario_logado.tipo == 'responsavel' %}
+                        <form method="POST" action="{{ url_for('pedidos.adicionar_item') }}" style="display:inline;" class="d-flex">
+                            <input type="hidden" name="produto_id" value="{{ produto.id }}">
+                            <input type="number" name="quantidade" min="1" value="1" class="form-control form-control-sm me-2" style="width:85px;">
+                            <button type="submit" class="btn btn-sm btn-primary">Comprar</button>
+                        </form>
+                        {% else %}
+                        <a href="{{ url_for('autenticacao.solicitar_codigo') }}" class="btn btn-sm btn-primary">Comprar</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
