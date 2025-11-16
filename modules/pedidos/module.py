@@ -111,6 +111,84 @@ def criar():
     return render_template('pedidos/criar.html')
 
 
+@pedidos_bp.route('/carrinho')
+def ver_carrinho():
+    """Exibe o carrinho atual do responsável logado (status 'carrinho')."""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    # Apenas responsáveis devem acessar o carrinho
+    if usuario_logado['tipo'] != 'responsavel':
+        flash('Acesso negado. Apenas responsáveis podem acessar o carrinho.', 'danger')
+        return redirect(url_for('home'))
+
+    responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+    if not responsavel:
+        # Exibe template com carrinho vazio
+        return render_template('pedidos/carrinho.html', pedido=None, itens=[])
+
+    carrinho = pedido_repo.buscar_carrinho(responsavel['id'])
+    if not carrinho:
+        return render_template('pedidos/carrinho.html', pedido=None, itens=[])
+
+    pedido_id = carrinho['id']
+    query_pedido = "SELECT * FROM pedidos WHERE id = %s"
+    pedido = Database.executar(query_pedido, (pedido_id,), fetchone=True)
+
+    query_itens = """
+        SELECT i.*, p.nome as produto_nome, p.descricao as produto_descricao, p.imagem_url as produto_imagem
+        FROM itens_pedido i
+        JOIN produtos p ON i.produto_id = p.id
+        WHERE i.pedido_id = %s
+        ORDER BY i.id
+    """
+    itens = Database.executar(query_itens, (pedido_id,), fetchall=True) or []
+
+    return render_template('pedidos/carrinho.html', pedido=pedido, itens=itens)
+
+
+@pedidos_bp.route('/finalizar/<int:id>', methods=['POST'])
+def finalizar(id):
+    """Finaliza o pedido com status 'carrinho' (deixa como 'pendente')."""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    # Busca o pedido
+    pedido = Database.executar("SELECT * FROM pedidos WHERE id = %s", (id,), fetchone=True)
+    if not pedido:
+        flash('Pedido não encontrado.', 'danger')
+        return redirect(url_for('pedidos.listar'))
+
+    # Validação de permissão: só administrador ou dono do pedido podem finalizar
+    if usuario_logado['tipo'] != 'administrador':
+        if usuario_logado['tipo'] == 'responsavel':
+            responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+            if not responsavel or pedido['responsavel_id'] != responsavel['id']:
+                flash('Acesso negado. Você só pode finalizar seus próprios pedidos.', 'danger')
+                return redirect(url_for('pedidos.listar'))
+        else:
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.listar'))
+
+    # Só finaliza se estiver em 'carrinho'
+    if pedido['status'] != 'carrinho':
+        flash('Somente pedidos em status carrinho podem ser finalizados.', 'danger')
+        return redirect(url_for('pedidos.listar'))
+
+    # Atualiza status e registra log
+    if Database.atualizar('pedidos', id, {'status': 'pendente'}):
+        LogService.registrar(usuario_logado['id'], 'pedidos', id, 'UPDATE', descricao='Pedido finalizado')
+        flash('Pedido finalizado com sucesso!', 'success')
+    else:
+        flash('Erro ao finalizar pedido.', 'danger')
+
+    return redirect(url_for('pedidos.listar'))
+
+
 # ============================================
 # RF07.3 - EDITAR PEDIDO
 # ============================================
