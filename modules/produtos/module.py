@@ -54,7 +54,7 @@ def listar():
     produtos = Database.executar(query, fetchall=True) or []
     
     # Renderiza template com dados
-    return render_template('produtos/listar.html', produtos=produtos)
+    return render_template('produtos/listar.html', produtos=produtos, usuario_logado=usuario_logado)
 
 
 # ============================================
@@ -187,6 +187,13 @@ def editar(id):
     if not produto:
         flash('Produto não encontrado.', 'danger')
         return redirect(url_for('produtos.listar'))
+
+    # Se o usuário for um fornecedor, verifica se ele é o "dono" do produto
+    if usuario_logado['tipo'] == 'fornecedor':
+        forn = fornecedor_repo.buscar_por_usuario_id(usuario_logado['id'])
+        if not forn or produto['fornecedor_id'] != forn['id']:
+            flash('Você não tem permissão para editar este produto.', 'danger')
+            return redirect(url_for('produtos.listar'))
     
     # GET: Exibe formulário de edição
     if request.method == 'GET':
@@ -253,6 +260,13 @@ def excluir(id):
     if not produto:
         flash('Produto não encontrado.', 'danger')
         return redirect(url_for('produtos.listar'))
+
+    # Se o usuário for um fornecedor, verifica se ele é o "dono" do produto
+    if usuario_logado['tipo'] == 'fornecedor':
+        forn = fornecedor_repo.buscar_por_usuario_id(usuario_logado['id'])
+        if not forn or produto['fornecedor_id'] != forn['id']:
+            flash('Você não tem permissão para excluir este produto.', 'danger')
+            return redirect(url_for('produtos.listar'))
     
     # Verifica se há dependências que impedem a exclusão
     bloqueios = crud_service.verificar_dependencias(id, [

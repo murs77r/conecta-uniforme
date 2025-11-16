@@ -10,10 +10,11 @@ Prioridade: (X) Essencial  ( ) Importante  ( ) Desejável
 [COLOCAR IMAGEM DA TELA DE LISTAGEM DE PRODUTOS AQUI]
 
 1. O usuário acessa a área de produtos.
-2. O sistema apresenta a listagem com identificação do produto e informações principais (por exemplo, nome e situação).
-3. A tela oferece ações compatíveis com o perfil do usuário: cadastrar novo produto, visualizar, editar ou excluir.
-4. Se não existirem produtos cadastrados, o sistema informa a ausência de registros.
-5. O caso de uso é encerrado.
+2. O sistema apresenta a listagem com identificação do produto e informações principais (por exemplo, nome e situação). A visualização é pública.
+3. O sistema verifica se há uma sessão de usuário ativa.
+4. Se o usuário estiver autenticado e tiver as permissões necessárias (Administrador, Fornecedor), a tela oferece ações adicionais, como cadastrar, editar e excluir. Caso contrário, essas ações não são exibidas.
+5. Se não existirem produtos cadastrados, o sistema informa a ausência de registros.
+6. O caso de uso é encerrado.
 
 ## RF06.2 - Cadastrar Produto
 

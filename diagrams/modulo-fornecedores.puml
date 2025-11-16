@@ -1,24 +1,22 @@
 @startuml
-' RF05 - Gerenciamento de Fornecedores
+' RF05 - Manter Cadastro de Fornecedor
 
 left to right direction
-
 skinparam actorStyle awesome
-
-title RF05 - Gerenciamento de Fornecedores
+title RF05 - Manter Cadastro de Fornecedor
 
 actor Administrador
-
 actor Fornecedor
-
 actor Escola
+actor Responsável
+
+usecase "Autenticar (RF02)" as RF02
 
 rectangle "Módulo de Fornecedores" {
-    usecase "Cadastrar\nFornecedor" as UC05_1
-    usecase "Listar\nFornecedores" as UC05_2
-    usecase "Visualizar\nDetalhes" as UC05_3
-    usecase "Editar\nFornecedor" as UC05_4
-    usecase "Excluir\nFornecedor" as UC05_5
+    usecase "Listar Fornecedores\n(RF05.1)" as UC05_1
+    usecase "Cadastrar Fornecedor\n(RF05.2)" as UC05_2
+    usecase "Editar Fornecedor\n(RF05.3)" as UC05_3
+    usecase "Excluir Fornecedor\n(RF05.4)" as UC05_4
 }
 
 ' Administrador - controle total
@@ -26,23 +24,27 @@ Administrador --> UC05_1
 Administrador --> UC05_2
 Administrador --> UC05_3
 Administrador --> UC05_4
-Administrador --> UC05_5
 
 ' Fornecedor - autogestão
-Fornecedor --> UC05_2
+Fornecedor --> UC05_1
 Fornecedor --> UC05_3
-Fornecedor --> UC05_4
 note on link
   Apenas seus próprios dados
 end note
 
-' Escola - visualiza para homologação
-Escola --> UC05_2
+' Escola e Responsável - visualização
+Escola --> UC05_1
+Responsável --> UC05_1
 
-note right of UC05_5
+' Dependência de Autenticação (RF02)
+UC05_1 ..> RF02 : <<include>>
+UC05_2 ..> RF02 : <<include>>
+UC05_3 ..> RF02 : <<include>>
+UC05_4 ..> RF02 : <<include>>
+
+note right of UC05_4
   Bloqueada se houver:
-  - Homologações com escolas (RF03)
   - Produtos cadastrados (RF06)
+  (Conforme doc RF05.4 e código)
 end note
-
 @enduml

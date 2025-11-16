@@ -191,6 +191,25 @@ def validar_codigo():
     email = request.form.get('email', '').strip().lower()
     tipo = request.form.get('tipo', '').strip()
     codigo_digitado = request.form.get('codigo', '').strip()
+
+    # MODO DE DESENVOLVIMENTO: Login rápido com qualquer usuário
+    if DEBUG and codigo_digitado == "000000":
+        # Busca o primeiro usuário ativo com o email e tipo fornecidos
+        query_dev_login = "SELECT id, nome, email, tipo FROM usuarios WHERE email = %s AND tipo = %s AND ativo = TRUE LIMIT 1"
+        usuario = Database.executar(query_dev_login, (email, tipo), fetchone=True)
+
+        if usuario:
+            session['usuario_id'] = usuario.get('id')
+            session['usuario_nome'] = usuario.get('nome')
+            session['usuario_email'] = usuario.get('email')
+            session['usuario_tipo'] = usuario.get('tipo')
+            session['logged_in'] = True
+            
+            flash(f"Login de desenvolvedor como {usuario['nome']}!", 'warning')
+            return redirect(url_for('home'))
+        else:
+            flash('Usuário de desenvolvedor não encontrado para este email/tipo.', 'danger')
+            return render_template('auth/validar_codigo.html', email=email, tipo=tipo, aviso_email='0', debug=DEBUG)
     
     # Validação: verifica se os campos foram preenchidos
     if not email or not codigo_digitado:

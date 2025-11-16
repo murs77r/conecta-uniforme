@@ -2,7 +2,7 @@
 
 Descrição: Este requisito estabelece o ciclo de vida do cadastro de escolas na plataforma: criação com identificação institucional e contato, exibição organizada para consulta, atualização de informações e exclusão controlada quando cabível. Os fluxos garantem consistência mínima, unicidade de contato e a preservação do relacionamento com demais elementos do sistema, quando houver.
 
-Atores: Administrador, Escola
+Atores: Administrador, Escola, Fornecedor, Responsável
 Prioridade: (X) Essencial  ( ) Importante  ( ) Desejável
 
 ## RF03.1 - Listar Escolas
@@ -75,7 +75,7 @@ Prioridade: (X) Essencial  ( ) Importante  ( ) Desejável
 3. Se o perfil não for autorizado, o sistema informa o bloqueio e retorna à área principal. O caso de uso é encerrado.
 4. O sistema tenta localizar a escola.
 5. Se não localizar, o sistema informa a inexistência e retorna à listagem. O caso de uso é encerrado.
-6. O sistema verifica se existem vínculos que impeçam a exclusão (por exemplo, elementos relacionados que dependam daquela escola):
+6. O sistema verifica se existem vínculos que impeçam a exclusão (como elementos relacionados que dependam daquela escola):
 	- Havendo impedimentos, o sistema apresenta os motivos e encerra a solicitação sem remover o registro. O caso de uso é encerrado.
 	- Não havendo impedimentos, o sistema efetiva a exclusão da escola.
  	- Regra: apenas administrador pode excluir escola e somente se não houver vínculos impeditivos.

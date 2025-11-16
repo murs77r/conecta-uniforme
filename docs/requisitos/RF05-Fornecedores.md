@@ -66,4 +66,3 @@ Prioridade: (X) Essencial  ( ) Importante  ( ) Desejável
  	- Regra: exclusão apenas por administrador e condicionada à inexistência de vínculos impeditivos.
 7. O sistema apresenta confirmação e retorna à listagem atualizada.
 8. O caso de uso é encerrado.
-

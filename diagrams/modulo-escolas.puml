@@ -1,55 +1,53 @@
 @startuml
-' RF03 - Gerenciamento de Escolas
+' RF03 - Manter Cadastro de Escola
 
 left to right direction
-
 skinparam actorStyle awesome
-
-title RF03 - Gerenciamento de Escolas
+title RF03 - Manter Cadastro de Escola
 
 actor Administrador
-
 actor Escola
-
 actor Fornecedor
-
 actor Responsável
 
+usecase "Autenticar (RF02)" as RF02
+
 rectangle "Módulo de Escolas" {
-    usecase "Cadastrar\nEscola" as UC03_1
-    usecase "Listar\nEscolas" as UC03_2
-    usecase "Visualizar\nDetalhes" as UC03_3
-    usecase "Editar\nEscola" as UC03_4
-    usecase "Excluir\nEscola" as UC03_5
+    usecase "Listar Escolas\n(RF03.1)" as UC03_1
+    usecase "Cadastrar Escola\n(RF03.2)" as UC03_2
+    usecase "Editar Escola\n(RF03.4)" as UC03_4
+    usecase "Excluir Escola\n(RF03.5)" as UC03_5
 }
 
 ' Administrador - controle total
 Administrador --> UC03_1
 Administrador --> UC03_2
-Administrador --> UC03_3
 Administrador --> UC03_4
 Administrador --> UC03_5
 
 ' Escola - autogestão
-Escola --> UC03_2
-Escola --> UC03_3
+Escola --> UC03_1
 Escola --> UC03_4
 note on link
   Apenas seus próprios dados
 end note
 
-' Fornecedor - visualiza para homologação
-Fornecedor --> UC03_2
+' Outros perfis autenticados - visualização
+Fornecedor --> UC03_1
+Responsável --> UC03_1
 
-' Responsável - visualiza para pedidos
-Responsável --> UC03_2
+' Dependência de Autenticação (RF02)
+UC03_1 ..> RF02 : <<include>>
+UC03_2 ..> RF02 : <<include>>
+UC03_4 ..> RF02 : <<include>>
+UC03_5 ..> RF02 : <<include>>
 
 note right of UC03_5
   Bloqueada se houver:
-  - Fornecedores homologados (RF05)
-  - Produtos vinculados (RF06)
-  - Pedidos realizados (RF07)
-  - Gestores cadastrados (RF04)
+  - Fornecedores homologados
+  - Produtos vinculados
+  - Pedidos realizados
+  (Conforme doc RF03.5 e código)
 end note
 
 @enduml

@@ -77,11 +77,19 @@ def listar():
 
 @pedidos_bp.route('/criar', methods=['GET', 'POST'])
 def criar():
-    """Cria um novo pedido"""
+    """Cria um novo pedido (Rota administrativa)"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
+    
+    # ==================================================================
+    # CORREÇÃO DE SEGURANÇA: Apenas administradores podem criar pedidos
+    # manualmente por esta rota.
+    # ==================================================================
+    if usuario_logado['tipo'] != 'administrador':
+        flash('Acesso negado. Apenas administradores podem criar pedidos manualmente.', 'danger')
+        return redirect(url_for('home'))
     
     if request.method == 'POST':
         dados = {
@@ -122,6 +130,27 @@ def editar(id):
     if not pedido:
         flash('Pedido não encontrado.', 'danger')
         return redirect(url_for('pedidos.listar'))
+
+    # ==================================================================
+    # RF07.3 - REGRA DE NEGÓCIO: Impedir edição de pedidos finalizados
+    # ==================================================================
+    if pedido['status'] in ['entregue', 'cancelado']:
+        flash(f"Pedidos com status '{pedido['status']}' não podem ser editados.", 'danger')
+        return redirect(url_for('pedidos.listar'))
+    
+    # ==================================================================
+    # CORREÇÃO DE SEGURANÇA: Validar permissão (Admin ou Dono do Pedido)
+    # ==================================================================
+    if usuario_logado['tipo'] != 'administrador':
+        if usuario_logado['tipo'] == 'responsavel':
+            responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+            if not responsavel or pedido['responsavel_id'] != responsavel['id']:
+                flash('Acesso negado. Você só pode editar seus próprios pedidos.', 'danger')
+                return redirect(url_for('pedidos.listar'))
+        else:
+            # Outros tipos (escola, fornecedor) não podem editar
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.listar'))
     
     if request.method == 'POST':
         dados = {
@@ -149,11 +178,42 @@ def apagar(id):
     """Apaga um pedido"""
     usuario_logado = auth_service.verificar_sessao()
     if not usuario_logado:
-        flash('Acesso negado.', 'danger')
-        return redirect(url_for('home'))
+        flash('Acesso negado. Faça login para continuar.', 'danger')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
     
+    # ==================================================================
+    # Buscar pedido para verificar propriedade
+    # ==================================================================
+    pedido = Database.executar("SELECT * FROM pedidos WHERE id = %s", (id,), fetchone=True)
+    if not pedido:
+        flash('Pedido não encontrado.', 'danger')
+        return redirect(url_for('pedidos.listar'))
+
+    # ==================================================================
+    # Impedir exclusão de pedidos em andamento ou finalizados
+    # ==================================================================
+    if pedido['status'] in ['pago', 'enviado', 'entregue']:
+        flash(f"Pedidos com status '{pedido['status']}' não podem ser apagados, apenas cancelados.", 'danger')
+        return redirect(url_for('pedidos.listar'))
+
+    # ==================================================================
+    # Validar permissão (Admin ou Dono do Pedido)
+    # ==================================================================
+    if usuario_logado['tipo'] != 'administrador':
+        if usuario_logado['tipo'] == 'responsavel':
+            responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+            if not responsavel or pedido['responsavel_id'] != responsavel['id']:
+                flash('Acesso negado. Você só pode apagar seus próprios pedidos.', 'danger')
+                return redirect(url_for('pedidos.listar'))
+        else:
+            # Outros tipos (escola, fornecedor) não podem apagar
+            flash('Acesso negado.', 'danger')
+            return redirect(url_for('pedidos.listar'))
+
+    # Se passou na verificação, pode apagar
     query = "DELETE FROM pedidos WHERE id = %s"
-    if Database.executar(query, (id,)):
+    
+    if Database.executar(query, (id,), commit=True):
         LogService.registrar(usuario_logado['id'], 'pedidos', id, 'DELETE', descricao='Pedido apagado')
         flash('Pedido apagado com sucesso!', 'success')
     else:

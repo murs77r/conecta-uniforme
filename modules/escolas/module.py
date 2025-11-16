@@ -41,16 +41,8 @@ def listar():
         flash('Faça login para continuar.', 'warning')
         return redirect(url_for('autenticacao.solicitar_codigo'))
     
-    # Monta query base com JOIN para trazer dados do usuário
-    query = """
-        SELECT e.*, u.nome, u.email, u.telefone
-        FROM escolas e
-        JOIN usuarios u ON e.usuario_id = u.id
-        ORDER BY u.nome
-    """
-    
-    # Executa query e retorna resultados
-    escolas = Database.executar(query, fetchall=True) or []
+    # Busca escolas com dados do usuário através do repositório
+    escolas = escola_repo.listar_com_filtros({}) or []
     
     return render_template('escolas/listar.html', escolas=escolas)
 

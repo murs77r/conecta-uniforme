@@ -1,22 +1,20 @@
 @startuml
-' RF04 - Gerenciamento de Gestores Escolares
+' RF04 - Manter Cadastro de Gestor Escolar
 
 left to right direction
-
 skinparam actorStyle awesome
-
-title RF04 - Gerenciamento de Gestores Escolares
+title RF04 - Manter Cadastro de Gestor Escolar
 
 actor Administrador
-
 actor Escola
 
+usecase "Autenticar (RF02)" as RF02
+
 rectangle "Módulo de Gestores Escolares" {
-    usecase "Cadastrar\nGestor" as UC04_1
-    usecase "Listar\nGestores" as UC04_2
-    usecase "Visualizar\nDetalhes" as UC04_3
-    usecase "Editar\nGestor" as UC04_4
-    usecase "Excluir\nGestor" as UC04_5
+    usecase "Listar Gestores\n(RF04.1)" as UC04_1
+    usecase "Cadastrar Gestor\n(RF04.2)" as UC04_2
+    usecase "Editar Gestor\n(RF04.3)" as UC04_3
+    usecase "Excluir Gestor\n(RF04.4)" as UC04_4
 }
 
 ' Administrador - controle total
@@ -24,21 +22,19 @@ Administrador --> UC04_1
 Administrador --> UC04_2
 Administrador --> UC04_3
 Administrador --> UC04_4
-Administrador --> UC04_5
 
 ' Escola - gerencia gestores próprios
 Escola --> UC04_1
 Escola --> UC04_2
 Escola --> UC04_3
 Escola --> UC04_4
-Escola --> UC04_5
 note on link
   Apenas gestores da própria escola
 end note
 
-note right of UC04_1
-  Gestores são contatos vinculados
-  à escola (diretor, coordenador, etc)
-end note
-
+' Dependência de Autenticação (RF02)
+UC04_1 ..> RF02 : <<include>>
+UC04_2 ..> RF02 : <<include>>
+UC04_3 ..> RF02 : <<include>>
+UC04_4 ..> RF02 : <<include>>
 @enduml
