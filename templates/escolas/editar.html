@@ -105,55 +105,90 @@
 (function(){
   const lista = document.getElementById('gestoresLista');
   const btn = document.getElementById('addGestor');
+  // Começa com 0, será ajustado se houver gestores pré-carregados
   let idx = 0;
-  
-  // Template de card de gestor
-  function gestorCard(i){
+
+  // Função utilitária para escapar HTML em valores (previne quebra do atributo value)
+  function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Template de card de gestor que aceita dados existentes (g)
+  function gestorCard(i, g = null){
+    const nome = escapeHtml(g && g.nome ? g.nome : '');
+    const email = escapeHtml(g && g.email ? g.email : '');
+    const telefone = escapeHtml(g && g.telefone ? g.telefone : '');
+    const cpf = escapeHtml(g && g.cpf ? g.cpf : '');
+    const tipo_gestor = escapeHtml(g && g.tipo_gestor ? g.tipo_gestor : '');
+
     return `
     <div class="card border" data-idx="${i}">
       <div class="card-body">
         <div class="row g-3 align-items-end">
           <div class="col-md-4">
             <label class="form-label">Nome do Gestor *</label>
-            <input type="text" class="form-control" name="gestores[${i}][nome]" required>
+            <input type="text" class="form-control" name="gestores[${i}][nome]" required value="${nome}">
           </div>
           <div class="col-md-4">
             <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="gestores[${i}][email]">
+            <input type="email" class="form-control" name="gestores[${i}][email]" value="${email}">
           </div>
           <div class="col-md-4">
             <label class="form-label">Telefone</label>
-            <input type="text" class="form-control" name="gestores[${i}][telefone]">
+            <input type="text" class="form-control" name="gestores[${i}][telefone]" value="${telefone}">
           </div>
           <div class="col-md-4">
             <label class="form-label">CPF</label>
-            <input type="text" class="form-control" name="gestores[${i}][cpf]">
+            <input type="text" class="form-control" name="gestores[${i}][cpf]" value="${cpf}">
           </div>
           <div class="col-md-4">
             <label class="form-label">Tipo de Gestor</label>
-            <input type="text" class="form-control" name="gestores[${i}][tipo_gestor]" placeholder="Diretor, Coordenador, Financeiro...">
+            <input type="text" class="form-control" name="gestores[${i}][tipo_gestor]" value="${tipo_gestor}" placeholder="Diretor, Coordenador, Financeiro...">
           </div>
           <div class="col-md-4 text-end">
+            ${g && g.id ? `<a class="btn btn-sm btn-outline-secondary me-2" href="${"/gestores/editar/" + g.id}" title="Editar gestor">
+              <i class="bi bi-pencil"></i>
+            </a>` : ''}
             <button type="button" class="btn btn-outline-danger btn-sm remover">
               <i class="bi bi-trash"></i> Remover
             </button>
           </div>
+          ${g && g.id ? `<input type="hidden" name="gestores[${i}][id]" value="${g.id}">` : ''}
         </div>
       </div>
     </div>`;
   }
-  
-  // Adicionar novo gestor
+
+  // Insere novo gestor vazio
   btn.addEventListener('click', function(){
     lista.insertAdjacentHTML('beforeend', gestorCard(idx++));
   });
-  
+
   // Remover gestor
   lista.addEventListener('click', function(e){
     if(e.target.closest('.remover')){
       e.target.closest('.card').remove();
     }
   });
+
+  // Pre-popula gestores existentes (se houver)
+  try {
+    const initialGestores = {{ gestores|default([]) | tojson | safe }};
+    if (Array.isArray(initialGestores) && initialGestores.length > 0) {
+      initialGestores.forEach(g => {
+        lista.insertAdjacentHTML('beforeend', gestorCard(idx++, g));
+      });
+    }
+  } catch (err) {
+    console.error('Erro ao pré-popular gestores:', err);
+  }
+
 })();
 </script>
 {% endblock %}

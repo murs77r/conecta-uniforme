@@ -72,6 +72,7 @@
                         <th>Telefone</th>
                         <th>CPF</th>
                         <th>Tipo</th>
+                        <th class="text-end">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -82,6 +83,19 @@
                         <td>{{ g.telefone or '-' }}</td>
                         <td>{{ g.cpf or '-' }}</td>
                         <td>{{ g.tipo_gestor or '-' }}</td>
+                        <td class="text-end">
+                          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('gestores.detalhes', id=g.id) }}" title="Ver Detalhes">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestores.editar', id=g.id) }}" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                          </a>
+                          <form method="POST" action="{{ url_for('gestores.excluir', id=g.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este gestor?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </td>
                       </tr>
                       {% endfor %}
                     </tbody>

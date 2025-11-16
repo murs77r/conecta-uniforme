@@ -199,12 +199,12 @@ def editar(id):
     # Validação: Telefone
     if dados_usuario['telefone'] and not validacao.validar_telefone(dados_usuario['telefone']):
         flash('Telefone inválido.', 'danger')
-        return render_template('escolas/editar.html', escola=escola)
+        return render_template('escolas/editar.html', escola=escola, gestores=gestor_repo.listar_por_escola(id))
     
     # Validação: CEP
     if dados_escola['cep'] and not validacao.validar_cep(dados_escola['cep']):
         flash('CEP inválido.', 'danger')
-        return render_template('escolas/editar.html', escola=escola)
+        return render_template('escolas/editar.html', escola=escola, gestores=gestor_repo.listar_por_escola(id))
     
     # Apenas administrador pode alterar status
     if usuario_logado['tipo'] == 'administrador':
@@ -216,7 +216,7 @@ def editar(id):
     if not all([dados_usuario['nome'], dados_usuario['email'], 
                 dados_escola['cnpj'], dados_escola['razao_social']]):
         flash('Preencha todos os campos obrigatórios.', 'danger')
-        return render_template('escolas/editar.html', escola=escola)
+        return render_template('escolas/editar.html', escola=escola, gestores=gestor_repo.listar_por_escola(id))
     
     # Atualiza usuário
     usuario_repo.atualizar(escola['usuario_id'], dados_usuario)
