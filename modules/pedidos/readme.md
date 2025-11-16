@@ -1,5 +1,30 @@
 # RF07 - Manter Cadastro de Pedido
 
+Este arquivo descreve resumidamente as sub-rotinas do requisito funcional RF07 — apenas as sub-RFs (RF07.1 a RF07.4) com as mudanças introduzidas no código.
+
+## RF07.1 - Criar Pedido
+- A rota administrativa `/pedidos/criar` recebe `responsavel_id`, `escola_id`, `status` e `valor_total`.
+- Apenas usuários do tipo `administrador` podem criar pedidos manualmente por esta rota.
+- Em caso de sucesso, persiste o pedido e registra auditoria (INSERT) via `LogService`.
+
+## RF07.2 - Apagar Pedido
+- Endpoint: `/pedidos/apagar/<id>` (POST).
+- Permissões: `administrador` pode apagar qualquer pedido; `responsavel` pode apagar apenas pedidos sem itens.
+- Comportamento para pedidos com itens vinculados:
+  - Se o pedido contiver itens (`itens_pedido`), a exclusão por `responsavel` é bloqueada e o usuário recebe mensagem solicitando a remoção dos itens antes de tentar apagar o pedido.
+  - Se a exclusão for executada por `administrador`, os itens são removidos e o pedido é excluído dentro de uma transação atômica para evitar violações de chave estrangeira; a operação registra log de exclusão.
+
+## RF07.3 - Editar Pedido
+- Endpoint: `/pedidos/editar/<id>` (GET/POST).
+- Validações: apenas `administrador` ou o `responsavel` dono do pedido podem editar; pedidos com status finalizado (`entregue`, `cancelado`) não podem ser editados.
+- A alteração é registrada por auditoria (UPDATE) e atualiza `data_atualizacao` automaticamente.
+
+## RF07.4 - Consultar Pedidos (Listagem e Detalhes)
+- Listagem (`/pedidos/` e `/pedidos/listar`) exibe pedidos excluindo o status `carrinho` por padrão; `administrador` vê todos, `responsavel` vê apenas seus pedidos.
+- Detalhes (`/pedidos/detalhes/<id>`) exibe informações do pedido, do responsável, escola e itens vinculados; restrição: `responsavel` só vê pedidos próprios.
+- Todas as consultas exigem sessão válida; ausência de sessão redireciona para fluxo de autenticação.
+# RF07 - Manter Cadastro de Pedido
+
 Documento tecnico de apresentacao do requisito funcional RF07 (Manter Cadastro de Pedido). Este roteiro detalha componentes, fluxos, dependencias e artefatos de apoio que viabilizam o CRUD completo de pedidos, incluindo filtros por perfil e trilha de auditoria.
 
 ## 1. Contexto e Objetivo
