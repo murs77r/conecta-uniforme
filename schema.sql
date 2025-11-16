@@ -221,10 +221,10 @@ CREATE INDEX IF NOT EXISTS idx_logs_acesso_data ON logs_acesso(data_acesso);
 -- ============================================
 INSERT INTO usuarios (nome, email, telefone, tipo, ativo)
 VALUES
-    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'administrador', TRUE),
-    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'escola', TRUE),
-    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'fornecedor', TRUE),
-    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', NULL, 'responsavel', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'administrador', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'escola', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'fornecedor', TRUE),
+    ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'responsavel', TRUE),
 
     ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'administrador', TRUE),
     ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'escola', TRUE),
