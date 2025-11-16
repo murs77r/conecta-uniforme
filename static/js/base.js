@@ -58,28 +58,36 @@ const App = (function() {
     }
 
     /**
-     * Converte mensagens flash Bootstrap em modais
+     * Converte a primeira mensagem flash Bootstrap em um modal.
+     * Previne a exibição de múltiplos modais se houver várias mensagens.
      */
     function converterFlashParaModal() {
-        const alerts = document.querySelectorAll('.alert[role="alert"]');
+        // Se já existe um modal de mensagem, não faz nada
+        if (document.querySelector('.modal.fade.show')) {
+            return;
+        }
+
+        const alertNode = document.querySelector('.alert[role="alert"]');
         
-        alerts.forEach(alert => {
-            // Extrair tipo e mensagem
-            const classes = alert.className;
+        if (alertNode) {
+            // Extrai tipo e mensagem do primeiro alerta encontrado
+            const classes = alertNode.className;
             let tipo = 'info';
             
             if (classes.includes('alert-success')) tipo = 'success';
             else if (classes.includes('alert-danger')) tipo = 'danger';
             else if (classes.includes('alert-warning')) tipo = 'warning';
             
-            const mensagem = alert.textContent.replace('×', '').trim();
+            const mensagem = alertNode.textContent.replace(/×/g, '').trim();
             
-            // Remover alert
-            alert.remove();
+            // Remove todos os alertas da página para evitar duplicatas
+            document.querySelectorAll('.alert[role="alert"]').forEach(alert => alert.remove());
             
-            // Mostrar modal
-            mostrarModal(tipo, mensagem);
-        });
+            // Exibe o modal com a mensagem
+            if (mensagem) {
+                mostrarModal(tipo, mensagem);
+            }
+        }
     }
 
     return {
