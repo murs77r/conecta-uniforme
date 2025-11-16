@@ -58,6 +58,49 @@ def criar():
     return render_template('pedidos/criar.html')
 
 
+# ============================================
+# RF07.4 - CONSULTAR PEDIDOS (LISTAGEM)
+# ============================================
+@pedidos_bp.route('/')
+@pedidos_bp.route('/listar')
+def listar():
+    """Lista pedidos"""
+    usuario_logado = auth_service.verificar_sessao()
+    if not usuario_logado:
+        flash('Faça login para continuar.', 'warning')
+        return redirect(url_for('autenticacao.solicitar_codigo'))
+
+    # Base query
+    query = """
+        SELECT p.*, 
+               r.usuario_id, 
+               u.nome as responsavel_nome,
+               e.id as escola_id,
+               e_usr.nome as escola_nome
+        FROM pedidos p
+        JOIN responsaveis r ON p.responsavel_id = r.id
+        JOIN usuarios u ON r.usuario_id = u.id
+        LEFT JOIN escolas e ON p.escola_id = e.id
+        LEFT JOIN usuarios e_usr ON e.usuario_id = e_usr.id
+        WHERE p.status != 'carrinho'
+    """
+    params = []
+
+    # If user is a responsible, show only their orders
+    if usuario_logado['tipo'] == 'responsavel':
+        responsavel = responsavel_repo.buscar_por_usuario_id(usuario_logado['id'])
+        if responsavel:
+            query += " AND p.responsavel_id = %s"
+            params.append(responsavel['id'])
+        else:
+            pedidos = []
+            return render_template('pedidos/listar.html', pedidos=pedidos)
+
+    query += " ORDER BY p.data_pedido DESC"
+    pedidos = Database.executar(query, tuple(params) if params else None, fetchall=True) or []
+    return render_template('pedidos/listar.html', pedidos=pedidos)
+
+
 @pedidos_bp.route('/carrinho')
 def ver_carrinho():
     """Exibe o carrinho atual do responsável logado (status 'carrinho')."""
