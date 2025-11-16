@@ -59,7 +59,7 @@ def criar():
 
 
 # ============================================
-# RF07.4 - CONSULTAR PEDIDOS (LISTAGEM)
+# RF07.4 - CONSULTAR PEDIDOS
 # ============================================
 @pedidos_bp.route('/')
 @pedidos_bp.route('/listar')
