@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS codigos_acesso (
 CREATE TABLE IF NOT EXISTS escolas (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER NOT NULL UNIQUE REFERENCES usuarios(id) ON DELETE RESTRICT,
+    nome VARCHAR(200) NOT NULL,
     cnpj VARCHAR(18) UNIQUE,
     razao_social VARCHAR(200),
     endereco TEXT,
@@ -48,7 +49,8 @@ CREATE TABLE IF NOT EXISTS escolas (
     estado VARCHAR(2),
     cep VARCHAR(10),
     ativo BOOLEAN DEFAULT TRUE,
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -65,7 +67,8 @@ CREATE TABLE IF NOT EXISTS fornecedores (
     estado VARCHAR(2),
     cep VARCHAR(10),
     ativo BOOLEAN DEFAULT TRUE,
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -80,7 +83,8 @@ CREATE TABLE IF NOT EXISTS responsaveis (
     cidade VARCHAR(100),
     estado VARCHAR(2),
     cep VARCHAR(10),
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -95,7 +99,8 @@ CREATE TABLE IF NOT EXISTS gestores_escolares (
     telefone VARCHAR(20),
     cpf VARCHAR(14),
     tipo_gestor VARCHAR(50), -- ex: diretor, coordenador, financeiro
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================
@@ -110,6 +115,7 @@ CREATE TABLE IF NOT EXISTS homologacao_fornecedores (
     data_homologacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ativo BOOLEAN DEFAULT TRUE,
     observacoes TEXT,
+    data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(escola_id, fornecedor_id)
 );
 
@@ -226,25 +232,25 @@ VALUES
     ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'fornecedor', TRUE),
     ('João Paulo Freitas da Silva', 'jpfreitass2005@gmail.com', '(11) 91111-1111', 'responsavel', TRUE),
 
-    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'administrador', TRUE),
-    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'escola', TRUE),
-    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'fornecedor', TRUE),
-    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', NULL, 'responsavel', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', '(21) 92222-2222', 'administrador', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', '(21) 92222-2222', 'escola', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', '(21) 92222-2222', 'fornecedor', TRUE),
+    ('João Paulo Nunes da Silva', 'joaondss@class-one.com.br', '(21) 92222-2222', 'responsavel', TRUE),
 
-    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'administrador', TRUE),
-    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'escola', TRUE),
-    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'fornecedor', TRUE),
-    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', NULL, 'responsavel', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', '(31) 93333-3333', 'administrador', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', '(31) 93333-3333', 'escola', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', '(31) 93333-3333', 'fornecedor', TRUE),
+    ('Murilo Souza Ramos', 'murilosr@outlook.com.br', '(31) 93333-3333', 'responsavel', TRUE),
 
-    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'administrador', TRUE),
-    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'escola', TRUE),
-    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'fornecedor', TRUE),
-    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', NULL, 'responsavel', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', '(61) 94444-4444', 'administrador', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', '(61) 94444-4444', 'escola', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', '(61) 94444-4444', 'fornecedor', TRUE),
+    ('Yuri Henrique Rodrigues Silva', 'yurihenriquersilva343@gmail.com', '(61) 94444-4444', 'responsavel', TRUE),
 
-    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'administrador', TRUE),
-    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'escola', TRUE),
-    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'fornecedor', TRUE),
-    ('Victor de Castro Canela', 'victorccanela@gmail.com', NULL, 'responsavel', TRUE)
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', '(41) 95555-5555', 'administrador', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', '(41) 95555-5555', 'escola', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', '(41) 95555-5555', 'fornecedor', TRUE),
+    ('Victor de Castro Canela', 'victorccanela@gmail.com', '(41) 95555-5555', 'responsavel', TRUE)
 ON CONFLICT (email, tipo) DO NOTHING;
 
 -- ============================================
@@ -262,15 +268,16 @@ WHERE NOT EXISTS (SELECT 1 FROM fornecedores WHERE usuario_id = v.usuario_id);
 -- ============================================
 -- DADOS SIMULADOS: Escolas
 -- ============================================
-INSERT INTO escolas (usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-SELECT usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo
+INSERT INTO escolas (usuario_id, nome, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
+SELECT usuario_id, nome, cnpj, razao_social, endereco, cidade, estado, cep, ativo
 FROM (VALUES
-    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'escola'), '22.333.444/0001-55', 'Escola Estadual Visconde de São Leopoldo', 'Rua da Educação, 100', 'São Paulo', 'SP', '02345-678', TRUE),
-    ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'escola'), '33.444.555/0001-66', 'Colégio Municipal Dom Pedro I', 'Av. Brasil, 3000', 'Rio de Janeiro', 'RJ', '20000-000', TRUE),
-    ((SELECT id FROM usuarios WHERE email = 'murilosr@outlook.com.br' AND tipo = 'escola'), '44.555.666/0001-77', 'Instituto de Educação Anísio Teixeira', 'Rua do Saber, 500', 'Belo Horizonte', 'MG', '30130-000', TRUE),
-    ((SELECT id FROM usuarios WHERE email = 'yurihenriquersilva343@gmail.com' AND tipo = 'escola'), '55.666.777/0001-88', 'Escola Técnica José de Freitas', 'Av. das Nações, 1200', 'Brasília', 'DF', '70000-000', TRUE)
-) AS v(usuario_id, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
-WHERE NOT EXISTS (SELECT 1 FROM escolas WHERE usuario_id = v.usuario_id);
+    ((SELECT id FROM usuarios WHERE email = 'jpfreitass2005@gmail.com' AND tipo = 'escola'), 'Escola Estadual Visconde de São Leopoldo', '22.333.444/0001-55', 'E.E. Visconde de São Leopoldo', 'Rua da Educação, 100', 'São Paulo', 'SP', '02345-678', TRUE),
+    ((SELECT id FROM usuarios WHERE email = 'joaondss@class-one.com.br' AND tipo = 'escola'), 'Colégio Municipal Dom Pedro I', '33.444.555/0001-66', 'C.M. Dom Pedro I', 'Av. Brasil, 3000', 'Rio de Janeiro', 'RJ', '20000-000', TRUE),
+    ((SELECT id FROM usuarios WHERE email = 'murilosr@outlook.com.br' AND tipo = 'escola'), 'Instituto de Educação Anísio Teixeira', '44.555.666/0001-77', 'I.E. Anísio Teixeira', 'Rua do Saber, 500', 'Belo Horizonte', 'MG', '30130-000', TRUE),
+    ((SELECT id FROM usuarios WHERE email = 'yurihenriquersilva343@gmail.com' AND tipo = 'escola'), 'Escola Técnica José de Freitas', '55.666.777/0001-88', 'E.T. José de Freitas', 'Av. das Nações, 1200', 'Brasília', 'DF', '70000-000', TRUE),
+    ((SELECT id FROM usuarios WHERE email = 'victorccanela@gmail.com' AND tipo = 'escola'), 'Escola Municipal Anne Frank', '66.777.888/0001-99', 'E.M. Anne Frank', 'Rua dos Inconfidentes, 10', 'Curitiba', 'PR', '80000-000', TRUE)
+) AS v(usuario_id, nome, cnpj, razao_social, endereco, cidade, estado, cep, ativo)
+WHERE v.usuario_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM escolas WHERE usuario_id = v.usuario_id);
 
 -- ============================================
 -- DADOS SIMULADOS: Responsáveis
@@ -290,16 +297,22 @@ WHERE NOT EXISTS (SELECT 1 FROM responsaveis WHERE usuario_id = v.usuario_id);
 -- DADOS SIMULADOS: Gestores Escolares
 -- ============================================
 INSERT INTO gestores_escolares (escola_id, nome, email, telefone, cpf, tipo_gestor)
-SELECT escola_id, nome, email, telefone, cpf, tipo_gestor
+SELECT
+    (SELECT e.id FROM escolas e JOIN usuarios u ON e.usuario_id = u.id WHERE u.email = v.user_email AND u.tipo = 'escola'),
+    (SELECT u.nome FROM usuarios u WHERE u.email = v.user_email LIMIT 1),
+    v.user_email,
+    (SELECT u.telefone FROM usuarios u WHERE u.email = v.user_email LIMIT 1),
+    (SELECT r.cpf FROM responsaveis r JOIN usuarios u ON r.usuario_id = u.id WHERE u.email = v.user_email AND u.tipo = 'responsavel'),
+    'diretor'
 FROM (VALUES
-    ((SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), 'Maria da Silva Santos', 'maria.santos@escola.sp.gov.br', '(11) 98765-4321', '111.222.333-44', 'diretor'),
-    ((SELECT id FROM escolas WHERE cnpj = '22.333.444/0001-55'), 'José Carlos Oliveira', 'jose.oliveira@escola.sp.gov.br', '(11) 98765-4322', '222.333.444-55', 'coordenador'),
-    ((SELECT id FROM escolas WHERE cnpj = '33.444.555/0001-66'), 'Ana Paula Costa', 'ana.costa@escola.rj.gov.br', '(21) 97654-3210', '333.444.555-66', 'diretor'),
-    ((SELECT id FROM escolas WHERE cnpj = '44.555.666/0001-77'), 'Roberto Almeida', 'roberto.almeida@escola.mg.gov.br', '(31) 96543-2109', '444.555.666-77', 'financeiro'),
-    ((SELECT id FROM escolas WHERE cnpj = '55.666.777/0001-88'), 'Fernanda Lima', 'fernanda.lima@escola.df.gov.br', '(61) 95432-1098', '555.666.777-88', 'coordenador')
-) AS v(escola_id, nome, email, telefone, cpf, tipo_gestor)
-WHERE v.escola_id IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM gestores_escolares WHERE cpf = v.cpf);
+    ('jpfreitass2005@gmail.com'),
+    ('joaondss@class-one.com.br'),
+    ('murilosr@outlook.com.br'),
+    ('yurihenriquersilva343@gmail.com'),
+    ('victorccanela@gmail.com')
+) AS v(user_email)
+WHERE (SELECT e.id FROM escolas e JOIN usuarios u ON e.usuario_id = u.id WHERE u.email = v.user_email AND u.tipo = 'escola') IS NOT NULL
+AND NOT EXISTS (SELECT 1 FROM gestores_escolares ge WHERE ge.email = v.user_email);
 
 -- ============================================
 -- DADOS SIMULADOS: Homologação de Fornecedores

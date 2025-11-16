@@ -81,15 +81,25 @@ class Database:
             else:
                 cursor.execute(query)
             
+            # Execute and optionally fetch results
+            resultado = None
+            if fetchall:
+                resultado = cursor.fetchall()
+            elif fetchone:
+                resultado = cursor.fetchone()
+
+            # Commit if requested
             if commit:
                 conexao.commit()
+
+            # If fetch was requested, return it even if we also committed
+            if resultado is not None:
+                return resultado
+
+            # If no fetch requested but commit was done, return rowcount for convenience
+            if commit:
                 return cursor.rowcount
-            
-            if fetchall:
-                return cursor.fetchall()
-            elif fetchone:
-                return cursor.fetchone()
-            
+
             return None
             
         except Exception as e:
@@ -120,7 +130,8 @@ class Database:
         placeholders = ', '.join(['%s'] * len(dados))
         query = f"INSERT INTO {tabela} ({campos}) VALUES ({placeholders}) RETURNING id"
         
-        resultado = Database.executar(query, tuple(dados.values()), fetchone=True)
+        # Need to commit the insert to persist the new row. Also fetch the RETURNING id.
+        resultado = Database.executar(query, tuple(dados.values()), fetchone=True, commit=True)
         return resultado['id'] if resultado and isinstance(resultado, dict) else None
 
     @staticmethod
@@ -136,7 +147,12 @@ class Database:
         Retorna:
             bool: True se atualizado com sucesso
         """
+        if not dados:
+            return False # Nenhum dado para atualizar
+            
         set_clause = ', '.join([f"{k} = %s" for k in dados.keys()])
+        
+        # Adiciona data_atualizacao para tabelas que possuem o campo
         query = f"UPDATE {tabela} SET {set_clause}, data_atualizacao = CURRENT_TIMESTAMP WHERE id = %s"
         
         parametros = tuple(dados.values()) + (id,)
