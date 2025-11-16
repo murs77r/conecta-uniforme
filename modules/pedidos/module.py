@@ -289,13 +289,37 @@ def apagar(id):
             return redirect(url_for('pedidos.listar'))
 
     # Se passou na verificação, pode apagar
-    query = "DELETE FROM pedidos WHERE id = %s"
-    
-    if Database.executar(query, (id,), commit=True):
-        LogService.registrar(usuario_logado['id'], 'pedidos', id, 'DELETE', descricao='Pedido apagado')
-        flash('Pedido apagado com sucesso!', 'success')
+    # Verifica se há itens vinculados ao pedido (bloqueia exclusão para responsáveis)
+    query_itens_count = "SELECT COUNT(*) AS total FROM itens_pedido WHERE pedido_id = %s"
+    resultado_count = Database.executar(query_itens_count, (id,), fetchone=True)
+    total_itens = int(resultado_count.get('total', 0)) if resultado_count and isinstance(resultado_count, dict) else 0
+
+    if total_itens > 0:
+        # Administradores podem apagar pedidos com itens (remove itens primeiro)
+        if usuario_logado['tipo'] == 'administrador':
+            # Tenta apagar os itens do pedido primeiro
+            delete_itens = Database.executar("DELETE FROM itens_pedido WHERE pedido_id = %s", (id,), commit=True)
+            if delete_itens is None:
+                flash('Erro ao apagar itens do pedido.', 'danger')
+                return redirect(url_for('pedidos.listar'))
+            # Prossegue para apagar o pedido
+            query = "DELETE FROM pedidos WHERE id = %s"
+            if Database.executar(query, (id,), commit=True):
+                LogService.registrar(usuario_logado['id'], 'pedidos', id, 'DELETE', descricao='Pedido apagado (com itens)')
+                flash('Pedido apagado com sucesso (itens removidos)!', 'success')
+            else:
+                flash('Erro ao apagar pedido após remover itens.', 'danger')
+        else:
+            # Usuários responsáveis não podem apagar pedidos que possuem itens por integridade de dados
+            flash('Não é possível apagar este pedido porque há itens vinculados. Remova os itens do carrinho antes de apagar o pedido.', 'warning')
+            return redirect(url_for('pedidos.listar'))
     else:
-        flash('Erro ao apagar pedido.', 'danger')
+        query = "DELETE FROM pedidos WHERE id = %s"
+        if Database.executar(query, (id,), commit=True):
+            LogService.registrar(usuario_logado['id'], 'pedidos', id, 'DELETE', descricao='Pedido apagado')
+            flash('Pedido apagado com sucesso!', 'success')
+        else:
+            flash('Erro ao apagar pedido.', 'danger')
     
     return redirect(url_for('pedidos.listar'))
 
