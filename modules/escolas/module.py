@@ -76,6 +76,7 @@ def cadastrar():
     
     # Coleta dados específicos da escola
     dados_escola = {
+        'nome': dados_usuario['nome'],
         'cnpj': request.form.get('cnpj', '').strip(),
         'razao_social': request.form.get('razao_social', '').strip(),
         'endereco': request.form.get('endereco', '').strip(),
@@ -188,6 +189,7 @@ def editar(id):
     
     # Coleta dados da escola
     dados_escola = {
+        'nome': dados_usuario['nome'],
         'cnpj': request.form.get('cnpj', '').strip(),
         'razao_social': request.form.get('razao_social', '').strip(),
         'endereco': request.form.get('endereco', '').strip(),

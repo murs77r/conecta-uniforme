@@ -1,0 +1,94 @@
+@startuml
+title "RF03 - Manter Cadastro de Escola - Diagrama de Atividades"
+
+start
+
+:Acessar Módulo de Escolas;
+
+if (Usuário Autenticado?) then (Sim)
+    switch (Ação do Usuário?)
+    case (Listar Escolas)
+        :Apresentar lista de escolas;
+        if (Existem escolas cadastradas?) then (Sim)
+            :Exibir escolas com ações (Detalhes, Editar, Excluir);
+        else (Não)
+            :Exibir mensagem "Nenhuma escola encontrada";
+        endif
+r
+    case (Cadastrar Escola)
+        if (Usuário é Administrador?) then (Sim)
+            :Apresentar formulário de cadastro;
+            :Preencher dados da escola;
+            :Confirmar cadastro;
+            if (Dados obrigatórios válidos?) then (Sim)
+                if (Email de contato já existe?) then (Sim)
+                    :Informar duplicidade de e-mail;
+                    stop
+                else (Não)
+                    :Salvar nova escola no banco de dados;
+                    :Vincular gestores (se informados);
+                    :Exibir mensagem de sucesso;
+                    :Redirecionar para a lista de escolas;
+                endif
+            else (Não)
+                :Exibir erros de validação no formulário;
+                stop
+            endif
+        else (Não)
+            :Exibir mensagem "Acesso Negado";
+            stop
+        endif
+
+    case (Editar Escola)
+        :Selecionar escola para edição;
+        if (Usuário é Administrador OU
+Usuário pertence à escola?) then (Sim)
+            :Apresentar formulário com dados da escola;
+            :Modificar dados e confirmar;
+            if (Dados obrigatórios válidos?) then (Sim)
+                :Atualizar dados da escola no banco de dados;
+                :Atualizar gestores (se informado);
+                :Exibir mensagem de sucesso;
+                :Redirecionar para a lista de escolas;
+            else (Não)
+                :Exibir erros de validação no formulário;
+                stop
+            endif
+        else (Não)
+            :Exibir mensagem "Acesso Negado";
+            stop
+        endif
+
+    case (Excluir Escola)
+        :Selecionar escola para exclusão;
+        if (Usuário é Administrador?) then (Sim)
+            if (Existem vínculos impeditivos?
+(fornecedores, produtos, pedidos)) then (Sim)
+                :Informar sobre vínculos existentes;
+                :Bloquear exclusão;
+                stop
+            else (Não)
+                :Confirmar exclusão;
+                :Remover escola do banco de dados;
+                :Exibir mensagem de sucesso;
+                :Redirecionar para a lista de escolas;
+            endif
+        else (Não)
+            :Exibir mensagem "Acesso Negado";
+            stop
+        endif
+
+    case (Visualizar Detalhes)
+        :Selecionar escola para visualização;
+        :Apresentar detalhes da escola;
+        :Exibir gestores vinculados;
+
+    endswitch
+else (Não)
+    :Redirecionar para a tela de Autenticação (RF02);
+    stop
+endif
+
+stop
+
+@enduml

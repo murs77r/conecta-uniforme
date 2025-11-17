@@ -15,6 +15,7 @@ usecase "Autenticar (RF02)" as RF02
 rectangle "Módulo de Escolas" {
     usecase "Listar Escolas\n(RF03.1)" as UC03_1
     usecase "Cadastrar Escola\n(RF03.2)" as UC03_2
+    usecase "Visualizar Escola\n(RF03.3)" as UC03_3
     usecase "Editar Escola\n(RF03.4)" as UC03_4
     usecase "Excluir Escola\n(RF03.5)" as UC03_5
 }
@@ -22,23 +23,28 @@ rectangle "Módulo de Escolas" {
 ' Administrador - controle total
 Administrador --> UC03_1
 Administrador --> UC03_2
+Administrador --> UC03_3
 Administrador --> UC03_4
 Administrador --> UC03_5
 
-' Escola - autogestão
+' Escola - autogestão e visualização
 Escola --> UC03_1
+Escola --> UC03_3
 Escola --> UC03_4
 note on link
-  Apenas seus próprios dados
+  Apenas seus próprios dados (Editar)
 end note
 
 ' Outros perfis autenticados - visualização
 Fornecedor --> UC03_1
+Fornecedor --> UC03_3
 Responsável --> UC03_1
+Responsável --> UC03_3
 
 ' Dependência de Autenticação (RF02)
 UC03_1 ..> RF02 : <<include>>
 UC03_2 ..> RF02 : <<include>>
+UC03_3 ..> RF02 : <<include>>
 UC03_4 ..> RF02 : <<include>>
 UC03_5 ..> RF02 : <<include>>
 
